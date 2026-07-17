@@ -1,0 +1,411 @@
+<!-- src/app/pages/calendario/calendario-page.component.html -->
+
+<div class="container">
+    <!-- HEADER -->
+    <header class="header">
+        <h1>Calendario de Visitas</h1>
+    </header>
+
+    <div class="content-wrapper">
+        <!-- BADGE Y BOTÓN PROGRAMAR -->
+        <div class="calendario-actions">
+            <div class="badge-total">
+                <i class="fas fa-calendar-check"></i>
+                <span>{{ visitasProgramadas.length }} visitas totales</span>
+            </div>
+            <button class="btn-programar" (click)="abrirModalProgramar()">
+                <i class="fas fa-plus-circle"></i> Programar Visita
+            </button>
+        </div>
+
+        <!-- TOAST -->
+        <div *ngIf="mostrarToastFlag" class="toast-container" [class.toast-success]="tipoToast === 'success'"
+            [class.toast-error]="tipoToast === 'error'" [class.toast-info]="tipoToast === 'info'">
+            <div class="toast-icon">
+                <i class="fas" [class.fa-check-circle]="tipoToast === 'success'"
+                    [class.fa-exclamation-circle]="tipoToast === 'error'" [class.fa-info-circle]="tipoToast === 'info'">
+                </i>
+            </div>
+            <div class="toast-message">{{ mensajeToast }}</div>
+            <button class="toast-close" (click)="cerrarToast()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- CONFIRMACIÓN -->
+        <div *ngIf="confirmacionVisible" class="confirmacion-overlay">
+            <div class="confirmacion-container">
+                <div class="confirmacion-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>{{ confirmacionTitulo }}</h3>
+                <p>{{ confirmacionMensaje }}</p>
+                <div class="confirmacion-detalle">{{ confirmacionDetalle }}</div>
+                <div class="confirmacion-botones">
+                    <button class="btn-cancelar" (click)="cancelarAction()">Cancelar</button>
+                    <button class="btn-confirmar" (click)="confirmarAction()">Eliminar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CUERPO DEL CALENDARIO -->
+        <div class="calendario-page-body">
+
+            <!-- INDICADOR DE PACIENTE DESDE EL MAPA -->
+            <div *ngIf="pacientesSeleccionados.length > 0 && mostrarModalProgramar" class="mapa-indicator">
+                <div class="mapa-indicator-left">
+                    <i class="fas fa-user-check"></i>
+                    <span>{{ pacientesSeleccionados.length }} paciente(s) seleccionado(s)</span>
+                </div>
+                <div class="mapa-indicator-right">
+                    <span *ngFor="let p of pacientesSeleccionados.slice(0, 2)">
+                        <i class="fas fa-user-circle"></i> {{ p.nombreCompleto }}
+                    </span>
+                    <span *ngIf="pacientesSeleccionados.length > 2">
+                        +{{ pacientesSeleccionados.length - 2 }} mas
+                    </span>
+                </div>
+            </div>
+
+            <!-- NAVEGACIÓN -->
+            <div class="calendario-nav-modern">
+                <div class="nav-arrows">
+                    <button class="nav-btn" (click)="anioAnterior()" title="Año anterior">
+                        <i class="fas fa-chevron-double-left"></i>
+                    </button>
+                    <button class="nav-btn" (click)="mesAnterior()" title="Mes anterior">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+
+                <div class="nav-mes">
+                    <span class="mes-titulo">{{ nombreMeses[mesActual] }}</span>
+                    <span class="anio-titulo">{{ anioActual }}</span>
+                    <button class="btn-hoy" (click)="irHoy()">Hoy</button>
+                </div>
+
+                <div class="nav-arrows">
+                    <button class="nav-btn" (click)="mesSiguiente()" title="Mes siguiente">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="nav-btn" (click)="anioSiguiente()" title="Año siguiente">
+                        <i class="fas fa-chevron-double-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SELECTOR RÁPIDO -->
+            <div class="selector-rapido">
+                <select class="selector-mes" [(ngModel)]="mesActual" (change)="cambiarMesAnio()">
+                    <option *ngFor="let mes of nombreMeses; let i = index" [value]="i">{{ mes }}</option>
+                </select>
+                <select class="selector-anio" [(ngModel)]="anioActual" (change)="cambiarMesAnio()">
+                    <option *ngFor="let year of yearsDisponibles" [value]="year">{{ year }}</option>
+                </select>
+            </div>
+
+            <!-- DÍAS DE LA SEMANA -->
+            <div class="calendario-dias-semana">
+                <div *ngFor="let dia of nombreDias" class="dia-semana">{{ dia }}</div>
+            </div>
+
+            <!-- CALENDARIO -->
+            <div class="calendario-body">
+                <div *ngFor="let dia of diasCalendario" class="dia-calendario" [class.otro-mes]="!dia.esMesActual"
+                    [class.hoy]="dia.esHoy" [class.con-visitas]="dia.tieneVisitas" (click)="seleccionarDia(dia)">
+                    <span class="dia-numero">{{ dia.dia }}</span>
+                    <div class="dia-indicador" *ngIf="dia.tieneVisitas">
+                        <span class="visitas-count">{{ dia.totalVisitas }}</span>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- MODAL DE DETALLE DEL DÍA -->
+            <div class="modal-overlay" *ngIf="mostrarModalDetalle" (click)="cerrarModalDetalle()">
+                <div class="modal-container-detalle" (click)="$event.stopPropagation()">
+
+                    <div class="modal-detalle-header">
+                        <div class="modal-detalle-header-left">
+                            <div class="modal-detalle-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div>
+                                <h3 class="modal-detalle-fecha">{{ fechaDelDia }}</h3>
+                                <p class="modal-detalle-subtotal">{{ totalVisitasDelDia }} visita(s) programada(s)</p>
+                            </div>
+                        </div>
+                        <div class="modal-detalle-actions">
+                            <button class="modal-close-detalle" (click)="cerrarModalDetalle()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="modal-detalle-body">
+                        <div class="detalle-lista" *ngIf="tieneVisitasDelDia">
+                            <div class="visita-card-detalle" *ngFor="let visita of visitasDelDia"
+                                [class.visita-completada]="visita.estado === 'completada'"
+                                [class.visita-cancelada]="visita.estado === 'cancelada'">
+
+                                <div class="visita-card-header-detalle">
+                                    <div class="visita-paciente-detalle">
+                                        <i class="fas fa-user-circle"></i>
+                                        <strong>{{ visita.pacienteNombre }}</strong>
+                                        <span class="visita-id">#{{ visita.pacienteId }}</span>
+                                    </div>
+                                    <div class="visita-estado-detalle">
+                                        <span class="estado-badge" [class]="getEstadoClass(visita.estado)">
+                                            <i class="fas" [class.fa-check-circle]="visita.estado === 'completada'"
+                                                [class.fa-clock]="visita.estado === 'pendiente'"
+                                                [class.fa-times-circle]="visita.estado === 'cancelada'"></i>
+                                            {{ visita.estado === 'pendiente' ? 'Pendiente' : visita.estado ===
+                                            'completada' ? 'Completada' : 'Cancelada' }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="visita-card-body-detalle">
+                                    <div class="visita-info-item-detalle">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ visita.hora }}</span>
+                                    </div>
+                                    <div class="visita-info-item-detalle">
+                                        <i class="fas fa-flag"></i>
+                                        <span class="prioridad-text"
+                                            [style.color]="getPrioridadColor(visita.prioridad)">
+                                            {{ visita.prioridad === 'alta' ? 'Alta' : visita.prioridad === 'media' ?
+                                            'Media' : 'Baja' }}
+                                        </span>
+                                    </div>
+                                    <div class="visita-info-item-detalle" *ngIf="visita.pacienteCurp">
+                                        <i class="fas fa-id-card"></i>
+                                        <span>{{ visita.pacienteCurp }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="visita-card-actions-detalle">
+                                    <select class="estado-select" [value]="visita.estado"
+                                        (change)="cambiarEstadoVisita(visita.id, $any($event.target).value)">
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="completada">Completada</option>
+                                        <option value="cancelada">Cancelada</option>
+                                    </select>
+                                    <button class="btn-eliminar-visita" (click)="eliminarVisita(visita.id)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detalle-vacio-detalle" *ngIf="!tieneVisitasDelDia">
+                            <i class="fas fa-calendar-plus"></i>
+                            <p>No hay visitas programadas para este dia</p>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL PROGRAMAR VISITAS -->
+            <div class="modal-overlay" *ngIf="mostrarModalProgramar" (click)="cerrarModalProgramar()">
+                <div class="modal-container" (click)="$event.stopPropagation()">
+                    <div class="modal-header-modern">
+                        <div class="modal-header-left">
+                            <div class="modal-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div>
+                                <h3>Programar Visitas</h3>
+                                <p class="modal-subtitle">Selecciona los pacientes y configura cada visita</p>
+                            </div>
+                        </div>
+                        <button class="modal-close-modern" (click)="cerrarModalProgramar()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="modal-body-modern">
+                        <!-- Contador -->
+                        <div class="contador-pacientes" *ngIf="pacientesSeleccionados.length > 0">
+                            <div class="contador-badge">
+                                <i class="fas fa-users"></i>
+                                <span>{{ pacientesSeleccionados.length }} paciente(s) seleccionado(s)</span>
+                            </div>
+                            <button class="btn-quitar-todos-modern" (click)="quitarTodosPacientes()">
+                                <i class="fas fa-trash-alt"></i> Quitar todos
+                            </button>
+                        </div>
+
+                        <!-- Lista de pacientes seleccionados -->
+                        <div class="pacientes-seleccionados-modern" *ngIf="pacientesSeleccionados.length > 0">
+                            <div class="seleccionado-item-modern"
+                                *ngFor="let p of pacientesSeleccionados; let i = index"
+                                [class.conflicto]="p.tieneConflicto" [class.finado]="p.estaFinado">
+                                <div class="seleccionado-header-modern">
+                                    <div class="paciente-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="paciente-info-modern">
+                                        <div class="paciente-nombre-modern">
+                                            <strong>{{ p.nombreCompleto }}</strong>
+                                            <span class="paciente-id">ID: {{ p.id }}</span>
+                                            <span class="finado-badge-modern" *ngIf="p.estaFinado">
+                                                <i class="fas fa-skull"></i> FINADO
+                                            </span>
+                                            <span class="conflicto-badge-modern"
+                                                *ngIf="p.tieneConflicto && !p.estaFinado">
+                                                <i class="fas fa-exclamation-triangle"></i> {{ p.mensajeConflicto }}
+                                            </span>
+                                        </div>
+                                        <div class="paciente-curp-modern" *ngIf="p.curp">
+                                            <i class="fas fa-id-card"></i> {{ p.curp }}
+                                        </div>
+                                    </div>
+                                    <button class="btn-quitar-modern" (click)="quitarPacienteSeleccionado(p.id)">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
+                                </div>
+
+                                <div class="seleccionado-config-modern" *ngIf="!p.estaFinado">
+                                    <div class="config-group-modern">
+                                        <label class="config-label-modern"><i class="fas fa-calendar-day"></i>
+                                            Fecha</label>
+                                        <input type="date" class="config-input-modern config-date-modern"
+                                            [value]="p.fecha" [min]="getFechaMinima()"
+                                            (change)="actualizarConfiguracionPaciente(p.id, 'fecha', $any($event.target).value)">
+                                    </div>
+                                    <div class="config-group-modern">
+                                        <label class="config-label-modern"><i class="fas fa-clock"></i> Hora</label>
+                                        <input type="time" class="config-input-modern config-time-modern"
+                                            [value]="p.hora"
+                                            (change)="actualizarConfiguracionPaciente(p.id, 'hora', $any($event.target).value)">
+                                    </div>
+                                    <div class="config-group-modern">
+                                        <label class="config-label-modern"><i class="fas fa-flag"></i> Prioridad</label>
+                                        <select class="config-input-modern config-prioridad-modern"
+                                            [value]="p.prioridad"
+                                            (change)="actualizarConfiguracionPaciente(p.id, 'prioridad', $any($event.target).value)">
+                                            <option value="alta" class="prio-alta">Alta</option>
+                                            <option value="media" class="prio-media">Media</option>
+                                            <option value="baja" class="prio-baja">Baja</option>
+                                        </select>
+                                    </div>
+                                    <div class="config-group-modern config-notas-modern">
+                                        <label class="config-label-modern"><i class="fas fa-sticky-note"></i>
+                                            Notas</label>
+                                        <input type="text" class="config-input-modern"
+                                            placeholder="Notas adicionales..." [value]="p.notas"
+                                            (change)="actualizarConfiguracionPaciente(p.id, 'notas', $any($event.target).value)">
+                                    </div>
+                                </div>
+                                <div class="seleccionado-config-modern" *ngIf="p.estaFinado">
+                                    <div class="config-group-modern" style="grid-column: span 4;">
+                                        <div class="finado-mensaje-modern">
+                                            <i class="fas fa-skull"></i>
+                                            <span>Este paciente esta registrado como FINADO y no puede agendarse</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buscador -->
+                        <div class="buscador-modern">
+                            <label class="buscador-label-modern">
+                                <i class="fas fa-search"></i> Buscar Paciente
+                                <span class="buscador-hint">(Nombre, ID o CURP)</span>
+                            </label>
+                            <div class="search-container-modern">
+                                <input type="text" class="search-input-modern"
+                                    placeholder="Ej: Juan Perez, 001, PEGJ800101HDF" [(ngModel)]="busquedaPaciente"
+                                    (input)="onBusquedaPacienteChange()" autocomplete="off">
+                                <button class="search-clear-modern" *ngIf="busquedaPaciente"
+                                    (click)="busquedaPaciente = ''; sugerenciasPacientes = []; mostrarSugerencias = false">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </div>
+                            <div class="suggestions-modern"
+                                *ngIf="mostrarSugerencias && sugerenciasPacientes.length > 0 && busquedaPaciente.length > 0">
+                                <div class="suggestion-item-modern" *ngFor="let p of sugerenciasPacientes"
+                                    (click)="agregarPacienteSeleccionado(p)">
+                                    <div class="suggestion-avatar">
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                    <div class="suggestion-info-modern">
+                                        <div class="suggestion-nombre">{{ p.nombreCompleto }}</div>
+                                        <div class="suggestion-detalles">
+                                            <span><i class="fas fa-id-badge"></i> ID: {{ p.id }}</span>
+                                            <span *ngIf="p.curp"><i class="fas fa-id-card"></i> {{ p.curp }}</span>
+                                            <span><i class="fas fa-map-marker-alt"></i> {{ p.colonia || 'Sin colonia'
+                                                }}</span>
+                                            <span *ngIf="p.estaFinado" class="finado-tag">FINADO</span>
+                                        </div>
+                                    </div>
+                                    <div class="suggestion-add" *ngIf="!p.estaFinado">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </div>
+                                    <div class="suggestion-add" *ngIf="p.estaFinado"
+                                        style="opacity: 0.5; color: #dc3545;">
+                                        <i class="fas fa-skull"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="suggestions-modern"
+                                *ngIf="mostrarSugerencias && sugerenciasPacientes.length === 0 && busquedaPaciente.length > 0">
+                                <div class="suggestion-empty-modern">
+                                    <i class="fas fa-search"></i>
+                                    <div>
+                                        <strong>No se encontraron pacientes</strong>
+                                        <span>Intenta con otro nombre, ID o CURP</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen -->
+                        <div class="resumen-modern" *ngIf="pacientesSeleccionados.length > 0">
+                            <div class="resumen-grid-modern">
+                                <div class="resumen-item-modern">
+                                    <i class="fas fa-users" style="color: #701f2f;"></i>
+                                    <span><strong>{{ pacientesSeleccionados.length }}</strong> paciente(s)</span>
+                                </div>
+                                <div class="resumen-item-modern"
+                                    *ngIf="pacientesSeleccionados.some(p => p.tieneConflicto)">
+                                    <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                                    <span style="color: #dc3545;">Hay conflictos de fecha</span>
+                                </div>
+                                <div class="resumen-item-modern" *ngIf="pacientesSeleccionados.some(p => p.estaFinado)">
+                                    <i class="fas fa-skull" style="color: #6c757d;"></i>
+                                    <span style="color: #6c757d;">Hay pacientes finados</span>
+                                </div>
+                                <div class="resumen-item-modern"
+                                    *ngIf="!pacientesSeleccionados.some(p => p.tieneConflicto) && !pacientesSeleccionados.some(p => p.estaFinado)">
+                                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                    <span style="color: #28a745;">Todos los pacientes disponibles</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-actions-modern">
+                            <button class="btn-cancelar-modern" (click)="cerrarModalProgramar()">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button class="btn-guardar-modern" (click)="guardarVisitaProgramada()"
+                                [disabled]="pacientesSeleccionados.length === 0 || pacientesSeleccionados.some(p => p.tieneConflicto) || pacientesSeleccionados.some(p => p.estaFinado)">
+                                <i class="fas fa-save"></i>
+                                <span *ngIf="pacientesSeleccionados.length === 0">Programar visitas</span>
+                                <span *ngIf="pacientesSeleccionados.length === 1">Programar 1 visita</span>
+                                <span *ngIf="pacientesSeleccionados.length > 1">Programar {{
+                                    pacientesSeleccionados.length
+                                    }} visitas</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

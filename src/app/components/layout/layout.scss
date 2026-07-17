@@ -1,0 +1,623 @@
+// src/app/components/layout/layout.scss
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.new-sidebar {
+  width: 340px;
+  background: #ffffff;
+  border-right: 1px solid #e9e0d6;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 16px;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.new-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.new-sidebar::-webkit-scrollbar-track {
+  background: #f0ece8;
+  border-radius: 10px;
+}
+
+.new-sidebar::-webkit-scrollbar-thumb {
+  background: #701f2f;
+  border-radius: 10px;
+}
+
+/* ============================================ */
+/* ⭐ CONTENT AREA - Se expande cuando no hay sidebar */
+/* ============================================ */
+.content-area {
+  flex: 1;
+  overflow: hidden;
+  background: #fefaf7;
+  transition: all 0.3s ease;
+}
+
+/* ⭐ Cuando el sidebar está oculto, el contenido ocupa todo el ancho */
+.content-area.full-width {
+  flex: 1;
+  width: 100%;
+}
+
+/* ============================================ */
+/* HEADER ROJO                                 */
+/* ============================================ */
+.header-red {
+  background: linear-gradient(135deg, #c12c2c 0%, #a02020 100%);
+  color: white;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2px;
+  box-shadow: 0 2px 10px rgba(193, 44, 44, 0.3);
+  flex-shrink: 0;
+}
+
+.header-red i {
+  font-size: 1.2rem;
+  color: white;
+}
+
+.header-red h2 {
+  font-size: 0.95rem;
+  margin: 0;
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================ */
+/* FILTER GROUP                                */
+/* ============================================ */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.filter-group label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #7B1D2E;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e0cfc4;
+  background: #fefaf7;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+select:focus {
+  outline: none;
+  border-color: #701f2f;
+  box-shadow: 0 0 0 3px rgba(112, 31, 47, 0.1);
+}
+
+select:disabled {
+  background: #f5f0eb;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+select.precargado {
+  background: #f0ece8;
+  border-color: #701f2f;
+  color: #701f2f;
+  font-weight: 600;
+  cursor: default;
+  opacity: 0.9;
+}
+
+select.precargado:disabled {
+  background: #e8e0d6;
+  border-color: #701f2f;
+  color: #701f2f;
+  opacity: 0.9;
+}
+
+/* ============================================ */
+/* ⭐ ZONAS / MANZANAS - DISEÑO MEJORADO        */
+/* ============================================ */
+.zonas-group {
+  background: linear-gradient(145deg, #fcf8f6, #f8f4f0);
+  border-radius: 16px;
+  padding: 16px 16px 14px 16px;
+  border: 1px solid #e9e0d6;
+  margin: 2px 0 4px 0;
+  flex: 1;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.zonas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.zonas-header label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #7B1D2E;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0;
+}
+
+.zonas-badge {
+  background: linear-gradient(135deg, #701f2f, #8b2e4a);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(112, 31, 47, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.zonas-badge i {
+  font-size: 10px;
+}
+
+.zonas-select {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #e0cfc4;
+  background: #fefaf7;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  margin-top: 2px;
+  font-weight: 500;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zonas-select:focus {
+  outline: none;
+  border-color: #701f2f;
+  box-shadow: 0 0 0 3px rgba(112, 31, 47, 0.08);
+}
+
+.zonas-select option {
+  padding: 8px;
+  font-size: 0.85rem;
+}
+
+/* ⭐ CONTENEDOR DE CHIPS - 2 COLUMNAS */
+.zonas-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 2px;
+  margin-top: 8px;
+  min-height: 80px;
+  max-height: none;
+  align-content: start;
+}
+
+.zonas-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.zonas-container::-webkit-scrollbar-track {
+  background: #f0ece8;
+  border-radius: 4px;
+}
+
+.zonas-container::-webkit-scrollbar-thumb {
+  background: #701f2f;
+  border-radius: 4px;
+}
+
+/* ⭐ CHIP DE ZONA - MÁS GRANDE */
+.zona-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 8px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 11px;
+  border: 1.5px solid #e9e0d6;
+  background: #f8f4f0;
+  color: #444;
+  user-select: none;
+  font-weight: 500;
+  min-height: 36px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.zona-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.zona-chip.seleccionada {
+  transform: translateY(-2px);
+  animation: seleccionZona 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ⭐ CÍRCULO DE COLOR - MÁS GRANDE */
+.color-dot-manzana {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+}
+
+.zona-chip:hover .color-dot-manzana {
+  transform: scale(1.1);
+}
+
+/* ⭐ NOMBRE DE ZONA - MÁS GRANDE */
+.zona-nombre {
+  font-size: 11px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+  font-weight: 500;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+
+.zona-chip.seleccionada .zona-nombre {
+  font-weight: 700;
+}
+
+/* ⭐ CHECK DE SELECCIÓN - MÁS GRANDE */
+.zona-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ⭐ INFORMACIÓN DE ZONAS */
+.zonas-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0ece8;
+  flex-shrink: 0;
+}
+
+.zonas-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #888;
+  flex-wrap: wrap;
+}
+
+.zonas-stats i {
+  color: #701f2f;
+  font-size: 11px;
+}
+
+.zonas-count strong {
+  color: #701f2f;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.zonas-separator {
+  color: #ddd;
+  font-size: 14px;
+}
+
+.zonas-colores {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(112, 31, 47, 0.06);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 9px;
+}
+
+.zonas-colores i {
+  color: #701f2f;
+  font-size: 10px;
+}
+
+.zona-seleccionada-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1.5px solid;
+  animation: fadeInZona 0.3s ease;
+  flex-wrap: wrap;
+}
+
+.zona-seleccionada-info i {
+  font-size: 13px;
+}
+
+.zona-seleccionada-info strong {
+  font-weight: 700;
+}
+
+.zona-color-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ⭐ LOADING */
+.loading-zonas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: #f8f4f0;
+  border-radius: 12px;
+  color: #701f2f;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px dashed #e0cfc4;
+  animation: pulseLoad 1.5s ease-in-out infinite;
+  flex: 1;
+  min-height: 80px;
+}
+
+.loading-zonas i {
+  font-size: 18px;
+}
+
+/* ⭐ ANIMACIONES */
+@keyframes pulseLoad {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes seleccionZona {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInZona {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================ */
+/* ⭐ RESPONSIVE                               */
+/* ============================================ */
+@media (max-width: 768px) {
+  .new-sidebar {
+    width: 280px;
+    padding: 16px 12px;
+  }
+
+  .zonas-container {
+    gap: 6px;
+    min-height: 60px;
+  }
+
+  .zona-chip {
+    padding: 6px 10px 6px 8px;
+    font-size: 10px;
+    min-height: 30px;
+  }
+
+  .color-dot-manzana {
+    width: 12px;
+    height: 12px;
+  }
+
+  .zona-check {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .new-sidebar {
+    width: 260px;
+    padding: 12px 10px;
+  }
+
+  .zonas-group {
+    padding: 12px 12px 10px 12px;
+    min-height: 150px;
+  }
+
+  .zonas-container {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    min-height: 50px;
+  }
+
+  .zona-chip {
+    padding: 5px 10px 5px 8px;
+    font-size: 10px;
+    min-height: 28px;
+    border-radius: 16px;
+  }
+
+  .color-dot-manzana {
+    width: 11px;
+    height: 11px;
+  }
+
+  .zona-check {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+
+  .zonas-stats {
+    font-size: 9px;
+  }
+
+  .zonas-count strong {
+    font-size: 10px;
+  }
+
+  .zona-seleccionada-info {
+    font-size: 10px;
+    padding: 6px 12px;
+  }
+
+  .zona-seleccionada-info i {
+    font-size: 11px;
+  }
+
+  .zona-color-preview {
+    width: 14px;
+    height: 14px;
+  }
+
+  .zonas-badge {
+    font-size: 10px;
+    padding: 2px 10px;
+  }
+
+  .zonas-badge i {
+    display: none;
+  }
+
+  .header-red {
+    padding: 10px 14px;
+  }
+
+  .header-red h2 {
+    font-size: 0.8rem;
+  }
+
+  .header-red i {
+    font-size: 1rem;
+  }
+
+  select {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+
+  .filter-group label {
+    font-size: 0.6rem;
+  }
+
+  .zonas-select {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+.content-area.full-width {
+  flex: 1;
+  width: 100%;
+}

@@ -1,0 +1,40 @@
+<!-- src/app/components/map/map.html -->
+
+<div class="map-container">
+  <div class="search-container">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Buscar calle o dirección..."
+        (keyup.enter)="buscarDireccion()" [disabled]="isSearching" />
+      <button class="btn-search" (click)="buscarDireccion()" [disabled]="isSearching">
+        <i class="fas" [class.fa-search]="!isSearching" [class.fa-spinner]="isSearching"></i>
+        {{ isSearching ? 'Buscando...' : 'Buscar' }}
+      </button>
+    </div>
+    <button class="btn-advanced-search" (click)="buscarDireccionConEntrecalles()" [disabled]="isSearching"
+      title="Búsqueda avanzada con entrecalles">
+      <i class="fas fa-route"></i>
+    </button>
+    <button class="btn-refresh-pacientes" (click)="recargarPacientes()" [disabled]="loadingPacientes"
+      title="Recargar pacientes en el mapa">
+      <i class="fas" [class.fa-sync]="!loadingPacientes" [class.fa-spinner]="loadingPacientes"
+        [class.fa-spin]="loadingPacientes"></i>
+    </button>
+  </div>
+
+  <!-- ⭐ ELIMINADO: ZONAS / MANZANAS SELECTOR -->
+
+  <div id="leafletMap" class="map"></div>
+
+  <!-- ⭐ INFO DEL MAPA - SOLO COORDENADAS Y ZOOM -->
+  <div class="map-info-coords" *ngIf="centerLat && centerLng">
+    <span>
+      <i class="fas fa-map-pin"></i>
+      Lat: {{ centerLat.toFixed(6) }}, Lng: {{ centerLng.toFixed(6) }}
+    </span>
+    <span>
+      <i class="fas fa-search-location"></i>
+      Zoom: {{ currentZoom }}
+    </span>
+  </div>
+</div>

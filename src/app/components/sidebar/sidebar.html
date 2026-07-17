@@ -1,0 +1,62 @@
+<aside class="app-sidebar glass-panel">
+  <div class="sidebar-header">
+    <h2>Filtros y Búsqueda</h2>
+  </div>
+
+  <div class="panel-switch">
+    <button class="switch-btn" [class.active]="(modoPanel$ | async) === 'electoral'" (click)="setModo('electoral')">
+      TERRITORIAL
+    </button>
+    <button class="switch-btn" [class.active]="(modoPanel$ | async) === 'operativo'" (click)="setModo('operativo')">
+      OPERATIVO
+    </button>
+  </div>
+
+  <div class="filter-group">
+    <label for="selDistritoF">DISTRITO FEDERAL</label>
+    <select id="selDistritoF" (change)="onDistritoChange($event)">
+      <option value="">Selecciona Distrito Federal</option>
+      <option *ngFor="let d of distritos" [value]="d">DISTRITO FEDERAL {{ d }}</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="selMunicipio">MUNICIPIO</label>
+    <select id="selMunicipio" (change)="onMunicipioChange($event)" [disabled]="!municipios.length">
+      <option value="">(Selecciona Distrito Federal)</option>
+      <option *ngFor="let m of municipios" [value]="m">Municipio {{ m }}</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="selAnio">AÑO</label>
+    <select id="selAnio" (change)="onAnioChange($event)" [value]="anioActivo$ | async">
+      <option value="2015">2015</option>
+      <option value="2018">2018</option>
+      <option value="2021">2021</option>
+      <option value="2024">2024</option>
+      <option value="ACTUAL">MAPA ACTUAL</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="selSecciones">SECCIONES</label>
+    <select id="selSecciones" (change)="onSeccionChange($event)" [disabled]="!secciones.length">
+      <option value="">(Seleccione municipio)</option>
+      <option *ngFor="let s of secciones" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="selManzanas">MANZANAS</label>
+    <select id="selManzanas" (change)="onManzanaChange($event)" [disabled]="!manzanas.length">
+      <option value="">(Seleccione municipio o sección)</option>
+      <option *ngFor="let m of manzanas" [value]="m">{{ m }}</option>
+    </select>
+  </div>
+
+  <div class="filter-group search-container">
+    <input type="text" placeholder="Buscar simpatizante..." class="search-input">
+  </div>
+
+</aside>

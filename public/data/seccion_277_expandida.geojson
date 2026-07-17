@@ -1,0 +1,43 @@
+{
+    "type": "Feature",
+    "properties": {
+        "ID": 276,
+        "ENTIDAD": 11,
+        "DISTRITO_F": 11,
+        "DISTRITO_L": 22,
+        "MUNICIPIO": 20,
+        "SECCION": 277,
+        "TIPO": 4,
+        "CONTROL": 7014.0,
+        "GEOMETRY1_": null
+    },
+    "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+            [
+                [
+                    [
+                        -101.7200,
+                        21.0950
+                    ],
+                    [
+                        -101.6600,
+                        21.0950
+                    ],
+                    [
+                        -101.6600,
+                        21.1400
+                    ],
+                    [
+                        -101.7200,
+                        21.1400
+                    ],
+                    [
+                        -101.7200,
+                        21.0950
+                    ]
+                ]
+            ]
+        ]
+    }
+}

@@ -1,0 +1,174 @@
+<!-- src/app/components/info-panel/info-panel.html -->
+
+<aside class="app-info-panel glass-panel">
+
+  <div class="info-section">
+
+    <!-- ============================================ -->
+    <!-- ⭐ HEADER ROJO - FILTROS DISTRITALES        -->
+    <!-- ============================================ -->
+    <div class="header-red">
+      <img src="https://i.postimg.cc/3J7H2cJH/logo1-removebg-preview.png" alt="Salud Casa por Casa"
+        class="header-logo-icon" />
+      <div class="header-text">
+        <h2>SALUD CASA POR CASA</h2>
+        <span class="header-subtitle">Programa de Visitas Domiciliarias</span>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ KPI - Total, Visitas, Pendientes          -->
+    <!-- ============================================ -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-n">{{ totalAsignados | number }}</div>
+        <div class="kpi-l"><i class="fas fa-users"></i> Total Asignados</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-n">{{ visitasHechas | number }}</div>
+        <div class="kpi-l"><i class="fas fa-user-check"></i> Visitas Hechas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-n">{{ pendientes | number }}</div>
+        <div class="kpi-l"><i class="fas fa-clock"></i> Pendientes</div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ PERFIL GENERAL CUBIERTO                   -->
+    <!-- ============================================ -->
+    <div class="filter-group">
+      <div class="filter-header">
+        <i class="fas fa-users"></i>
+        <label>PERFIL GENERAL CUBIERTO</label>
+      </div>
+      <div class="profile-filters">
+        <div class="pfilter" data-perfil="adulto" [class.checked]="perfiles.adulto" (click)="togglePerfil('adulto')">
+          <span class="dot green-dot"></span>
+          <span>Adulto Mayor</span>
+        </div>
+        <div class="pfilter" data-perfil="discapacitado" [class.checked]="perfiles.discapacitado"
+          (click)="togglePerfil('discapacitado')">
+          <span class="dot purple-dot"></span>
+          <span>Persona Discapacitada</span>
+        </div>
+        <div class="pfilter" data-perfil="finado" [class.checked]="perfiles.finado" (click)="togglePerfil('finado')">
+          <span class="dot red-dot"></span>
+          <span>Finado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ NIVELES DE RIESGO TOTALES                 -->
+    <!-- ============================================ -->
+    <div class="filter-group">
+      <div class="filter-header">
+        <i class="fas fa-chart-line"></i>
+        <label>NIVELES DE RIESGO TOTALES</label>
+      </div>
+      <div class="risk-chips">
+        <div class="rchip green-chip" [class.sel]="riesgosSeleccionados.g1" (click)="toggleRiesgoChip('g1')">Grupo 1
+        </div>
+        <div class="rchip yellow-chip" [class.sel]="riesgosSeleccionados.g2" (click)="toggleRiesgoChip('g2')">Grupo 2
+        </div>
+        <div class="rchip orange-chip" [class.sel]="riesgosSeleccionados.g3" (click)="toggleRiesgoChip('g3')">Grupo 3
+        </div>
+        <div class="rchip red-chip" [class.sel]="riesgosSeleccionados.g4" (click)="toggleRiesgoChip('g4')">Grupo 4</div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ DISTRIBUCIÓN POR PERFIL                   -->
+    <!-- ============================================ -->
+    <div class="section">
+      <div class="sec-title"><i class="fas fa-users"></i> Distribución por Perfil</div>
+
+      <div class="prof-row">
+        <div class="prof-label"><span class="color-dot green"></span> Adulto Mayor</div>
+        <div class="prof-bar-bg">
+          <div class="prof-bar-fill green-fill" [style.width.%]="perfilAdulto">{{ perfilAdulto }}%</div>
+        </div>
+      </div>
+
+      <div class="prof-row">
+        <div class="prof-label"><span class="color-dot purple"></span> Discapacitado</div>
+        <div class="prof-bar-bg">
+          <div class="prof-bar-fill purple-fill" [style.width.%]="perfilDiscapacitado">{{ perfilDiscapacitado }}%</div>
+        </div>
+      </div>
+
+      <div class="prof-row">
+        <div class="prof-label"><span class="color-dot red"></span> Finado</div>
+        <div class="prof-bar-bg">
+          <div class="prof-bar-fill red-fill" [style.width.%]="perfilFinado">{{ perfilFinado }}%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ DISTRIBUCIÓN DE RIESGO                   -->
+    <!-- ============================================ -->
+    <div class="section">
+      <div class="sec-title"><i class="fas fa-chart-line"></i> Distribución de Riesgo</div>
+
+      <div class="risk-block">
+        <div class="risk-upper-info">
+          <span><span class="color-dot green"></span> Grupo 1 (Bajo)</span>
+          <span>{{ riesgoG1 | number }}</span>
+        </div>
+        <div class="risk-bar-bg">
+          <div class="risk-bar-fill green-fill" [style.width.%]="pctRiesgoG1">
+            {{ pctRiesgoG1 }}%
+          </div>
+        </div>
+      </div>
+
+      <div class="risk-block">
+        <div class="risk-upper-info">
+          <span><span class="color-dot yellow"></span> Grupo 2 (Medio)</span>
+          <span>{{ riesgoG2 | number }}</span>
+        </div>
+        <div class="risk-bar-bg">
+          <div class="risk-bar-fill yellow-fill" [style.width.%]="pctRiesgoG2">
+            {{ pctRiesgoG2 }}%
+          </div>
+        </div>
+      </div>
+
+      <div class="risk-block">
+        <div class="risk-upper-info">
+          <span><span class="color-dot orange"></span> Grupo 3 (Alto)</span>
+          <span>{{ riesgoG3 | number }}</span>
+        </div>
+        <div class="risk-bar-bg">
+          <div class="risk-bar-fill orange-fill" [style.width.%]="pctRiesgoG3">
+            {{ pctRiesgoG3 }}%
+          </div>
+        </div>
+      </div>
+
+      <div class="risk-block">
+        <div class="risk-upper-info">
+          <span><span class="color-dot red"></span> Grupo 4 (Crítico)</span>
+          <span>{{ riesgoG4 | number }}</span>
+        </div>
+        <div class="risk-bar-bg">
+          <div class="risk-bar-fill red-fill" [style.width.%]="pctRiesgoG4">
+            {{ pctRiesgoG4 }}%
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Mensaje cuando no hay datos -->
+  <div class="info-section" *ngIf="currentData.total === 0">
+    <div class="empty-state">
+      <i class="fas fa-info-circle"></i>
+      <p>Cargando datos generales de pacientes...</p>
+    </div>
+  </div>
+
+</aside>

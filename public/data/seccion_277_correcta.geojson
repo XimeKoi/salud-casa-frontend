@@ -1,0 +1,44 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "SECCION": "277",
+                "DISTRITO_F": "11",
+                "DISTRITO_L": "11",
+                "MUNICIPIO": "20",
+                "ENTIDAD": 11,
+                "ID": 9999,
+                "TIPO": 2
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -101.6920,
+                            21.1100
+                        ],
+                        [
+                            -101.6820,
+                            21.1100
+                        ],
+                        [
+                            -101.6820,
+                            21.1200
+                        ],
+                        [
+                            -101.6920,
+                            21.1200
+                        ],
+                        [
+                            -101.6920,
+                            21.1100
+                        ]
+                    ]
+                ]
+            }
+        }
+    ]
+}

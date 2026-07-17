@@ -1,0 +1,623 @@
+// src/app/components/info-panel/info-panel.scss
+
+.app-info-panel {
+  height: 100%;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-color);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.app-info-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-info-panel::-webkit-scrollbar-track {
+  background: #f0ece8;
+  border-radius: 10px;
+}
+
+.app-info-panel::-webkit-scrollbar-thumb {
+  background: #701f2f;
+  border-radius: 10px;
+}
+
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ============================================ */
+/* HEADER ROJO - CON LOGO E IDENTIDAD          */
+/* ============================================ */
+.header-red {
+  background: linear-gradient(135deg, #c12c2c 0%, #a02020 100%);
+  color: white;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 2px;
+  box-shadow: 0 2px 10px rgba(193, 44, 44, 0.3);
+  flex-shrink: 0;
+}
+
+.header-logo-icon {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-text h2 {
+  font-size: 0.95rem;
+  margin: 0;
+  color: white;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.header-subtitle {
+  font-size: 0.6rem;
+  opacity: 0.85;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+}
+
+/* ============================================ */
+/* ⭐ KPI ROW - MEJORADO                       */
+/* ============================================ */
+.kpi-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.kpi {
+  flex: 1;
+  text-align: center;
+  background: linear-gradient(145deg, #faf8f6, #f5f0eb);
+  border-radius: 16px;
+  padding: 16px 8px;
+  border: 1px solid #e9e0d6;
+  min-width: 0;
+  transition: all 0.3s ease;
+}
+
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-n {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: #701f2f;
+  line-height: 1.2;
+}
+
+.kpi-l {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-top: 4px;
+  letter-spacing: 0.3px;
+}
+
+.kpi-l i {
+  color: #701f2f;
+  margin-right: 4px;
+}
+
+/* ============================================ */
+/* FILTER GROUP                                */
+/* ============================================ */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(145deg, #fcf8f6, #f8f4f0);
+  border-radius: 16px;
+  padding: 16px 14px;
+  border: 1px solid #e9e0d6;
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.filter-header i {
+  font-size: 1rem;
+  color: #7B1D2E;
+}
+
+.filter-header label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #7B1D2E;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0;
+}
+
+/* ============================================ */
+/* ⭐ PERFIL GENERAL CUBIERTO                   */
+/* ============================================ */
+.profile-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pfilter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 30px;
+  border: 1.5px solid #e0cfc4;
+  background: #fefaf7;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.pfilter .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pfilter .green-dot {
+  background: #2e7d32;
+}
+
+.pfilter .purple-dot {
+  background: #7B1FA2;
+}
+
+.pfilter .blue-dot {
+  background: #1565C0;
+}
+
+.pfilter[data-perfil="adulto"].checked {
+  background: #2e7d32;
+  border-color: #1b5e20;
+  color: white;
+}
+
+.pfilter[data-perfil="adulto"].checked .dot {
+  background: white;
+  box-shadow: 0 0 0 2px #2e7d32;
+}
+
+.pfilter[data-perfil="discapacitado"].checked {
+  background: #7B1FA2;
+  border-color: #4A148C;
+  color: white;
+}
+
+.pfilter[data-perfil="discapacitado"].checked .dot {
+  background: white;
+  box-shadow: 0 0 0 2px #7B1FA2;
+}
+
+.pfilter[data-perfil="referido"].checked {
+  background: #1565C0;
+  border-color: #0D47A1;
+  color: white;
+}
+
+.pfilter[data-perfil="referido"].checked .dot {
+  background: white;
+  box-shadow: 0 0 0 2px #1565C0;
+}
+
+.pfilter:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
+}
+
+/* ============================================ */
+/* ⭐ NIVELES DE RIESGO                        */
+/* ============================================ */
+.risk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rchip {
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #f3efea;
+  transition: all 0.2s ease;
+  border: 1.5px solid transparent;
+}
+
+.rchip:hover {
+  transform: scale(1.02);
+}
+
+.rchip.green-chip.sel {
+  background: #4CAF50;
+  color: white;
+  border-color: #388E3C;
+}
+
+.rchip.yellow-chip.sel {
+  background: #FFC107;
+  color: #333;
+  border-color: #F9A825;
+}
+
+.rchip.orange-chip.sel {
+  background: #FF9800;
+  color: white;
+  border-color: #F57C00;
+}
+
+.rchip.red-chip.sel {
+  background: #D32F2F;
+  color: white;
+  border-color: #C62828;
+}
+
+/* ============================================ */
+/* ⭐ SECCIONES - Distribución                 */
+/* ============================================ */
+.section {
+  background: linear-gradient(145deg, #fcf8f6, #f8f4f0);
+  border-radius: 16px;
+  padding: 16px 14px;
+  border: 1px solid #e9e0d6;
+  width: 100%;
+  max-width: 100%;
+}
+
+.sec-title {
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: #7B1D2E;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sec-title i {
+  color: #7B1D2E;
+  font-size: 0.9rem;
+}
+
+/* ============================================ */
+/* ⭐ DISTRIBUCIÓN POR PERFIL                  */
+/* ============================================ */
+.prof-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.prof-label {
+  width: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  color: #444;
+}
+
+.color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.color-dot.green {
+  background: #2e7d32;
+}
+
+.color-dot.purple {
+  background: #7B1FA2;
+}
+
+.color-dot.blue {
+  background: #1565C0;
+}
+
+.color-dot.yellow {
+  background: #FFC107;
+}
+
+.color-dot.orange {
+  background: #FF9800;
+}
+
+.color-dot.red {
+  background: #D32F2F;
+}
+
+.prof-bar-bg {
+  flex: 1;
+  height: 22px;
+  background: #e9ecef;
+  border-radius: 20px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.prof-bar-fill {
+  height: 100%;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 30px;
+}
+
+.prof-bar-fill.green-fill {
+  background: linear-gradient(90deg, #2e7d32, #43a047);
+}
+
+.prof-bar-fill.purple-fill {
+  background: linear-gradient(90deg, #7B1FA2, #9C27B0);
+}
+
+.prof-bar-fill.blue-fill {
+  background: linear-gradient(90deg, #1565C0, #1E88E5);
+}
+
+.prof-bar-fill.yellow-fill {
+  background: linear-gradient(90deg, #FFC107, #FFD54F);
+}
+
+.prof-bar-fill.orange-fill {
+  background: linear-gradient(90deg, #FF9800, #FFB74D);
+}
+
+.prof-bar-fill.red-fill {
+  background: linear-gradient(90deg, #D32F2F, #EF5350);
+}
+
+/* ============================================ */
+/* ⭐ DISTRIBUCIÓN DE RIESGO                   */
+/* ============================================ */
+.risk-block {
+  margin-bottom: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.risk-block:last-child {
+  margin-bottom: 0;
+}
+
+.risk-upper-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  margin-bottom: 4px;
+  width: 100%;
+  font-weight: 500;
+  color: #444;
+}
+
+.risk-upper-info span:last-child {
+  font-weight: 700;
+  color: #701f2f;
+}
+
+.risk-bar-bg {
+  height: 20px;
+  background: #e9ecef;
+  border-radius: 20px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 30px;
+}
+
+.risk-bar-fill.green-fill {
+  background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+.risk-bar-fill.yellow-fill {
+  background: linear-gradient(90deg, #FFC107, #FFD54F);
+}
+
+.risk-bar-fill.orange-fill {
+  background: linear-gradient(90deg, #FF9800, #FFB74D);
+}
+
+.risk-bar-fill.red-fill {
+  background: linear-gradient(90deg, #D32F2F, #EF5350);
+}
+
+/* ============================================ */
+/* ⭐ EMPTY STATE                              */
+/* ============================================ */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-light);
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ============================================ */
+/* ⭐ RESPONSIVE                               */
+/* ============================================ */
+@media (max-width: 768px) {
+  .app-info-panel {
+    padding: 16px 14px;
+  }
+
+  .kpi-row {
+    flex-wrap: wrap;
+  }
+
+  .kpi {
+    min-width: 30%;
+    padding: 12px 6px;
+  }
+
+  .kpi-n {
+    font-size: 1.2rem;
+  }
+
+  .prof-label {
+    width: 80px;
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-info-panel {
+    padding: 12px 10px;
+  }
+
+  .header-red {
+    padding: 10px 14px;
+  }
+
+  .header-logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .header-text h2 {
+    font-size: 0.8rem;
+  }
+
+  .header-subtitle {
+    font-size: 0.5rem;
+  }
+
+  .filter-group {
+    padding: 12px 10px;
+  }
+
+  .section {
+    padding: 12px 10px;
+  }
+
+  .kpi-row {
+    flex-direction: column;
+  }
+
+  .kpi {
+    padding: 10px;
+  }
+
+  .kpi-n {
+    font-size: 1rem;
+  }
+
+  .pfilter {
+    font-size: 0.7rem;
+    padding: 8px 12px;
+  }
+
+  .rchip {
+    font-size: 0.6rem;
+    padding: 4px 10px;
+  }
+
+  .prof-row {
+    flex-wrap: wrap;
+  }
+
+  .prof-label {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .risk-upper-info {
+    font-size: 0.6rem;
+  }
+}
+
+// src/app/components/info-panel/info-panel.scss
+
+// ⭐ AGREGAR ESTOS ESTILOS AL FINAL DEL ARCHIVO
+
+/* ⭐ COLOR ROJO PARA FINADO */
+.pfilter[data-perfil="finado"].checked {
+  background: #c62828;
+  border-color: #b71c1c;
+  color: white;
+}
+
+.pfilter[data-perfil="finado"].checked .dot {
+  background: white;
+  box-shadow: 0 0 0 2px #c62828;
+}
+
+.color-dot.red {
+  background: #c62828;
+}
+
+.prof-bar-fill.red-fill {
+  background: linear-gradient(90deg, #c62828, #ef5350);
+}

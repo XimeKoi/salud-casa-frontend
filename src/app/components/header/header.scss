@@ -1,0 +1,369 @@
+.main-header {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+  background-color: #f0ede6;
+  background-blend-mode: overlay;
+  border-bottom: 3px solid #9F2241;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 0 20px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.header-left-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hamburger {
+  font-size: 18px;
+  cursor: pointer;
+  background: rgba(255, 255, 245, 0.7);
+  border: none;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: #9F2241;
+  backdrop-filter: blur(2px);
+
+  &:hover {
+    background: rgba(159, 34, 65, 0.15);
+    transform: scale(0.96);
+  }
+}
+
+/* Botón de notificaciones */
+.btn-notificacion {
+  background: rgba(255, 255, 245, 0.85);
+  color: #9F2241;
+  border: 2px solid #9F2241;
+  backdrop-filter: blur(3px);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.25s ease;
+  font-size: 1rem;
+
+  &:hover {
+    background: #9F2241;
+    color: #ffffff;
+    border-color: #9F2241;
+    backdrop-filter: none;
+  }
+
+  .badge-notificacion {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Botón de perfil */
+.btn-perfil {
+  background: rgba(255, 255, 245, 0.85);
+  color: #9F2241;
+  border: 2px solid #9F2241;
+  backdrop-filter: blur(3px);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  font-size: 1.2rem;
+
+  &:hover {
+    background: #9F2241;
+    color: #ffffff;
+    border-color: #9F2241;
+    backdrop-filter: none;
+  }
+}
+
+.header-logo-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  height: 38px;
+  min-height: 32px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0.92) sepia(0.85) saturate(1.5) hue-rotate(0deg) contrast(1.05);
+}
+
+.logo-bienestar {
+  font-family: 'Montserrat', sans-serif;
+  line-height: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bienestar {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  color: #9F2241;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 1px rgba(255, 255, 200, 0.3);
+}
+
+.secretaria {
+  font-weight: 500;
+  color: #BC955C;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.brand-divider {
+  width: 1px;
+  height: 30px;
+  background: #e0cfb6;
+  margin: 0 6px;
+}
+
+.program-text {
+  line-height: 1.1;
+}
+
+.title-main {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #9F2241;
+  letter-spacing: 0.2px;
+}
+
+.subtitle-main {
+  font-size: 0.65rem;
+  color: #7a5a4b;
+  font-weight: 500;
+  margin-top: 2px;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar-demo {
+  position: fixed;
+  top: 62px;
+  left: -280px;
+  width: 280px;
+  height: calc(100% - 62px);
+  background-image: url('https://i.postimg.cc/hGb1rMyT/textura.png');
+  background-repeat: repeat;
+  background-size: auto;
+  background-position: top left;
+  background-color: rgba(255, 245, 235, 0.94);
+  background-blend-mode: overlay;
+  border-right: 1px solid #BC955C;
+  transition: left 0.3s ease;
+  z-index: 999;
+  padding: 24px 16px;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.08);
+  font-family: 'Montserrat', sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  &.open {
+    left: 0;
+  }
+
+  ul {
+    list-style: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    backdrop-filter: none;
+    box-shadow: none;
+    flex: 1;
+  }
+
+  li {
+    margin: 8px 0;
+    color: #9F2241;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+
+    &:hover {
+      background: #BC955C30;
+      transform: translateX(5px);
+      color: #6d1732;
+    }
+
+    i {
+      width: 28px;
+      font-size: 1.2rem;
+      color: #BC955C;
+    }
+  }
+}
+
+/* Footer del sidebar con botón cerrar sesión */
+.sidebar-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(188, 149, 92, 0.3);
+}
+
+.btn-cerrar-sesion-sidebar {
+  background: rgba(255, 255, 245, 0.85);
+  color: #9F2241;
+  border: 2px solid #9F2241;
+  backdrop-filter: blur(3px);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: 'Montserrat', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: #9F2241;
+    color: #ffffff;
+    border-color: #9F2241;
+    backdrop-filter: none;
+  }
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 998;
+
+  &.active {
+    display: block;
+  }
+}
+
+.btn-mapa {
+  background: rgba(255, 255, 245, 0.85);
+  color: #9F2241;
+  border: 2px solid #9F2241;
+  backdrop-filter: blur(3px);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  font-size: 1rem;
+
+  &:hover {
+    background: #9F2241;
+    color: #ffffff;
+    border-color: #9F2241;
+    backdrop-filter: none;
+  }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .main-header {
+    padding: 0 12px;
+    height: 54px;
+  }
+
+  .brand-logo {
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .bienestar {
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+  }
+
+  .secretaria {
+    font-size: 0.5rem;
+  }
+
+  .btn-notificacion,
+  .btn-perfil {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+
+  .hamburger {
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .sidebar-demo {
+    top: 54px;
+    width: 260px;
+    left: -260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-logo {
+    height: 28px;
+    min-height: 28px;
+  }
+}

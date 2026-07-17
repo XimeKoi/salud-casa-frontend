@@ -1,0 +1,17 @@
+.dashboard-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.map-wrapper {
+    flex: 3;
+    position: relative;
+}
+
+.info-wrapper {
+    width: 360px;
+    border-left: 1px solid #e9e0d6;
+    overflow-y: auto;
+    background: #fefaf7;
+}

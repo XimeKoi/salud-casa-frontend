@@ -1,0 +1,155 @@
+/* ⭐ FONT AWESOME - CARGA LOCAL */
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+/* ⭐ FORZAR QUE LOS ICONOS SE MUESTREN CORRECTAMENTE */
+.fa,
+.fas,
+.far,
+.fal,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-light {
+  font-family: 'Font Awesome 6 Free' !important;
+  display: inline-block !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  line-height: 1 !important;
+}
+
+.fa,
+.fas,
+.fa-solid {
+  font-weight: 900 !important;
+}
+
+.far,
+.fa-regular {
+  font-weight: 400 !important;
+}
+
+.fab {
+  font-family: 'Font Awesome 6 Brands' !important;
+  font-weight: 400 !important;
+}
+
+/* Global Styles & Variables */
+:root {
+  /* Modern Palette */
+  --primary-color: #7E101F;
+  /* Guinda */
+  --primary-dark: #4a040d;
+  --primary-light: #a63a49;
+
+  --bg-main: #f8fafc;
+  --bg-panel: rgba(255, 255, 255, 0.85);
+  --bg-dark: #0f172a;
+  --bg-dark-panel: rgba(30, 41, 59, 0.85);
+
+  --text-main: #334155;
+  --text-light: #94a3b8;
+  --text-dark: #f8fafc;
+
+  --border-color: rgba(0, 0, 0, 0.1);
+  --border-dark: rgba(255, 255, 255, 0.1);
+
+  /* Typography */
+  --font-main: 'Inter', sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+
+  /* Layout */
+  --sidebar-width: 320px;
+  --info-width: 360px;
+  --header-height: 70px;
+
+  /* Effects */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+  --glass-blur: blur(12px);
+
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dark-mode {
+  --bg-main: #020617;
+  --bg-panel: rgba(15, 23, 42, 0.85);
+  --text-main: #f8fafc;
+  --text-light: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  color: var(--text-main);
+  background-color: var(--bg-main);
+  overflow: hidden;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+app-root {
+  display: block;
+  height: 100vh;
+  width: 100vw;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(126, 16, 31, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(126, 16, 31, 0.6);
+}
+
+/* Micro-animations */
+button {
+  transition: var(--transition);
+  font-family: var(--font-main);
+}
+
+button:active {
+  transform: scale(0.98);
+}

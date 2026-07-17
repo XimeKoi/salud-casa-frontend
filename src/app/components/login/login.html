@@ -1,0 +1,80 @@
+<!-- src/app/pages/login/login.html -->
+<div class="bg-doctor"></div>
+<div class="overlay-bordo"></div>
+<div class="gold-bottom"></div>
+
+<div class="main-container">
+
+  <div class="logo-top-left">
+    <div class="logo-bienestar">
+      <img class="escudo-icon" src="https://i.postimg.cc/HWc50YYT/logo1-removebg-preview.png" alt="Logo Bienestar">
+      <div class="bienestar-text">
+        <div class="bienestar-title">BIENESTAR</div>
+        <div class="secretaria">Secretaría de Bienestar</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-left">
+    <svg class="heartbeat-line" viewBox="0 0 800 60" preserveAspectRatio="none" fill="none"
+      xmlns="http://www.w3.org/2000/svg">
+      <polyline
+        points="10,30 180,30 210,30 240,8 270,55 300,8 330,55 360,30 490,30 530,30 560,5 590,58 620,5 650,58 680,30 790,30"
+        stroke="#F5D98F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    </svg>
+
+    <div class="programa-block">
+      <div class="salud-line">
+        Salud
+        <svg class="corazon-pulse" viewBox="0 0 68 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M34 48C34 48 7 32 7 17.5C7 7.5 14 2.5 22 2.5C28 2.5 32 6.5 34 11C36 6.5 40 2.5 46 2.5C54 2.5 61 7.5 61 17.5C61 32 34 48 34 48Z"
+            fill="white" />
+          <polyline points="20,24 25,24 28,16 32,35 36,21 41,24 48,24" fill="none" stroke="#9B2E4E" stroke-width="2.8"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="casa-por-casa">Casa por Casa</div>
+    </div>
+
+    <div class="tagline">
+      Llevando salud a cada hogar mexicano<br>con dedicación y calidez.
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="card-login">
+      <img class="card-seal" src="https://i.postimg.cc/5tB0Dpmn/logo4.png" alt="Logo Bienestar">
+
+      <h1 class="card-title">Iniciar Sesión</h1>
+      <p class="card-sub">Accede a tu cuenta de personal de salud.</p>
+
+      <div class="input-field">
+        <label for="username" style="display:none">Usuario</label>
+        <input type="text" id="username" placeholder="Clave de Usuario" [(ngModel)]="username" autocomplete="off">
+      </div>
+
+      <div class="input-field">
+        <label for="password" style="display:none">Contraseña</label>
+        <input type="password" id="password" placeholder="Contraseña" [(ngModel)]="password" (keyup.enter)="login()"
+          autocomplete="off">
+      </div>
+
+      <div class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+      <div class="row-links">
+        <a href="#" (click)="olvidasteContrasena($event)">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button class="btn-ingresar" (click)="login()" [disabled]="loading">
+        {{ loading ? 'Cargando...' : 'Entrar al sistema' }}
+      </button>
+
+      <div class="notice-small">
+        Plataforma de uso exclusivo para personal autorizado.
+      </div>
+
+      <a class="privacy-link" href="#" (click)="avisoPrivacidad($event)">Aviso de Privacidad</a>
+    </div>
+  </div>
+</div>

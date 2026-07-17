@@ -1,0 +1,244 @@
+<!-- src/app/pages/captura/captura.component.html -->
+
+<div class="container">
+    <!-- ⭐ HEADER -->
+    <header class="header">
+        <h1>Captura</h1>
+    </header>
+
+    <div class="form-wrapper">
+        <form class="form-body" (ngSubmit)="guardarFormulario()">
+            <h2 class="section-title">1. Datos Generales y Estatus de la Visita</h2>
+
+            <!-- Barra de búsqueda principal -->
+            <div class="form-group" style="margin-bottom: 20px; position: relative;">
+                <label for="buscadorBeneficiario">Buscar Beneficiario (Escribe Nombre, ID o CURP)</label>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="buscadorBeneficiario" class="form-control search-control"
+                        placeholder="Ej: Juan Pérez, 001, PEGJ800101HDF" [(ngModel)]="busquedaBeneficiario"
+                        name="busquedaBeneficiario" (input)="onBusquedaChange()" autocomplete="off">
+                </div>
+
+                <!-- Sugerencias -->
+                <div class="suggestions-container"
+                    *ngIf="sugerencias.length > 0 && busquedaBeneficiario.length > 0 && mostrarSugerencias">
+                    <div class="suggestion-item" *ngFor="let s of sugerencias" (click)="seleccionarSugerencia(s)">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="suggestion-info">
+                            <strong>{{ s.nombreCompleto || s.nombre }}</strong>
+                            <small>
+                                ID: {{ s.id }} | Número: {{ s.numero }}
+                                <span *ngIf="s.curp"> | CURP: <strong style="color: #701f2f;">{{ s.curp
+                                        }}</strong></span>
+                                <span *ngIf="!s.curp" style="color: #999;"> | Sin CURP</span>
+                            </small>
+                            <small style="display: block; font-size: 10px; color: #888; margin-top: 2px;">
+                                <i class="fas fa-map-marker-alt"></i> {{ s.direccion || 'Sin dirección' }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="loading" style="margin-top: 8px; font-size: 12px; color: #999;">
+                    <i class="fas fa-spinner fa-pulse"></i> Cargando pacientes...
+                </div>
+            </div>
+
+            <!-- Alerta advertencia -->
+            <div class="alert-warning-seleccion" *ngIf="mostrarAdvertenciaSeleccion">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="alert-content">
+                    <strong>Seleccione un beneficiario</strong>
+                    <p>Debe seleccionar un beneficiario válido antes de marcarlo como FINADO</p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="form-group">
+                        <label for="pacienteId">Clave / ID del Paciente</label>
+                        <input type="text" id="pacienteId" class="form-control" readonly required
+                            [(ngModel)]="pacienteId" name="pacienteId" [class.finado-input]="pacienteFinado">
+                    </div>
+                    <div class="form-group">
+                        <label for="pacienteNombre">Nombre Completo del Paciente</label>
+                        <input type="text" id="pacienteNombre" class="form-control" readonly required
+                            [(ngModel)]="pacienteNombre" name="pacienteNombre" [class.finado-input]="pacienteFinado"
+                            [placeholder]="!pacienteId ? 'Seleccione un paciente' : ''">
+                    </div>
+                    <div class="form-group">
+                        <label for="pacienteCurp">CURP</label>
+                        <input type="text" id="pacienteCurp" class="form-control" readonly [(ngModel)]="pacienteCurp"
+                            name="pacienteCurp" [class.finado-input]="pacienteFinado"
+                            [placeholder]="!pacienteId ? 'Seleccione un paciente' : 'Sin CURP registrado'">
+                    </div>
+                    <div class="form-group">
+                        <label for="pacienteDireccion">Dirección</label>
+                        <input type="text" id="pacienteDireccion" class="form-control" readonly
+                            [(ngModel)]="pacienteDireccion" name="pacienteDireccion"
+                            [class.finado-input]="pacienteFinado"
+                            [placeholder]="!pacienteId ? 'Seleccione un paciente' : 'Sin dirección registrada'">
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label for="numVisita">Número de Visita</label>
+                        <input type="number" id="numVisita" class="form-control" min="1"
+                            style="font-weight: bold; background-color: #FDF8E7; border-color: #D4AF37;" readonly
+                            required [(ngModel)]="numVisita" name="numVisita" [class.finado-input]="pacienteFinado">
+                        <small style="font-size: 10px; color: #888; display: block; margin-top: 4px;">
+                            <i class="fas fa-info-circle"></i> El número de visita se calcula automáticamente
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label>Condición Actual del Paciente</label>
+                        <div class="status-toggle-container">
+                            <div class="status-option">
+                                <input type="radio" id="status-vivo" name="estatus_vital" value="vivo"
+                                    [(ngModel)]="estatusVital" (change)="onEstatusVivo()"
+                                    [disabled]="pacienteFinado || !pacienteId">
+                                <label for="status-vivo" class="status-label"
+                                    [class.disabled]="pacienteFinado || !pacienteId">VIVO</label>
+                            </div>
+                            <div class="status-option">
+                                <input type="radio" id="status-finado" name="estatus_vital" value="finado"
+                                    [(ngModel)]="estatusVital" (change)="onEstatusFinado()" [disabled]="!pacienteId">
+                                <label for="status-finado" class="status-label"
+                                    [class.disabled]="!pacienteId">FINADO</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerta finado -->
+            <div class="alert-finado-redesign" *ngIf="pacienteFinado">
+                <div class="alert-finado-icon">
+                    <i class="fas fa-skull-crossbones"></i>
+                </div>
+                <div class="alert-finado-content">
+                    <div class="alert-finado-title">PACIENTE FINADO</div>
+                    <div class="alert-finado-text">{{ pacienteNombre }} - Registro de defunción</div>
+                    <div class="alert-finado-date">Fecha de registro: {{ fechaFinado }}</div>
+                    <div class="alert-finado-message">No se pueden realizar más visitas ni modificar sus datos.</div>
+                </div>
+                <button type="button" class="btn-clear-finado-redesign" (click)="limpiarSeleccion()">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Buscar otro paciente</span>
+                </button>
+            </div>
+
+            <!-- ⭐ INDICADOR DE PROGRAMA ACTUAL -->
+            <div class="programa-indicador" *ngIf="pacienteId">
+                <div class="programa-badge" [class.discapacidad]="programaActual === 'DISCAPACIDAD'"
+                    [class.pam]="programaActual === 'PAM'">
+                    <i class="fas" [class.fa-wheelchair]="programaActual === 'DISCAPACIDAD'"
+                        [class.fa-user]="programaActual === 'PAM'"></i>
+                    {{ programaActual || 'Sin programa' }}
+                </div>
+            </div>
+
+            <h2 class="section-title" [class.finado-title]="pacienteFinado">2. Valoración de discapacidades (Marcar si
+                aplica)</h2>
+            <div class="checklist-container" [class.finado-container]="pacienteFinado">
+                <!-- Discapacidades -->
+                <div class="checklist-item">
+                    <div class="checklist-info">
+                        <h4>1. Discapacidad Motriz</h4>
+                        <p>Dificultades o limitaciones severas de movilidad</p>
+                    </div>
+                    <div class="switch-container">
+                        <span class="switch-label-text">No</span>
+                        <label class="switch">
+                            <input type="checkbox" [(ngModel)]="discapacidades.motriz" name="disc_motriz"
+                                [disabled]="pacienteFinado">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <div class="checklist-info">
+                        <h4>2. Discapacidad Visual</h4>
+                        <p>Pérdida de agudeza o campo visual en ambos ojos</p>
+                    </div>
+                    <div class="switch-container">
+                        <span class="switch-label-text">No</span>
+                        <label class="switch">
+                            <input type="checkbox" [(ngModel)]="discapacidades.visual" name="disc_visual"
+                                [disabled]="pacienteFinado">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <div class="checklist-info">
+                        <h4>3. Discapacidad Auditiva</h4>
+                        <p>Pérdida o limitación severa para escuchar</p>
+                    </div>
+                    <div class="switch-container">
+                        <span class="switch-label-text">No</span>
+                        <label class="switch">
+                            <input type="checkbox" [(ngModel)]="discapacidades.auditiva" name="disc_auditiva"
+                                [disabled]="pacienteFinado">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <div class="checklist-info">
+                        <h4>4. Discapacidad Intelectual</h4>
+                        <p>Limitaciones en comprensión y razonamiento</p>
+                    </div>
+                    <div class="switch-container">
+                        <span class="switch-label-text">No</span>
+                        <label class="switch">
+                            <input type="checkbox" [(ngModel)]="discapacidades.intelectual" name="disc_intelectual"
+                                [disabled]="pacienteFinado">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="checklist-item">
+                    <div class="checklist-info">
+                        <h4>5. Discapacidad Psicosocial</h4>
+                        <p>Alteraciones de la salud mental</p>
+                    </div>
+                    <div class="switch-container">
+                        <span class="switch-label-text">No</span>
+                        <label class="switch">
+                            <input type="checkbox" [(ngModel)]="discapacidades.psicosocial" name="disc_psicosocial"
+                                [disabled]="pacienteFinado">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="seccion-proxima-visita" *ngIf="!pacienteFinado && pacienteId">
+                <h2 class="section-title">3. Agenda de Próxima Visita (Opcional)</h2>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="fechaVisita">Programar Fecha</label>
+                        <input type="date" id="fechaVisita" class="form-control" [(ngModel)]="fechaVisita"
+                            name="fechaVisita">
+                    </div>
+                    <div class="form-group">
+                        <label for="comentarios">Notas Médicas</label>
+                        <input type="text" id="comentarios" class="form-control"
+                            placeholder="Ej. Control de presión arterial..." [(ngModel)]="comentarios"
+                            name="comentarios">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Guardar -->
+            <div class="actions-panel">
+                <button type="submit" class="btn-submit-redesign" [disabled]="pacienteFinado || !pacienteId">
+                    <i class="fas fa-save"></i>
+                    <span>Guardar Visita</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

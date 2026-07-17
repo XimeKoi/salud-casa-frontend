@@ -1,0 +1,22 @@
+# netlify.toml - Coloca este archivo en la raíz del frontend
+
+[build]
+  command = "ng build --configuration=production"
+  publish = "dist/frontend/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ⭐ Redirecciones para que Angular maneje las rutas
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# ⭐ Headers de seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"

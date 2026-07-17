@@ -1,0 +1,74 @@
+<header class="main-header">
+  <div class="header-left-area">
+    <button class="hamburger" (click)="toggleSidebar()" title="Menú lateral">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="header-logo-title">
+      <img src="https://i.postimg.cc/3J7H2cJH/logo1-removebg-preview.png"
+        alt="Escudo Nacional - Secretaría de Bienestar" class="brand-logo" />
+
+      <div class="brand-text logo-bienestar">
+        <div class="bienestar">BIENESTAR</div>
+        <div class="secretaria">Salud Casa por Casa</div>
+      </div>
+
+      <div class="brand-divider"></div>
+
+      <div class="program-text">
+        <div class="title-main">Tablero de Control del Programa</div>
+        <div class="subtitle-main">León, Guanajuato</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Iconos de navegación -->
+  <div class="header-right-area">
+    <button class="btn-mapa" (click)="irAlMapa()" title="Mapa">
+      <i class="fas fa-map-marked-alt"></i>
+    </button>
+
+    <button class="btn-notificacion" (click)="mostrarNotificaciones()" title="Notificaciones">
+      <i class="fas fa-bell"></i>
+      <span class="badge-notificacion" *ngIf="cantidadNotificaciones > 0">{{ cantidadNotificaciones }}</span>
+    </button>
+
+    <button class="btn-perfil" (click)="irAPerfil()" title="Mi Perfil">
+      <i class="fas fa-user-circle"></i>
+    </button>
+  </div>
+</header>
+
+<!-- SIDEBAR CON ICONOS MEJORADOS -->
+<div class="sidebar-demo" [class.open]="sidebarOpen">
+  <ul>
+    <li (click)="navigateTo('dashboard')">
+      <i class="fas fa-map-marked-alt"></i> Mapa
+    </li>
+    <li (click)="navigateTo('pacientes')">
+      <i class="fas fa-notes-medical"></i> Pacientes
+    </li>
+    <li (click)="navigateTo('notificaciones')">
+      <i class="fas fa-bell"></i> Notificaciones
+    </li>
+    <li (click)="navigateTo('calendario')">
+      <i class="fas fa-calendar-alt"></i> Calendario
+    </li>
+    <li (click)="navigateTo('perfil')">
+      <i class="fas fa-user-md"></i> Mi Perfil
+    </li>
+    <li (click)="navigateTo('captura')">
+      <i class="fas fa-database"></i> Captura
+    </li>
+    <li (click)="navigateTo('incidencias')">
+      <i class="fas fa-exclamation-triangle"></i> Incidencias
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <button class="btn-cerrar-sesion-sidebar" (click)="logout()">
+      <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+    </button>
+  </div>
+</div>
+<div class="overlay" [class.active]="sidebarOpen" (click)="closeSidebar()"></div>

@@ -1,0 +1,132 @@
+<!-- src/app/components/layout/layout.html -->
+
+<div class="app-layout">
+  <app-header></app-header>
+
+  <div class="main-container">
+    <!-- ⭐ SIDEBAR - SOLO SE MUESTRA EN DASHBOARD -->
+    <div *ngIf="mostrarSidebar" class="new-sidebar">
+
+      <!-- HEADER ROJO -->
+      <div class="header-red">
+        <i class="fas fa-sliders-h"></i>
+        <h2>FILTROS DISTRITALES</h2>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- ⭐ DISTRITO FEDERAL 11 (FIJO)                -->
+      <!-- ============================================ -->
+      <div class="filter-group">
+        <label>DISTRITO FEDERAL</label>
+        <select class="precargado" disabled>
+          <option value="11" selected>DISTRITO FEDERAL 11</option>
+        </select>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- ⭐ MUNICIPIO 20 (FIJO)                       -->
+      <!-- ============================================ -->
+      <div class="filter-group">
+        <label>MUNICIPIO</label>
+        <select class="precargado" disabled>
+          <option value="20" selected>Municipio 20 (LEON)</option>
+        </select>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- ⭐ SECCIONES - FIJO 277                      -->
+      <!-- ============================================ -->
+      <div class="filter-group">
+        <label>SECCIONES</label>
+        <select class="precargado" disabled>
+          <option value="277" selected>277</option>
+        </select>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- ⭐ MANZANAS / ZONAS                          -->
+      <!-- ============================================ -->
+      <div class="filter-group zonas-group">
+        <div class="zonas-header">
+          <label>MANZANAS / ZONAS</label>
+          <span class="zonas-badge" *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0">
+            <i class="fas fa-map-pin"></i>
+            {{ manzanasDisponibles.length }}
+          </span>
+        </div>
+
+        <!-- src/app/components/layout/layout.html -->
+
+        <select *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0" (change)="onManzanaChange($event)"
+          [value]="manzanaSeleccionada" class="zonas-select"
+          [style.border-color]="manzanaSeleccionada ? getColorZona(manzanaSeleccionada) : '#e0cfc4'"
+          [style.background]="manzanaSeleccionada ? getColorZona(manzanaSeleccionada) + '10' : '#fefaf7'">
+          <option value="">Todas las zonas</option>
+          <option *ngFor="let zona of manzanasDisponibles" [value]="zona"
+            [style.background]="isZonaSeleccionada(zona) ? getColorZona(zona) + '25' : 'transparent'"
+            [style.color]="isZonaSeleccionada(zona) ? getColorZona(zona) : 'inherit'"
+            [style.font-weight]="isZonaSeleccionada(zona) ? 'bold' : 'normal'">
+            {{ getNombreZona(zona) }}
+          </option>
+        </select>
+
+        <div *ngIf="!manzanasDisponibles || manzanasDisponibles.length === 0" class="loading-zonas">
+          <i class="fas fa-spinner fa-pulse"></i>
+          <span>Cargando zonas...</span>
+        </div>
+
+        <!-- ⭐ CHIPS DE ZONAS - 2 COLUMNAS -->
+        <div class="zonas-container" *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0">
+          <div *ngFor="let zona of manzanasDisponibles" (click)="onManzanaChange({ target: { value: zona } })"
+            class="zona-chip" [class.seleccionada]="isZonaSeleccionada(zona)"
+            [style.background]="isZonaSeleccionada(zona) ? getColorZona(zona) + '20' : '#f8f4f0'"
+            [style.border]="isZonaSeleccionada(zona) ? '2px solid ' + getColorZona(zona) : '1px solid #e9e0d6'"
+            [style.box-shadow]="isZonaSeleccionada(zona) ? '0 2px 12px ' + getColorZona(zona) + '50' : 'none'"
+            [title]="zona">
+            <span class="color-dot-manzana" [style.background]="getColorZona(zona)"
+              [style.box-shadow]="isZonaSeleccionada(zona) ? '0 0 0 3px ' + getColorZona(zona) + '40' : 'none'">
+            </span>
+            <span class="zona-nombre" [style.color]="isZonaSeleccionada(zona) ? getColorZona(zona) : '#444'">
+              {{ getNombreZona(zona) }}
+            </span>
+            <span *ngIf="isZonaSeleccionada(zona)" class="zona-check" [style.background]="getColorZona(zona)">
+              ✓
+            </span>
+          </div>
+        </div>
+
+        <!-- ⭐ INFORMACIÓN DE SELECCIÓN -->
+        <div class="zonas-info" *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0">
+          <div class="zonas-stats">
+            <span class="zonas-count">
+              <i class="fas fa-layer-group"></i>
+              <strong>{{ manzanasDisponibles.length }}</strong> zonas disponibles
+            </span>
+            <span class="zonas-separator">•</span>
+            <span class="zonas-colores">
+              <i class="fas fa-palette"></i>
+              {{ ObjectKeys(coloresManzanas).length }} colores asignados
+            </span>
+          </div>
+
+          <div *ngIf="manzanaSeleccionada" class="zona-seleccionada-info"
+            [style.color]="getColorZona(manzanaSeleccionada)"
+            [style.background]="getColorZona(manzanaSeleccionada) + '10'"
+            [style.border-color]="getColorZona(manzanaSeleccionada)">
+            <i class="fas fa-check-circle"></i>
+            <span><strong>Zona activa:</strong> {{ getNombreZona(manzanaSeleccionada) }}</span>
+            <span class="zona-color-preview" [style.background]="getColorZona(manzanaSeleccionada)"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ⭐ Área dinámica con router-outlet -->
+    <div class="content-area" [class.full-width]="!mostrarSidebar">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+  <app-admin-modal></app-admin-modal>
+</div>

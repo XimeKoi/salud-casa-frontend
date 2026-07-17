@@ -1,0 +1,609 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:host {
+  display: block;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+.bg-doctor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 78%;
+  height: 100%;
+  background-image: url('https://i.postimg.cc/mrN7K8cQ/bienestar2.png');
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+.gold-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 19px;
+  background: linear-gradient(90deg, #b5892d, #e6c468, #f9e28c, #e6c468, #b5892d);
+  z-index: 20;
+  box-shadow: 0 -1.5px 4.5px rgba(0, 0, 0, 0.3);
+}
+
+.main-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+.logo-top-left {
+  position: absolute;
+  top: 22.5px;
+  left: 22.5px;
+  z-index: 30;
+}
+
+.logo-top-left .logo-bienestar {
+  display: flex;
+  align-items: center;
+  gap: 7.5px;
+  margin-bottom: 0;
+}
+
+.logo-top-left .escudo-icon {
+  width: 75px;
+  height: 75px;
+  filter: brightness(0) invert(1);
+}
+
+.logo-top-left .bienestar-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-top-left .bienestar-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30.5px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: white;
+  text-shadow: 0 1.5px 6px rgba(0, 0, 0, 0.4);
+  line-height: 1.1;
+}
+
+.logo-top-left .secretaria {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 240, 0.9);
+  letter-spacing: 0.75px;
+}
+
+.hero-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 165px 52.5px 45px 60px;
+  position: relative;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.heartbeat-line {
+  position: absolute;
+  bottom: 75px;
+  left: 30px;
+  width: 90px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.programa-block {
+  margin: 26.25px 0 18.75px 0;
+}
+
+.salud-line,
+.casa-por-casa {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 66px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 11.25px;
+}
+
+.corazon-pulse {
+  width: 60px;
+  height: auto;
+  filter: drop-shadow(0 1.5px 4.5px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes pulso {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.corazon-pulse {
+  animation: pulso 2s infinite ease-in-out;
+}
+
+.casa-por-casa {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 66px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.tagline {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 22px;
+  font-weight: 300;
+  color: #ffffff;
+  max-width: 500px;
+  margin-top: 25px;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  opacity: 0.95;
+  font-style: italic;
+}
+
+.login-right {
+  width: 420px;
+  background: rgba(90, 20, 40, 0.92);
+  backdrop-filter: blur(2.25px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 18.75px;
+  position: relative;
+}
+
+.card-login {
+  background: #ffffff;
+  background-image: radial-gradient(circle at 100% 100%, rgba(245, 245, 245, 0.4) 0%, transparent 50%);
+  border-radius: 24px;
+  padding: 40px 30px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 25;
+}
+
+.card-seal {
+  display: block;
+  width: 71.25px;
+  height: auto;
+  margin: 0 auto 13.5px auto;
+}
+
+.card-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.card-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #666;
+  text-align: center;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.input-field {
+  margin-bottom: 20px;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 15px 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  border: 2px solid #d1d1d1;
+  border-radius: 14px;
+  background: #f9f9f9;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-field input::placeholder {
+  color: #a0a0a0;
+  opacity: 1;
+}
+
+.input-field input:focus {
+  border-color: #9D2449;
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(157, 36, 73, 0.15);
+}
+
+.row-links {
+  display: flex;
+  justify-content: flex-end;
+  margin: 4.5px 3px 22.5px 3px;
+}
+
+.row-links a {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9.75px;
+  font-weight: 600;
+  color: #5a3e2e;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.error-msg {
+  color: #e74c3c;
+  font-size: 9.75px;
+  text-align: center;
+  margin: -11.25px 0 15px 0;
+}
+
+.btn-ingresar {
+  width: 100%;
+  background: linear-gradient(135deg, #176d9c, #1a5f85);
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-ingresar:hover {
+  box-shadow: 0 8px 16px rgba(23, 109, 156, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-ingresar:active {
+  transform: scale(0.97);
+}
+
+.notice-small {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  text-align: center;
+  color: #6c6c6c;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.privacy-link {
+  display: block;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9.75px;
+  font-weight: 600;
+  color: #5a3e2e;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 1400px) {
+  .login-right {
+    width: 390px;
+  }
+
+  .card-login {
+    padding: 30px 22.5px;
+  }
+
+  .hero-left {
+    padding-top: 150px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .login-right {
+    width: 360px;
+  }
+
+  .card-login {
+    padding: 26.25px 18.75px;
+  }
+
+  .card-title {
+    font-size: 21px;
+  }
+
+  .hero-left {
+    padding-top: 135px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .hero-left {
+    padding: 120px 30px 30px 30px;
+  }
+
+  .salud-line,
+  .casa-por-casa {
+    font-size: 51px;
+  }
+
+  .corazon-pulse {
+    width: 45px;
+  }
+
+  .login-right {
+    width: 330px;
+    padding: 22.5px 15px;
+  }
+
+  .card-login {
+    padding: 22.5px 18.75px;
+  }
+
+  .logo-top-left {
+    top: 15px;
+    left: 15px;
+  }
+
+  .logo-top-left .bienestar-title {
+    font-size: 36px;
+  }
+
+  .logo-top-left .secretaria {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 960px) {
+  .main-container {
+    flex-direction: column;
+  }
+
+  .hero-left {
+    padding: 105px 30px 30px 30px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .login-right {
+    width: 100%;
+    backdrop-filter: blur(3px);
+    padding: 30px 22.5px;
+  }
+
+  .card-login {
+    max-width: 412.5px;
+  }
+
+  .tagline {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .heartbeat-line {
+    width: 85%;
+    left: 10.5%;
+  }
+
+  .salud-line,
+  .casa-por-casa {
+    font-size: 43.5px;
+  }
+
+  .logo-top-left {
+    top: 11.25px;
+    left: 11.25px;
+  }
+
+  .logo-top-left .escudo-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .logo-top-left .bienestar-title {
+    font-size: 28.5px;
+  }
+
+  .logo-top-left .secretaria {
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-left {
+    padding: 90px 15px 22.5px 15px;
+  }
+
+  .logo-top-left {
+    top: 7.5px;
+    left: 7.5px;
+  }
+
+  .logo-top-left .escudo-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .logo-top-left .bienestar-title {
+    font-size: 21px;
+  }
+
+  .logo-top-left .secretaria {
+    font-size: 8.25px;
+  }
+
+  .salud-line,
+  .casa-por-casa {
+    font-size: 36px;
+  }
+
+  .tagline {
+    font-size: 13.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-left {
+    padding: 75px 11.25px 15px 11.25px;
+  }
+
+  .logo-top-left {
+    top: 6px;
+    left: 6px;
+  }
+
+  .logo-top-left .escudo-icon {
+    width: 37.5px;
+    height: 37.5px;
+  }
+
+  .logo-top-left .bienestar-title {
+    font-size: 16.5px;
+  }
+
+  .logo-top-left .secretaria {
+    font-size: 6.75px;
+  }
+
+  .salud-line,
+  .casa-por-casa {
+    font-size: 27px;
+  }
+
+  .corazon-pulse {
+    width: 30px;
+  }
+
+  .tagline {
+    font-size: 10.5px;
+  }
+
+  .card-title {
+    font-size: 18px;
+  }
+
+  .btn-ingresar {
+    font-size: 10.5px;
+    padding: 9px;
+  }
+
+  // ============================================
+  // ESTILOS PERSONALIZADOS PARA SWEETALERT
+  // ============================================
+
+  :host ::ng-deep {
+    .swal-popup-custom {
+      border-radius: 20px !important;
+      padding: 20px !important;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+      font-family: 'Montserrat', sans-serif !important;
+    }
+
+    .swal-title-custom {
+      color: #9D2449 !important;
+      font-size: 22px !important;
+      font-weight: 700 !important;
+      font-family: 'Montserrat', sans-serif !important;
+    }
+
+    .swal-button-custom {
+      background: linear-gradient(135deg, #9D2449, #7a1a3a) !important;
+      padding: 12px 36px !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      font-family: 'Montserrat', sans-serif !important;
+      transition: all 0.3s !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+
+      &:hover {
+        background: linear-gradient(135deg, #b02a55, #9D2449) !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 4px 15px rgba(157, 36, 73, 0.3) !important;
+      }
+    }
+
+    .swal-html-custom {
+      font-family: 'Montserrat', sans-serif !important;
+
+      ul {
+        text-align: left !important;
+      }
+
+      li {
+        margin-bottom: 4px !important;
+      }
+
+      hr {
+        border-color: #e8e0d6 !important;
+      }
+    }
+
+    .swal2-icon {
+      border-color: #9D2449 !important;
+      color: #9D2449 !important;
+    }
+
+    .swal2-icon-content {
+      color: #9D2449 !important;
+    }
+
+    .swal2-close {
+      color: #9D2449 !important;
+
+      &:hover {
+        color: #7a1a3a !important;
+      }
+    }
+
+    .swal2-footer {
+      font-size: 12px !important;
+      color: #888 !important;
+    }
+
+    .swal2-html-container::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .swal2-html-container::-webkit-scrollbar-track {
+      background: #f8f4f0;
+      border-radius: 10px;
+    }
+
+    .swal2-html-container::-webkit-scrollbar-thumb {
+      background: #9D2449;
+      border-radius: 10px;
+    }
+  }
+}

@@ -1,0 +1,64 @@
+<button class="admin-floating-btn" (click)="openModal()" *ngIf="isAdmin$ | async" title="Administración">
+  REGISTRAR ✏️
+</button>
+
+<div class="admin-overlay glass-panel" *ngIf="isOpen$ | async">
+  <div class="admin-window">
+    <h2 class="admin-title">Panel de Administración</h2>
+    
+    <div class="admin-tabs">
+      <button class="admin-tab" [class.active]="activeTab === 'responsables'" (click)="setTab('responsables')">Responsables</button>
+      <button class="admin-tab" [class.active]="activeTab === 'operativo'" (click)="setTab('operativo')">Secciones / Manzanas</button>
+      <button class="admin-tab" [class.active]="activeTab === 'dibujo'" (click)="setTab('dibujo')">Zonas / Subzonas</button>
+    </div>
+
+    <!-- TAB: RESPONSABLES -->
+    <div class="admin-content" *ngIf="activeTab === 'responsables'">
+      <label>Nivel:</label>
+      <select class="admin-input">
+          <option value="distrito_f">Distrito Federal</option>
+          <option value="zona">Zona</option>
+          <option value="subzona">Subzona</option>
+          <option value="seccion">Sección</option>
+          <option value="manzana">Manzana</option>
+      </select>
+      <label>ID:</label>
+      <input class="admin-input" />
+      <label>Nombre:</label>
+      <input class="admin-input" />
+      <button class="admin-save-btn">Guardar</button>
+    </div>
+
+    <!-- TAB: OPERATIVO -->
+    <div class="admin-content" *ngIf="activeTab === 'operativo'">
+      <label>Nivel:</label>
+      <select class="admin-input">
+          <option value="seccion">Sección</option>
+          <option value="manzana">Manzana</option>
+      </select>
+      <label>ID:</label>
+      <input class="admin-input" />
+      <label>Simpatizantes:</label>
+      <input type="number" class="admin-input" />
+      <button class="admin-save-btn">Guardar</button>
+    </div>
+
+    <!-- TAB: DIBUJO -->
+    <div class="admin-content" *ngIf="activeTab === 'dibujo'">
+      <div class="instructions">
+        <strong>Instrucciones:</strong>
+        <p>Activa el modo de selección, haz clic en las secciones en el mapa para agruparlas, y guarda la nueva zona.</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox">
+        <span class="slider round"></span>
+      </label> Modo Selección
+      <br><br>
+      <label>Nombre de la Nueva Subzona/Zona:</label>
+      <input class="admin-input" placeholder="Ej. Zona Norte 1" />
+      <button class="admin-save-btn">🔗 Fusionar y Guardar</button>
+    </div>
+
+    <button class="admin-close-btn" (click)="closeModal()">Cerrar</button>
+  </div>
+</div>

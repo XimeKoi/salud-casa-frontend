@@ -1,0 +1,138 @@
+.app-sidebar {
+  height: 100%;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.sidebar-header h2 {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+}
+
+body.dark-mode .sidebar-header h2 {
+  color: var(--primary-light);
+}
+
+.panel-switch {
+  display: flex;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 8px;
+}
+
+body.dark-mode .panel-switch {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.switch-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  cursor: pointer;
+}
+
+.switch-btn.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+}
+
+.filter-group select,
+.search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.filter-group select:focus,
+.search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(126, 16, 31, 0.2);
+}
+
+.filter-group select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.search-container {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+// src/app/components/map/map.scss - AGREGAR AL FINAL
+
+/* ⭐ MARCADOR DE BÚSQUEDA CON ANIMACIÓN */
+.search-marker {
+  z-index: 1000 !important;
+}
+
+.search-marker div {
+  animation: searchPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes searchPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 16px rgba(21, 101, 192, 0.4);
+  }
+
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 2px 32px rgba(21, 101, 192, 0.7);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 16px rgba(21, 101, 192, 0.4);
+  }
+}
+
+/* ⭐ POPUP DE BÚSQUEDA */
+.search-popup .leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(21, 101, 192, 0.15);
+  border: 1px solid rgba(21, 101, 192, 0.1);
+}
+
+.search-popup .leaflet-popup-tip {
+  background: white;
+}
+
+.search-popup .leaflet-popup-content {
+  margin: 10px 14px;
+  font-family: 'Montserrat', sans-serif;
+}

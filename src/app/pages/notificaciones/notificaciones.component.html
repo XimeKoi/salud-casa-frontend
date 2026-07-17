@@ -1,0 +1,254 @@
+<!-- src/app/pages/notificaciones/notificaciones.component.html -->
+
+<div class="container">
+    <!-- ⭐ HEADER -->
+    <header class="header">
+        <h1>Notificaciones</h1>
+    </header>
+
+    <div class="content-wrapper">
+
+        <!-- ⭐ ESTADO VACÍO -->
+        <div class="empty-state-container" *ngIf="!cargando && notificacionesFiltradas.length === 0">
+            <div class="empty-state">
+                <div class="empty-icon-wrapper">
+                    <div class="empty-icon">
+                        <i class="fas fa-bell-slash"></i>
+                    </div>
+                    <div class="empty-ring"></div>
+                </div>
+                <h2>No hay notificaciones</h2>
+                <p>Todas las notificaciones aparecerán aquí cuando las recibas</p>
+                <button class="btn-refresh-empty" (click)="cargarNotificaciones()">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- ⭐ CONTENIDO CON NOTIFICACIONES -->
+        <ng-container *ngIf="!cargando && notificacionesFiltradas.length > 0">
+            <!-- Acciones -->
+            <div class="notificaciones-actions">
+                <div class="badge-total">
+                    <i class="fas fa-bell"></i>
+                    <!-- ⭐ ELIMINADO COMPLETAMENTE EL BADGE DE NO LEÍDAS -->
+                </div>
+                <div class="header-actions">
+                    <button class="btn-eliminar-seleccionadas" (click)="eliminarSeleccionadas()"
+                        [disabled]="notificacionesSeleccionadas.length === 0">
+                        <i class="fas fa-trash-alt"></i>
+                        Eliminar seleccionadas
+                        <span class="badge-seleccionadas" *ngIf="notificacionesSeleccionadas.length > 0">
+                            {{ notificacionesSeleccionadas.length }}
+                        </span>
+                    </button>
+                    <button class="btn-marcar-todas" (click)="marcarTodasLeidas()" [disabled]="contador.noLeidas === 0">
+                        <i class="fas fa-check-double"></i> Marcar todas
+                    </button>
+                    <button class="btn-limpiar" (click)="limpiarTodasNotificaciones()"
+                        [disabled]="notificaciones.length === 0">
+                        <i class="fas fa-trash-alt"></i> Limpiar todas
+                    </button>
+                    <button class="btn-refresh" (click)="cargarNotificaciones()" title="Actualizar">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ⭐ BARRA DE SELECCIÓN MÚLTIPLE -->
+            <div class="seleccion-multiple-bar">
+                <label class="checkbox-label">
+                    <input type="checkbox" (change)="toggleSeleccionarTodas($event)" [checked]="todasSeleccionadas">
+                    <span class="checkmark"></span>
+                    <span class="label-text">Seleccionar todas</span>
+                </label>
+                <span class="seleccionadas-count" *ngIf="notificacionesSeleccionadas.length > 0">
+                    {{ notificacionesSeleccionadas.length }} seleccionadas
+                </span>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filtros-container">
+                <button class="filtro-btn" [class.active]="filtroActual === 'todas'" (click)="cambiarFiltro('todas')">
+                    <i class="fas fa-list-ul"></i>
+                    Todas <span class="badge">{{ notificaciones.length }}</span>
+                </button>
+                <button class="filtro-btn" [class.active]="filtroActual === 'noLeidas'"
+                    (click)="cambiarFiltro('noLeidas')">
+                    <i class="fas fa-circle" style="color: #1565c0;"></i>
+                    No leídas <span class="badge no-leidas">{{ contador.noLeidas }}</span>
+                </button>
+                <button class="filtro-btn" [class.active]="filtroActual === 'urgentes'"
+                    (click)="cambiarFiltro('urgentes')">
+                    <i class="fas fa-exclamation-circle" style="color: #c62828;"></i>
+                    Urgentes <span class="badge urgentes">{{ contador.urgentes }}</span>
+                </button>
+            </div>
+
+            <!-- Lista de notificaciones -->
+            <div class="scroll-container" #scrollContainer>
+                <div class="notificaciones-lista">
+                    <!-- Lista -->
+                    <div *ngFor="let notificacion of notificacionesFiltradas; let i = index" class="notificacion-item"
+                        [class.leida]="notificacion.leida" [class.no-leida]="!notificacion.leida"
+                        [class.seleccionada]="isSeleccionada(notificacion.id)"
+                        [class.tipo-paciente]="notificacion.tipo === 'paciente'"
+                        [class.tipo-incidencia]="notificacion.tipo === 'incidencia'"
+                        [class.tipo-visita]="notificacion.tipo === 'visita'"
+                        [class.tipo-calendario]="notificacion.tipo === 'calendario'"
+                        [class.tipo-captura]="notificacion.tipo === 'captura'"
+                        [class.tipo-sistema]="notificacion.tipo === 'sistema'"
+                        [class.tipo-emergencia]="notificacion.tipo === 'emergencia'"
+                        [class.tipo-recordatorio]="notificacion.tipo === 'recordatorio'"
+                        style="animation-delay: {{ i * 50 }}ms;">
+
+                        <!-- CHECKBOX -->
+                        <div class="notificacion-checkbox" (click)="$event.stopPropagation()">
+                            <label class="checkbox-item">
+                                <input type="checkbox" [checked]="isSeleccionada(notificacion.id)"
+                                    (change)="toggleSeleccion(notificacion.id)">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+
+                        <!-- ICONO -->
+                        <div class="notificacion-icono" [class]="'notificacion-icono tipo-' + notificacion.tipo"
+                            (click)="toggleLeida(notificacion)">
+                            <i [class]="'fas ' + getTipoIcono(notificacion.tipo)"></i>
+                        </div>
+
+                        <!-- CONTENIDO -->
+                        <div class="notificacion-contenido" (click)="toggleLeida(notificacion)">
+                            <div class="notificacion-header">
+                                <div class="notificacion-titulo">
+                                    <span class="tipo-badge" [class]="'tipo-badge tipo-' + notificacion.tipo">
+                                        <i [class]="'fas ' + getTipoIcono(notificacion.tipo)"></i>
+                                        {{ getTipoTexto(notificacion.tipo) }}
+                                    </span>
+                                    <span class="notificacion-titulo-texto">{{ notificacion.titulo }}</span>
+                                </div>
+                                <span class="notificacion-tiempo">
+                                    <i class="fas fa-clock"></i>
+                                    {{ getFechaFormateada(notificacion.createdAt) }}
+                                </span>
+                            </div>
+                            <p class="notificacion-mensaje">{{ notificacion.mensaje }}</p>
+                            <div class="notificacion-footer">
+                                <span class="prioridad-badge" [class]="getPrioridadClass(notificacion.prioridad)">
+                                    <i class="fas fa-flag"></i>
+                                    {{ getPrioridadTexto(notificacion.prioridad) }}
+                                </span>
+                                <span class="estado-badge" [class.leida-estado]="notificacion.leida">
+                                    <i class="fas" [class.fa-check-circle]="notificacion.leida"
+                                        [class.fa-clock]="!notificacion.leida"></i>
+                                    {{ notificacion.leida ? 'Leída' : 'No leída' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- ACCIONES -->
+                        <div class="notificacion-acciones">
+                            <button class="btn-eliminar"
+                                (click)="$event.stopPropagation(); confirmarEliminar(notificacion)"
+                                title="Eliminar notificación">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="estado-indicador" *ngIf="!notificacion.leida">
+                                <span class="punto-nuevo"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cargando más -->
+                    <div class="loading-more" *ngIf="cargandoMas">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                        <span>Cargando más notificaciones...</span>
+                    </div>
+
+                    <!-- Fin de la lista -->
+                    <div class="fin-lista"
+                        *ngIf="!cargando && !cargandoMas && notificacionesFiltradas.length > 0 && !hasMore">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Has visto todas las notificaciones</span>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+
+        <!-- ⭐ LOADING -->
+        <div class="loading-state" *ngIf="cargando && notificaciones.length === 0">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-pulse"></i>
+            </div>
+            <p>Cargando notificaciones...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ⭐ MODAL ELIMINAR INDIVIDUAL -->
+<div class="modal-overlay" *ngIf="modalEliminarVisible" (click)="cerrarModalEliminar()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-header-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>Eliminar notificación</h3>
+            <button class="modal-close" (click)="cerrarModalEliminar()">×</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-mensaje">¿Estás seguro de que deseas eliminar esta notificación?</p>
+            <p class="modal-detalle">Esta acción no se puede deshacer.</p>
+            <div class="notificacion-preview" *ngIf="notificacionAEliminar">
+                <div class="preview-icon" [class]="'tipo-' + notificacionAEliminar.tipo">
+                    <i [class]="'fas ' + getTipoIcono(notificacionAEliminar.tipo)"></i>
+                </div>
+                <div class="preview-info">
+                    <strong>{{ notificacionAEliminar.titulo }}</strong>
+                    <span>{{ notificacionAEliminar.mensaje | slice:0:60 }}{{ notificacionAEliminar.mensaje.length > 60 ?
+                        '...' : '' }}</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancelar" (click)="cerrarModalEliminar()">Cancelar</button>
+                <button class="btn-confirmar" (click)="ejecutarEliminar()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ⭐ MODAL ELIMINAR MÚLTIPLE -->
+<div class="modal-overlay" *ngIf="modalEliminarMultipleVisible" (click)="cerrarModalEliminarMultiple()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-header-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>Eliminar seleccionadas</h3>
+            <button class="modal-close" (click)="cerrarModalEliminarMultiple()">×</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-mensaje">¿Eliminar <strong>{{ notificacionesSeleccionadas.length }}</strong> notificaciones?
+            </p>
+            <p class="modal-detalle">Esta acción no se puede deshacer.</p>
+            <div class="notificaciones-preview-list">
+                <div class="preview-item" *ngFor="let n of notificacionesAEliminarMultiple.slice(0, 5)">
+                    <div class="preview-icon" [class]="'tipo-' + n.tipo">
+                        <i [class]="'fas ' + getTipoIcono(n.tipo)"></i>
+                    </div>
+                    <div class="preview-info">
+                        <strong>{{ n.titulo }}</strong>
+                    </div>
+                </div>
+                <div class="preview-more" *ngIf="notificacionesAEliminarMultiple.length > 5">
+                    +{{ notificacionesAEliminarMultiple.length - 5 }} más
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancelar" (click)="cerrarModalEliminarMultiple()">Cancelar</button>
+                <button class="btn-confirmar" (click)="ejecutarEliminarMultiple()">
+                    Eliminar {{ notificacionesSeleccionadas.length }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
