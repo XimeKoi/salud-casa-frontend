@@ -92,7 +92,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private idEnfermera: number = 1;
   private datosCargados: boolean = false;
 
-  // ⭐ CONTROL DE TOASTS Y BÚSQUEDA
   private toastTimeout: any = null;
   private toastIdCounter: number = 0;
   private busquedaEnProgreso: boolean = false;
@@ -244,7 +243,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.mapInicializado = false;
     window.removeEventListener('recargarMapa', () => { });
 
-    // ⭐ LIMPIAR TIMEOUT DE TOAST
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
       this.toastTimeout = null;
@@ -428,6 +426,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.pacientes = pacientesFiltrados;
     this.agregarMarcadoresPacientes();
+
+    // ⭐ ABRIR POPUP DEL PRIMER PACIENTE DE LA ZONA SELECCIONADA
+    setTimeout(() => {
+      this.abrirPopupDelPrimerPaciente();
+    }, 800);
   }
 
   private actualizarMarcadoresConFiltros() {
@@ -685,24 +688,109 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   `;
   }
 
+  // ⭐⭐⭐ ABRIR POPUP DEL PRIMER PACIENTE ⭐⭐⭐
+  private abrirPopupDelPrimerPaciente() {
+    if (!this.map) {
+      console.warn('⚠️ Mapa no disponible');
+      return;
+    }
+
+    if (this.pacientes.length === 0) {
+      console.warn('⚠️ No hay pacientes para mostrar');
+      return;
+    }
+
+    const primero = this.pacientes[0];
+    if (!primero.lat || !primero.lng) {
+      console.warn('⚠️ El primer paciente no tiene coordenadas');
+      return;
+    }
+
+    console.log(`🔍 Abriendo popup para: ${primero.nombre} (ID: ${primero.id})`);
+
+    // Centrar el mapa en el primer paciente
+    this.map.setView([primero.lat, primero.lng], 17);
+
+    // Esperar a que los marcadores estén listos
+    setTimeout(() => {
+      let popupAbierto = false;
+      let intentos = 0;
+      const maxIntentos = 10;
+
+      const intentarAbrirPopup = () => {
+        if (popupAbierto || intentos >= maxIntentos) {
+          if (!popupAbierto) {
+            console.warn('⚠️ No se pudo abrir el popup después de varios intentos');
+          }
+          return;
+        }
+
+        intentos++;
+        console.log(`🔍 Intento ${intentos} de ${maxIntentos} para abrir popup...`);
+
+        // Buscar en marcadores principales
+        for (const marker of this.marcadoresPacientes) {
+          try {
+            const popup = marker.getPopup();
+            if (popup) {
+              const content = popup.getContent();
+              if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
+                marker.openPopup();
+                popupAbierto = true;
+                console.log(`✅ Popup abierto para: ${primero.nombre}`);
+                return;
+              }
+            }
+          } catch (e) { }
+        }
+
+        // Buscar en cluster
+        if (!popupAbierto && this.clusterGroup && typeof this.clusterGroup.eachLayer === 'function') {
+          try {
+            this.clusterGroup.eachLayer((layer: any) => {
+              if (popupAbierto) return;
+              try {
+                if (layer instanceof L.Marker) {
+                  const popup = layer.getPopup();
+                  if (popup) {
+                    const content = popup.getContent();
+                    if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
+                      layer.openPopup();
+                      popupAbierto = true;
+                      console.log(`✅ Popup abierto desde cluster para: ${primero.nombre}`);
+                    }
+                  }
+                }
+              } catch (e) { }
+            });
+          } catch (e) { }
+        }
+
+        // Fallback
+        if (!popupAbierto && this.marcadoresPacientes.length > 0) {
+          try {
+            this.marcadoresPacientes[0].openPopup();
+            popupAbierto = true;
+            console.log('✅ Popup abierto (fallback)');
+            return;
+          } catch (e) { }
+        }
+
+        if (!popupAbierto && intentos < maxIntentos) {
+          setTimeout(intentarAbrirPopup, 300);
+        }
+      };
+
+      intentarAbrirPopup();
+
+    }, 500);
+  }
+
   // ⭐⭐⭐ AGREGAR MARCADORES DE PACIENTES ⭐⭐⭐
-  // ⭐ REEMPLAZA EL MÉTODO agregarMarcadoresPacientes COMPLETO CON ESTE ⭐
-
-  // ⭐ REEMPLAZA EL MÉTODO agregarMarcadoresPacientes COMPLETO CON ESTE ⭐
-
   agregarMarcadoresPacientes() {
     if (!this.map) {
       console.warn('⚠️ Mapa no inicializado');
       return;
-    }
-
-    // ⭐ LIMPIAR COMPLETAMENTE LOS POPUPS ANTES DE RECREAR
-    if (this.map) {
-      this.map.closePopup();
-      const popupPane = this.map.getPane('popupPane');
-      if (popupPane) {
-        popupPane.innerHTML = '';
-      }
     }
 
     this.limpiarMarcadoresPacientes();
@@ -864,20 +952,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           autoPanPadding: [20, 20]
         });
 
-      // ⭐ FORZAR RE-APLICACIÓN DE ESTILOS CUANDO SE ABRE EL POPUP
-      marker.on('popupopen', function () {
-        setTimeout(() => {
-          const popupWrapper = document.querySelector('.paciente-popup .leaflet-popup-content-wrapper');
-          if (popupWrapper) {
-            // Forzar reflow para re-aplicar estilos
-            (popupWrapper as HTMLElement).style.display = 'none';
-            setTimeout(() => {
-              (popupWrapper as HTMLElement).style.display = '';
-            }, 10);
-          }
-        }, 50);
-      });
-
       if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
         this.clusterGroup.addLayer(marker);
       } else {
@@ -908,7 +982,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    // ⭐ FORZAR ACTUALIZACIÓN DEL MAPA Y ESTILOS
     setTimeout(() => {
       if (this.map) {
         this.map.invalidateSize();
@@ -969,35 +1042,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('reportarIncidencia', this._incidenciaListener);
   }
 
-  // ⭐ REEMPLAZA EL MÉTODO limpiarMarcadoresPacientes COMPLETO CON ESTE ⭐
-
   limpiarMarcadoresPacientes() {
     console.log('🧹 Limpiando marcadores...');
 
     if (this.map) {
-      // ⭐ CERRAR TODOS LOS POPUPS
       this.map.closePopup();
 
-      // ⭐ LIMPIAR EL PANE DE POPUPS COMPLETAMENTE
-      const popupPane = this.map.getPane('popupPane');
-      if (popupPane) {
-        popupPane.innerHTML = '';
-      }
-
-      // ⭐ ELIMINAR CLUSTER GROUP
       if (this.clusterGroup) {
         try { this.map.removeLayer(this.clusterGroup); } catch (e) { }
         this.clusterGroup = null;
       }
 
-      // ⭐ ELIMINAR MARCADORES INDIVIDUALES
       this.marcadoresPacientes.forEach(marker => {
         if (this.map) {
           try { this.map.removeLayer(marker); } catch (e) { }
         }
       });
 
-      // ⭐ LIMPIAR TODAS LAS CAPAS ADICIONALES
       this.map.eachLayer((layer: any) => {
         if (layer instanceof L.Marker || layer instanceof L.MarkerClusterGroup) {
           try { this.map?.removeLayer(layer); } catch (e) { }
@@ -1008,7 +1069,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.marcadoresPacientes = [];
     this.clusterGroup = null;
 
-    // ⭐ LIMPIAR EVENT LISTENERS
     if (this._eventListener) {
       window.removeEventListener('agregarAlCalendario', this._eventListener);
       this._eventListener = null;
@@ -1063,7 +1123,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return 'g2';
   }
 
-  // ⭐⭐⭐ BÚSQUEDA DE DIRECCIÓN - CORREGIDA ⭐⭐⭐
+  // ⭐⭐⭐ BÚSQUEDA DE DIRECCIÓN ⭐⭐⭐
   buscarDireccion() {
     if (this.busquedaEnProgreso) {
       console.log('⏳ Búsqueda en progreso, ignorando nueva solicitud...');
@@ -1147,7 +1207,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // ⭐ MÉTODO: MOSTRAR PACIENTES ENCONTRADOS Y ABRIR POPUP AUTOMÁTICAMENTE
   private mostrarPacientesEncontrados(pacientes: any[], backupOriginal: any[], query: string) {
     const idsExistentes = new Set();
     const finalPacientes: any[] = [];
@@ -1188,55 +1247,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.agregarMarcadoresPacientes();
 
-    // ⭐ ABRIR POPUP AUTOMÁTICAMENTE
-    const primero = finalPacientes[0];
-    if (this.map && primero.lat && primero.lng) {
-      this.map.setView([primero.lat, primero.lng], 17);
-
-      setTimeout(() => {
-        let popupAbierto = false;
-
-        // ⭐ BUSCAR EN MARCADORES PRINCIPALES
-        this.marcadoresPacientes.forEach(marker => {
-          const popup = marker.getPopup();
-          if (popup) {
-            const content = popup.getContent();
-            if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
-              marker.openPopup();
-              popupAbierto = true;
-              console.log(`✅ Popup abierto automáticamente para: ${primero.nombre}`);
-            }
-          }
-        });
-
-        // ⭐ BUSCAR EN CLUSTER SI NO SE ENCONTRÓ
-        if (!popupAbierto && this.clusterGroup && typeof this.clusterGroup.eachLayer === 'function') {
-          this.clusterGroup.eachLayer((layer: any) => {
-            if (layer instanceof L.Marker) {
-              const popup = layer.getPopup();
-              if (popup) {
-                const content = popup.getContent();
-                if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
-                  layer.openPopup();
-                  popupAbierto = true;
-                  console.log(`✅ Popup abierto desde cluster para: ${primero.nombre}`);
-                }
-              }
-            }
-          });
-        }
-
-        if (!popupAbierto) {
-          console.warn('⚠️ No se pudo abrir el popup automáticamente');
-        }
-
-      }, 1000);
-    }
-
-    this.mostrarToast('Pacientes encontrados', `${finalPacientes.length} paciente(s) encontrado(s)`, 'success', 500);
+    // ⭐ ABRIR POPUP AUTOMÁTICAMENTE DEL PRIMER PACIENTE ENCONTRADO
+    setTimeout(() => {
+      this.abrirPopupDelPrimerPaciente();
+    }, 800);
   }
 
-  // ⭐ MÉTODO: BUSCAR UBICACIÓN POR DIRECCIÓN (GEOCODING)
   private buscarUbicacionPorDireccion(query: string) {
     this.mostrarToast('Buscando ubicación', `Buscando "${query}" en el mapa...`, 'info', 1000);
 
@@ -1291,7 +1307,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // ⭐ MÉTODO: MOSTRAR MARCADOR DE UBICACIÓN (CUANDO NO HAY PACIENTES)
   private mostrarMarcadorUbicacion(result: any) {
     if (!this.map) return;
 
@@ -1441,7 +1456,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.map;
   }
 
-  // ⭐ LIMPIAR BÚSQUEDA
   limpiarBusqueda() {
     this.searchQuery = '';
     this.isSearching = false;
@@ -1490,21 +1504,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.cdr.detectChanges();
   }
-  // ⭐ MÉTODO PARA VERIFICAR SI HAY FILTROS ACTIVOS
+
   private hayFiltrosActivos(): boolean {
     const hayPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido;
     const hayRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 || this.filtrosRiesgos.g3 || this.filtrosRiesgos.g4;
     return hayPerfil || hayRiesgo;
   }
-  // ⭐ TOAST CORREGIDO - SIN DUPLICADOS
+
   mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'info', duracion: number = 1000) {
-    // ⭐ CANCELAR TIMEOUT ANTERIOR
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
       this.toastTimeout = null;
     }
 
-    // ⭐ ELIMINAR TOASTS ANTERIORES
     const toastsAnteriores = document.querySelectorAll('.custom-toast-map');
     toastsAnteriores.forEach(el => el.remove());
 

@@ -504,7 +504,7 @@ export class CalendarioPageComponent implements OnInit {
             estaFinado: paciente.estatus === 'FINADO' || paciente.finado === true
         };
 
-        console.log(' Paciente agregado con fecha:', nuevoPaciente.fecha);
+        console.log('📋 Paciente agregado con fecha:', nuevoPaciente.fecha);
 
         this.verificarConflictos(nuevoPaciente);
         this.pacientesSeleccionados.push(nuevoPaciente);
@@ -577,7 +577,7 @@ export class CalendarioPageComponent implements OnInit {
 
     private enviarNotificacionVisitaProgramada(visita: VisitaProgramada) {
         const notificacion = {
-            titulo: ` Visita programada - ${visita.pacienteNombre}`,
+            titulo: `📅 Visita programada - ${visita.pacienteNombre}`,
             mensaje: `Se ha programado una visita para ${visita.pacienteNombre} el ${this.formatearFecha(visita.fecha)} a las ${visita.hora}`,
             tipo: 'calendario',
             prioridad: 'media',
@@ -595,7 +595,7 @@ export class CalendarioPageComponent implements OnInit {
 
         this.http.post(`${this.apiUrl}/notificaciones`, notificacion).subscribe({
             next: (response) => {
-                console.log(' Notificación de calendario enviada al backend:', response);
+                console.log('✅ Notificación de calendario enviada al backend:', response);
             },
             error: (error) => {
                 console.error('❌ Error enviando notificación al backend:', error);
@@ -634,7 +634,7 @@ export class CalendarioPageComponent implements OnInit {
                     createdAt: new Date().toISOString()
                 });
                 localStorage.setItem('notificacionesCache', JSON.stringify(notificaciones));
-                console.log(' Notificación de calendario guardada localmente');
+                console.log('📌 Notificación de calendario guardada localmente');
 
                 window.dispatchEvent(new CustomEvent('nuevaNotificacion', {
                     detail: notificacion
@@ -723,7 +723,7 @@ export class CalendarioPageComponent implements OnInit {
             // ⭐ Obtener fecha correcta sin desfase UTC
             let fechaCorrecta = this.obtenerFechaCorrecta(p.fecha);
 
-            console.log(` Paciente: ${p.nombreCompleto}, Fecha original: ${p.fecha}, Fecha corregida: ${fechaCorrecta}`);
+            console.log(`📅 Paciente: ${p.nombreCompleto}, Fecha original: ${p.fecha}, Fecha corregida: ${fechaCorrecta}`);
 
             return {
                 id: Date.now() + index,
@@ -741,7 +741,7 @@ export class CalendarioPageComponent implements OnInit {
             };
         });
 
-        console.log(' Guardando visitas con fechas:', nuevasVisitas.map(v => ({
+        console.log('📅 Guardando visitas con fechas:', nuevasVisitas.map(v => ({
             paciente: v.pacienteNombre,
             fecha: v.fecha,
             hora: v.hora
@@ -758,7 +758,7 @@ export class CalendarioPageComponent implements OnInit {
 
         // ⭐ MOSTRAR TOAST CON COLOR SEGÚN ÉXITO
         this.mostrarToast(
-            ' Visitas programadas',
+            '✅ Visitas programadas',
             `${nuevasVisitas.length} visita(s) programada(s) correctamente`,
             'success'
         );
@@ -769,7 +769,7 @@ export class CalendarioPageComponent implements OnInit {
         try {
             this.http.post(`${this.apiUrl}/calendario/visitas`, { visitas: nuevasVisitas }).subscribe({
                 next: () => {
-                    console.log(' Visitas guardadas en el backend');
+                    console.log('✅ Visitas guardadas en el backend');
                 },
                 error: (error) => {
                     console.log('ℹ️ El backend no tiene la ruta /calendario/visitas, las visitas están guardadas localmente');
@@ -793,10 +793,10 @@ export class CalendarioPageComponent implements OnInit {
 
             if (nuevoEstado === 'completada') {
                 tipo = 'success';
-                mensaje = 'Visita marcada como completada ';
+                mensaje = 'Visita marcada como completada ✅';
             } else if (nuevoEstado === 'cancelada') {
                 tipo = 'error';
-                mensaje = 'Visita cancelada ';
+                mensaje = 'Visita cancelada ❌';
             } else {
                 tipo = 'info';
                 mensaje = 'Visita marcada como pendiente ⏳';
@@ -824,7 +824,7 @@ export class CalendarioPageComponent implements OnInit {
             this.cdr.detectChanges();
 
             this.http.delete(`${this.apiUrl}/calendario/visitas/${id}`).subscribe({
-                next: () => console.log(' Visita eliminada en backend'),
+                next: () => console.log('✅ Visita eliminada en backend'),
                 error: () => console.log('ℹ️ Backend no disponible, visita eliminada localmente')
             });
         };
