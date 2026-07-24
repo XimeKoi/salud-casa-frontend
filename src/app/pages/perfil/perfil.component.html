@@ -1,6 +1,7 @@
 <!-- src/app/pages/perfil/perfil.component.html -->
 
 <div class="profile-fullscreen-container">
+    <!-- ⭐ HEADER FIJO ⭐ -->
     <div class="profile-header">
         <div class="header-top">
             <div class="logo-area">
@@ -10,7 +11,7 @@
         </div>
     </div>
 
-    <!-- ⭐ INDICADOR DE CARGA MIENTRAS LLEGAN LOS DATOS -->
+    <!-- ⭐ INDICADOR DE CARGA ⭐ -->
     <div *ngIf="cargando" class="loading-overlay">
         <div class="loading-spinner">
             <i class="fas fa-spinner fa-pulse"></i>
@@ -18,16 +19,20 @@
         </div>
     </div>
 
-    <!-- ⭐ CONTENIDO CUANDO LOS DATOS ESTÁN LISTOS -->
+    <!-- ⭐ CONTENIDO CUANDO LOS DATOS ESTÁN LISTOS ⭐ -->
     <ng-container *ngIf="!cargando">
-        <div class="avatar-overlay-container">
+
+        <!-- ⭐ AVATAR - STICKY (SE QUEDA FIJO AL HACER SCROLL) ⭐ -->
+        <div class="avatar-sticky-container">
             <div class="avatar-container">
+                <div class="avatar-shadow"></div>
                 <div class="profile-avatar-wrapper icon-avatar">
                     <i class="fas" [class.fa-user-nurse]="!esMujer" [class.fa-user-md]="esMujer"></i>
                 </div>
             </div>
         </div>
 
+        <!-- ⭐ CONTENIDO SCROLLEABLE ⭐ -->
         <div class="profile-scroll-wrapper">
             <div class="profile-identity-section">
                 <div class="profile-profession">

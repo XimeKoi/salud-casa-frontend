@@ -1,3 +1,5 @@
+// src/app/pages/perfil/perfil.component.scss
+
 :host {
     display: block;
     height: 100%;
@@ -25,13 +27,15 @@
     position: relative;
 }
 
-/* Header fijo - No se mueve */
+/* ============================================ */
+/* ⭐ HEADER FIJO ⭐ */
+/* ============================================ */
 .profile-header {
     background: #701f2f;
     width: 100%;
     border-bottom: 4px solid #D4C19C;
     position: relative;
-    z-index: 5;
+    z-index: 10;
     flex-shrink: 0;
 }
 
@@ -66,21 +70,29 @@
     color: white;
 }
 
-/* Avatar - Posición absoluta montado sobre el header */
-.avatar-overlay-container {
-    position: relative;
+/* ============================================ */
+/* ⭐ AVATAR - STICKY (MÁS GRANDE) ⭐ */
+/* ============================================ */
+.avatar-sticky-container {
+    position: sticky;
+    top: 0;
     z-index: 20;
-    height: 0;
     display: flex;
     justify-content: center;
+    padding-top: 0;
+    margin-top: -60px;
+    /* ⭐ Aumentado para que monte más sobre el header */
+    flex-shrink: 0;
+    pointer-events: none;
 }
 
 .avatar-container {
-    position: absolute;
-    top: 20px;
-    width: 120px;
-    height: 120px;
-    z-index: 20;
+    width: 150px;
+    /* ⭐ Antes: 120px */
+    height: 150px;
+    /* ⭐ Antes: 120px */
+    position: relative;
+    pointer-events: auto;
 }
 
 /* Icono de avatar */
@@ -92,16 +104,34 @@
     border-radius: 50%;
     width: 100%;
     height: 100%;
-    border: 4px solid #ffffff;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    border: 5px solid #ffffff;
+    /* ⭐ Borde más grueso */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    /* ⭐ Sombra más pronunciada */
 }
 
 .icon-avatar i {
-    font-size: 3.5rem;
+    font-size: 4.5rem;
+    /* ⭐ Antes: 3.5rem */
     color: white;
 }
 
-/* Contenedor scrolleable */
+/* Sombra decorativa detrás del avatar */
+.avatar-shadow {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: -12px;
+    bottom: -12px;
+    border-radius: 50%;
+    background: rgba(112, 31, 47, 0.12);
+    z-index: -1;
+    filter: blur(12px);
+}
+
+/* ============================================ */
+/* ⭐ CONTENEDOR SCROLLEABLE ⭐ */
+/* ============================================ */
 .profile-scroll-wrapper {
     flex: 1;
     overflow-y: auto;
@@ -110,7 +140,6 @@
     z-index: 1;
 }
 
-/* Scroll personalizado */
 .profile-scroll-wrapper::-webkit-scrollbar {
     width: 8px;
 }
@@ -129,16 +158,18 @@
     background: #8b2e4a;
 }
 
-/* Sección identidad - Textos debajo del avatar - CENTRADO */
+/* ============================================ */
+/* ⭐ SECCIÓN IDENTIDAD ⭐ */
+/* ============================================ */
 .profile-identity-section {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     text-align: center;
-    padding: 150px 24px 25px 24px;
+    padding: 90px 24px 25px 24px;
+    /* ⭐ Aumentado para dar espacio al avatar más grande */
 }
 
-/* Textos - TAMAÑOS MÁS GRANDES */
 .profile-profession {
     font-size: 1rem;
     color: #701f2f;
@@ -169,7 +200,9 @@
     color: #701f2f;
 }
 
-/* Contenido principal - CENTRADO */
+/* ============================================ */
+/* ⭐ CONTENIDO PRINCIPAL ⭐ */
+/* ============================================ */
 .profile-main-content {
     width: 100%;
     max-width: 1200px;
@@ -248,7 +281,7 @@
     line-height: 1.4;
 }
 
-/* Botón volver - CENTRADO */
+/* Botón volver */
 .back-action {
     margin-top: 25px;
     text-align: center;
@@ -275,132 +308,9 @@
     transform: translateY(-2px);
 }
 
-/* ========== MEDIA QUERIES ========== */
-
-/* Desktop grande */
-@media (min-width: 1025px) {
-    .profile-details-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 18px;
-    }
-
-    .avatar-container {
-        width: 130px;
-        height: 130px;
-        top: 25px;
-    }
-
-    .profile-name {
-        font-size: 2.2rem;
-    }
-
-    .profile-identity-section {
-        padding-top: 160px;
-    }
-
-    .icon-avatar i {
-        font-size: 4rem;
-    }
-
-    .detail-value {
-        font-size: 1.05rem;
-    }
-}
-
-/* Tablet */
-@media (max-width: 768px) {
-    .profile-details-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .header-top {
-        padding: 12px 18px;
-    }
-
-    .logo-area i {
-        font-size: 22px;
-    }
-
-    .logo-area h2 {
-        font-size: 1.2rem;
-    }
-
-    .avatar-container {
-        width: 90px;
-        height: 90px;
-        top: 15px;
-    }
-
-    .profile-name {
-        font-size: 1.5rem;
-    }
-
-    .profile-profession {
-        font-size: 0.85rem;
-    }
-
-    .ubicacion {
-        font-size: 0.85rem;
-    }
-
-    .detail-value {
-        font-size: 0.9rem;
-    }
-
-    .profile-identity-section {
-        padding-top: 130px;
-    }
-
-    .icon-avatar i {
-        font-size: 2.5rem;
-    }
-}
-
-/* Móvil */
-@media (max-width: 480px) {
-    .profile-main-content {
-        padding: 10px 16px 25px 16px;
-    }
-
-    .profile-identity-section {
-        padding: 110px 16px 20px 16px;
-    }
-
-    .avatar-container {
-        width: 80px;
-        height: 80px;
-        top: 10px;
-    }
-
-    .profile-name {
-        font-size: 1.2rem;
-    }
-
-    .detail-value {
-        font-size: 0.85rem;
-    }
-
-    .seccion-title {
-        font-size: 0.85rem;
-    }
-
-    .icon-avatar i {
-        font-size: 2rem;
-    }
-
-    .logo-area h2 {
-        font-size: 1rem;
-    }
-}
-
-// src/app/pages/perfil/perfil.component.scss
-
-// ... TODO TU CÓDIGO EXISTENTE ...
-
-// ⭐ AGREGAR AL FINAL DEL ARCHIVO
-
-/* ========== LOADING OVERLAY ========== */
+/* ============================================ */
+/* ⭐ LOADING OVERLAY ⭐ */
+/* ============================================ */
 .loading-overlay {
     flex: 1;
     display: flex;
@@ -435,5 +345,201 @@
 
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* ============================================ */
+/* ⭐ MEDIA QUERIES ⭐ */
+/* ============================================ */
+
+/* Desktop grande */
+@media (min-width: 1025px) {
+    .profile-details-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+
+    .avatar-container {
+        width: 170px;
+        /* ⭐ Aún más grande en desktop */
+        height: 170px;
+    }
+
+    .avatar-sticky-container {
+        margin-top: -75px;
+    }
+
+    .profile-identity-section {
+        padding-top: 100px;
+    }
+
+    .profile-name {
+        font-size: 2.2rem;
+    }
+
+    .icon-avatar i {
+        font-size: 5rem;
+    }
+
+    .detail-value {
+        font-size: 1.05rem;
+    }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+    .profile-details-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .header-top {
+        padding: 12px 18px;
+    }
+
+    .logo-area i {
+        font-size: 22px;
+    }
+
+    .logo-area h2 {
+        font-size: 1.2rem;
+    }
+
+    .avatar-container {
+        width: 120px;
+        height: 120px;
+    }
+
+    .avatar-sticky-container {
+        margin-top: -55px;
+    }
+
+    .profile-identity-section {
+        padding-top: 80px;
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+    }
+
+    .profile-profession {
+        font-size: 0.85rem;
+    }
+
+    .ubicacion {
+        font-size: 0.85rem;
+    }
+
+    .detail-value {
+        font-size: 0.9rem;
+    }
+
+    .icon-avatar i {
+        font-size: 3.2rem;
+    }
+}
+
+/* Móvil */
+@media (max-width: 480px) {
+    .profile-main-content {
+        padding: 10px 16px 25px 16px;
+    }
+
+    .profile-identity-section {
+        padding: 70px 16px 20px 16px;
+    }
+
+    .avatar-container {
+        width: 100px;
+        height: 100px;
+    }
+
+    .avatar-sticky-container {
+        margin-top: -45px;
+    }
+
+    .profile-name {
+        font-size: 1.2rem;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+    }
+
+    .seccion-title {
+        font-size: 0.85rem;
+    }
+
+    .icon-avatar i {
+        font-size: 2.6rem;
+    }
+
+    .logo-area h2 {
+        font-size: 1rem;
+    }
+
+    .logo-area i {
+        font-size: 18px;
+    }
+
+    .detail-item {
+        padding: 10px 14px;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+    }
+
+    .profile-scroll-wrapper {
+        padding-top: 0;
+    }
+}
+
+/* Móvil muy pequeño */
+@media (max-width: 360px) {
+    .avatar-container {
+        width: 85px;
+        height: 85px;
+    }
+
+    .avatar-sticky-container {
+        margin-top: -38px;
+    }
+
+    .profile-identity-section {
+        padding-top: 60px;
+    }
+
+    .icon-avatar i {
+        font-size: 2.2rem;
+    }
+
+    .profile-name {
+        font-size: 1rem;
+    }
+
+    .profile-profession {
+        font-size: 0.7rem;
+    }
+
+    .ubicacion {
+        font-size: 0.7rem;
+    }
+
+    .seccion-title {
+        font-size: 0.7rem;
+    }
+
+    .detail-value {
+        font-size: 0.75rem;
+    }
+
+    .detail-label {
+        font-size: 0.55rem;
+    }
+
+    .back-link {
+        font-size: 0.75rem;
+        padding: 8px 16px;
     }
 }

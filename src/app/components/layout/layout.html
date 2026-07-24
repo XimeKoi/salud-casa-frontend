@@ -19,7 +19,7 @@
       <div class="filter-group">
         <label>DISTRITO FEDERAL</label>
         <select class="precargado" disabled>
-          <option value="11" selected>DISTRITO FEDERAL 11</option>
+          <option value="11" selected>DISTRITO FEDERAL 03</option>
         </select>
       </div>
 
@@ -37,7 +37,7 @@
       <!-- ⭐ SECCIONES - FIJO 277                      -->
       <!-- ============================================ -->
       <div class="filter-group">
-        <label>SECCIONES</label>
+        <label>ZONA DE TRABAJO</label>
         <select class="precargado" disabled>
           <option value="277" selected>277</option>
         </select>
@@ -54,8 +54,6 @@
             {{ manzanasDisponibles.length }}
           </span>
         </div>
-
-        <!-- src/app/components/layout/layout.html -->
 
         <select *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0" (change)="onManzanaChange($event)"
           [value]="manzanaSeleccionada" class="zonas-select"

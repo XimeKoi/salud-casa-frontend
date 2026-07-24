@@ -242,40 +242,6 @@
     color: #701f2f;
 }
 
-.badge-no-leidas {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #e3f2fd;
-    color: #1565c0;
-    padding: 2px 14px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.badge-no-leidas .dot {
-    width: 6px;
-    height: 6px;
-    background: #1565c0;
-    border-radius: 50%;
-    animation: pulseDot 1.5s ease-in-out infinite;
-}
-
-@keyframes pulseDot {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.4;
-        transform: scale(0.7);
-    }
-}
-
 .header-actions {
     display: flex;
     gap: 8px;
@@ -1338,7 +1304,7 @@
 /* ============================================ */
 /* ⭐ RESPONSIVE                               */
 /* ============================================ */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
     .header {
         padding: 16px 20px;
     }
@@ -1348,7 +1314,21 @@
     }
 
     .content-wrapper {
-        padding: 16px 20px 20px 20px;
+        padding: 18px 20px 25px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 14px 16px;
+    }
+
+    .header h1 {
+        font-size: 16px;
+    }
+
+    .content-wrapper {
+        padding: 14px 16px 20px 16px;
     }
 
     .notificaciones-actions {
@@ -1363,23 +1343,31 @@
 
     .header-actions {
         flex-wrap: wrap;
+        justify-content: center;
     }
 
     .header-actions button {
         flex: 1;
         justify-content: center;
         min-width: 0;
+        font-size: 11px;
+        padding: 6px 12px;
     }
 
     .filtros-container {
-        gap: 6px;
+        gap: 4px;
     }
 
     .filtro-btn {
         flex: 1;
         justify-content: center;
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .filtro-btn .badge {
+        font-size: 9px;
+        padding: 1px 6px;
     }
 
     .notificacion-item {
@@ -1413,6 +1401,16 @@
         justify-content: flex-end;
     }
 
+    .notificacion-icono {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+    }
+
+    .notificacion-icono i {
+        font-size: 14px;
+    }
+
     .modal-container {
         max-width: 95%;
         margin: 10px;
@@ -1431,83 +1429,11 @@
     .seleccion-multiple-bar {
         flex-wrap: wrap;
         gap: 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    .header {
-        padding: 14px 16px;
+        padding: 8px 12px;
     }
 
-    .header h1 {
-        font-size: 16px;
-    }
-
-    .content-wrapper {
-        padding: 12px 15px 20px 15px;
-    }
-
-    .badge-total {
+    .checkbox-label {
         font-size: 12px;
-        padding: 6px 12px;
-    }
-
-    .badge-no-leidas {
-        font-size: 10px;
-        padding: 1px 10px;
-    }
-
-    .filtro-btn {
-        font-size: 10px;
-        padding: 4px 10px;
-    }
-
-    .filtro-btn .badge {
-        font-size: 9px;
-        padding: 1px 6px;
-    }
-
-    .notificacion-item {
-        padding: 10px 12px;
-        gap: 8px;
-    }
-
-    .notificacion-icono {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-    }
-
-    .notificacion-icono i {
-        font-size: 13px;
-    }
-
-    .notificacion-titulo-texto {
-        font-size: 12px;
-    }
-
-    .notificacion-mensaje {
-        font-size: 11px;
-    }
-
-    .tipo-badge {
-        font-size: 9px;
-        padding: 1px 8px;
-    }
-
-    .prioridad-badge {
-        font-size: 9px;
-        padding: 1px 8px;
-    }
-
-    .estado-badge {
-        font-size: 9px;
-        padding: 1px 8px;
-    }
-
-    .checkbox-item .checkmark {
-        width: 16px;
-        height: 16px;
     }
 
     .empty-icon {
@@ -1523,14 +1449,155 @@
     .empty-state p {
         font-size: 13px;
     }
+}
+
+@media (max-width: 480px) {
+    .header {
+        padding: 10px 12px;
+        border-bottom-width: 3px;
+    }
+
+    .header h1 {
+        font-size: 14px;
+    }
+
+    .content-wrapper {
+        padding: 10px 12px 16px 12px;
+    }
+
+    .badge-total {
+        font-size: 11px;
+        padding: 6px 12px;
+    }
+
+    .badge-total i {
+        font-size: 13px;
+    }
+
+    .header-actions button {
+        font-size: 10px;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+
+    .filtro-btn {
+        font-size: 10px;
+        padding: 4px 8px;
+        border-radius: 20px;
+    }
+
+    .filtro-btn i {
+        font-size: 10px;
+    }
+
+    .notificacion-item {
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: 10px;
+    }
+
+    .notificacion-icono {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+    }
+
+    .notificacion-icono i {
+        font-size: 12px;
+    }
+
+    .notificacion-titulo-texto {
+        font-size: 12px;
+    }
+
+    .notificacion-mensaje {
+        font-size: 11px;
+        margin: 0 0 6px 0;
+    }
+
+    .tipo-badge {
+        font-size: 8px;
+        padding: 1px 8px;
+    }
+
+    .tipo-badge i {
+        font-size: 8px;
+    }
+
+    .prioridad-badge {
+        font-size: 8px;
+        padding: 1px 8px;
+    }
+
+    .prioridad-badge i {
+        font-size: 8px;
+    }
+
+    .estado-badge {
+        font-size: 8px;
+        padding: 1px 8px;
+    }
+
+    .checkbox-item .checkmark {
+        width: 16px;
+        height: 16px;
+    }
+
+    .checkbox-label .checkmark {
+        width: 16px;
+        height: 16px;
+    }
+
+    .checkbox-label input[type="checkbox"]:checked+.checkmark::after {
+        font-size: 11px;
+    }
+
+    .btn-eliminar {
+        width: 24px;
+        height: 24px;
+    }
+
+    .btn-eliminar i {
+        font-size: 12px;
+    }
+
+    .notificacion-tiempo {
+        font-size: 9px;
+    }
+
+    .notificacion-tiempo i {
+        font-size: 8px;
+    }
+
+    .loading-state .loading-spinner {
+        font-size: 32px;
+    }
+
+    .loading-state p {
+        font-size: 14px;
+    }
 
     .modal-container {
         max-width: 98%;
         border-radius: 16px;
     }
 
+    .modal-header {
+        padding: 12px 16px;
+    }
+
     .modal-header h3 {
         font-size: 15px;
+    }
+
+    .modal-header-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+
+    .modal-body {
+        padding: 14px 16px 18px;
     }
 
     .modal-mensaje {
@@ -1541,14 +1608,91 @@
         font-size: 12px;
     }
 
-    .btn-eliminar-seleccionadas {
+    .notificacion-preview {
+        padding: 8px 12px;
+    }
+
+    .notificacion-preview .preview-icon {
+        width: 28px;
+        height: 28px;
         font-size: 11px;
-        padding: 6px 12px;
+    }
+
+    .notificacion-preview .preview-info strong {
+        font-size: 12px;
+    }
+
+    .notificacion-preview .preview-info span {
+        font-size: 11px;
+    }
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        font-size: 28px;
+    }
+
+    .empty-ring {
+        top: -6px;
+        left: -6px;
+        right: -6px;
+        bottom: -6px;
+    }
+
+    .empty-state h2 {
+        font-size: 18px;
+    }
+
+    .empty-state p {
+        font-size: 12px;
+    }
+
+    .btn-refresh-empty {
+        font-size: 12px;
+        padding: 8px 20px;
+    }
+
+    .btn-eliminar-seleccionadas {
+        font-size: 10px;
+        padding: 4px 10px;
     }
 
     .btn-marcar-todas,
     .btn-limpiar {
-        font-size: 11px;
-        padding: 6px 12px;
+        font-size: 10px;
+        padding: 4px 10px;
+    }
+
+    .btn-refresh {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+
+    .fin-lista {
+        font-size: 12px;
+        padding: 12px;
+    }
+
+    .fin-lista i {
+        font-size: 16px;
+    }
+
+    .loading-more {
+        font-size: 12px;
+        padding: 12px;
+    }
+
+    .loading-more i {
+        font-size: 16px;
+    }
+
+    .seleccion-multiple-bar {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .seleccionadas-count {
+        font-size: 10px;
+        padding: 1px 10px;
     }
 }

@@ -1,4 +1,4 @@
-// E:\fronty-main\fronty-main\src\app\services\pacientes-map.service.ts
+// src/app/services/pacientes-map.service.ts
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -42,6 +42,11 @@ export class PacientesMapService {
     private cacheTimestamp: number = 0;
     private readonly CACHE_TTL = 30000; // 30 segundos
 
+    // ⭐ CACHE PARA NIVELES DE RIESGO
+    private nivelesRiesgoCache: Map<number, string> = new Map();
+    private nivelesRiesgoTimestamp: number = 0;
+    private readonly NIVELES_CACHE_TTL = 30000; // 30 segundos
+
     constructor(private http: HttpClient) { }
 
     clearCache(): void {
@@ -71,7 +76,6 @@ export class PacientesMapService {
             );
             console.log(`📊 ${pacientes?.length || 0} pacientes obtenidos de la BD`);
 
-            // ⭐ LOG PARA VER PACIENTES CON DISCAPACIDAD
             const conDiscapacidad = pacientes?.filter(p =>
                 p.discapacidadMotriz || p.discapacidadVisual ||
                 p.discapacidadAuditiva || p.discapacidadIntelectual ||
@@ -190,7 +194,6 @@ export class PacientesMapService {
             const discapacidades = this.extraerDiscapacidades(p);
             const finadoInfo = this.esFinado(p);
 
-            // ⭐ LOG PARA DEPURACIÓN
             if (nombreCompleto.toLowerCase().includes('guzmán') ||
                 p.nombre?.toLowerCase().includes('guzmán') ||
                 p.apellidoPaterno?.toLowerCase().includes('guzmán')) {
@@ -265,7 +268,10 @@ export class PacientesMapService {
         }
     }
 
+    // ⭐ ============================================
     // ⭐ OBTENER PACIENTES CON FILTROS APLICADOS
+    // ⭐ ============================================
+
     getPacientesConFiltros(idEnfermera: number = 1, filtros?: {
         perfiles?: { adulto?: boolean; discapacitado?: boolean; finado?: boolean };
         riesgos?: { g1?: boolean; g2?: boolean; g3?: boolean; g4?: boolean };
@@ -282,7 +288,6 @@ export class PacientesMapService {
 
         let resultado = [...pacientes];
 
-        // ⭐ FILTRAR POR ZONA
         if (filtros.zona) {
             const zona = filtros.zona.toUpperCase();
             resultado = resultado.filter(p => {
@@ -292,7 +297,6 @@ export class PacientesMapService {
             });
         }
 
-        // ⭐ FILTRAR POR PERFILES
         const perfiles = filtros.perfiles || {};
         const hayFiltrosPerfil = perfiles.adulto || perfiles.discapacitado || perfiles.finado;
 
@@ -313,7 +317,6 @@ export class PacientesMapService {
             });
         }
 
-        // ⭐ FILTRAR POR RIESGOS
         const riesgos = filtros.riesgos || {};
         const hayFiltrosRiesgo = riesgos.g1 || riesgos.g2 || riesgos.g3 || riesgos.g4;
 
@@ -335,5 +338,131 @@ export class PacientesMapService {
         }
 
         return resultado;
+    }
+
+    // ⭐ ============================================
+    // ⭐ NIVELES DE RIESGO - MÉTODOS PARA BACKEND
+    // ⭐ ============================================
+
+    /**
+     * Obtener todos los niveles de riesgo del backend
+     */
+    async cargarNivelesRiesgoDesdeBackend(): Promise<void> {
+        try {
+            console.log('📊 Cargando niveles de riesgo del backend...');
+            const response = await firstValueFrom(
+                this.http.get<any[]>(`${this.apiUrl}/pacientes/niveles-riesgo`)
+            );
+
+            if (response && Array.isArray(response)) {
+                this.nivelesRiesgoCache = new Map();
+                response.forEach(item => {
+                    if (item.pacienteId && item.nivelRiesgo) {
+                        this.nivelesRiesgoCache.set(item.pacienteId, item.nivelRiesgo);
+                    }
+                });
+                this.nivelesRiesgoTimestamp = Date.now();
+                console.log(`✅ ${this.nivelesRiesgoCache.size} niveles de riesgo cargados`);
+            }
+        } catch (error) {
+            console.warn('⚠️ Error cargando niveles de riesgo del backend:', error);
+        }
+    }
+
+    /**
+     * Obtener nivel de riesgo de un paciente específico
+     */
+    async obtenerNivelRiesgoPaciente(pacienteId: number): Promise<string | null> {
+        try {
+            if (this.nivelesRiesgoCache.has(pacienteId)) {
+                return this.nivelesRiesgoCache.get(pacienteId) || null;
+            }
+
+            const response = await firstValueFrom(
+                this.http.get<any>(`${this.apiUrl}/pacientes/${pacienteId}/nivel-riesgo`)
+            );
+
+            if (response && response.nivelRiesgo) {
+                this.nivelesRiesgoCache.set(pacienteId, response.nivelRiesgo);
+                return response.nivelRiesgo;
+            }
+            return null;
+        } catch (error) {
+            console.warn(`⚠️ Error obteniendo nivel de riesgo para paciente ${pacienteId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Actualizar nivel de riesgo de un paciente
+     */
+    async actualizarNivelRiesgo(
+        pacienteId: number,
+        nivelRiesgo: string | null,
+        usuarioId: number = 1
+    ): Promise<{ success: boolean; message: string; nivelRiesgo: string | null }> {
+        try {
+            const response = await firstValueFrom(
+                this.http.patch<any>(`${this.apiUrl}/pacientes/${pacienteId}/nivel-riesgo`, {
+                    nivelRiesgo: nivelRiesgo,
+                    usuarioId: usuarioId
+                })
+            );
+
+            if (response && response.success) {
+                if (nivelRiesgo) {
+                    this.nivelesRiesgoCache.set(pacienteId, nivelRiesgo);
+                } else {
+                    this.nivelesRiesgoCache.delete(pacienteId);
+                }
+                console.log(`✅ Nivel de riesgo actualizado para paciente ${pacienteId}: ${nivelRiesgo}`);
+            }
+
+            return response;
+        } catch (error) {
+            // ⭐ CORREGIDO: manejar error de tipo unknown
+            const errorMessage = error instanceof Error ? error.message : 'Error al actualizar nivel de riesgo';
+            console.error(`❌ Error actualizando nivel de riesgo para paciente ${pacienteId}:`, error);
+            return {
+                success: false,
+                message: errorMessage,
+                nivelRiesgo: null
+            };
+        }
+    }
+
+    /**
+     * Obtener pacientes con nivel de riesgo incluido
+     */
+    async getPacientesConNivelRiesgo(idEnfermera: number = 1): Promise<any[]> {
+        try {
+            const response = await firstValueFrom(
+                this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}/con-riesgo`)
+            );
+            return response || [];
+        } catch (error) {
+            console.error('❌ Error obteniendo pacientes con nivel de riesgo:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Notificar cambio en niveles de riesgo (para actualizar dashboard)
+     */
+    notificarCambioNivelesRiesgo(pacienteId: number, nivelRiesgo: string | null): void {
+        window.dispatchEvent(new CustomEvent('nivelesRiesgoActualizados', {
+            detail: {
+                pacienteId: pacienteId,
+                nivelRiesgo: nivelRiesgo,
+                timestamp: new Date().toISOString()
+            }
+        }));
+    }
+
+    /**
+     * Obtener nivel de riesgo de un paciente desde el cache (síncrono)
+     */
+    getNivelRiesgoFromCache(pacienteId: number): string | null {
+        return this.nivelesRiesgoCache.get(pacienteId) || null;
     }
 }

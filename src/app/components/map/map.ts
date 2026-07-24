@@ -22,8 +22,8 @@ import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { CalendarioService, VisitaData } from '../../services/calendario.service';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
-// ⭐ DECLARAR TOASTIFY
 declare const Toastify: any;
 
 @Component({
@@ -83,13 +83,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     'FINADO': '#6c757d'
   };
 
-  private colorDefault: string = '#1976d2';
+  private colorDefault: string = '#6c5ce7';
   private pacientesOriginal: any[] = [];
   private _eventListener: ((event: any) => void) | null = null;
   private _incidenciaListener: ((event: any) => void) | null = null;
-  private apiUrl = 'http://localhost:3000';
+
+  private apiUrl = environment.apiUrl;
   private idEnfermera: number = 1;
   private datosCargados: boolean = false;
+
+  // ⭐ CONTROL DE TOASTS Y BÚSQUEDA
+  private toastTimeout: any = null;
+  private toastIdCounter: number = 0;
+  private busquedaEnProgreso: boolean = false;
 
   constructor(
     private store: Store<{ app: AppState }>,
@@ -105,78 +111,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     private http: HttpClient
   ) {
     console.log('🏗️ [MapComponent] Constructor ejecutado');
-    this.distritoActual = this.distritoService.getDistritoActual();
-    this.centerLat = this.distritoActual.lat;
-    this.centerLng = this.distritoActual.lng;
-    this.currentZoom = this.distritoActual.zoom;
-
-    if (this.distritoActual.secciones) {
-      this.seccionesPermitidas = this.distritoActual.secciones;
-    }
-
-    this.distritoSubscription = this.distritoService.distrito$.subscribe((distrito: Distrito) => {
-      console.log('📌 [MapComponent] Distrito cambiado:', distrito.nombre);
-      this.distritoActual = distrito;
-      this.centerLat = distrito.lat;
-      this.centerLng = distrito.lng;
-      this.currentZoom = distrito.zoom;
-
-      if (distrito.secciones) {
-        this.seccionesPermitidas = distrito.secciones;
-      }
-
-      if (this.map) {
-        this.recargarMapaPorDistrito();
-      }
-    });
-
-    this.subscriptions.push(
-      this.store.select(selectManzanaSeleccionada).subscribe(manzana => {
-        console.log('📍 [Map] Manzana seleccionada cambiada:', manzana);
-        this.manzanaFiltro = manzana || '';
-        if (this.mapInicializado && this.pacientesOriginal.length > 0) {
-          this.aplicarFiltroZona();
-        }
-      })
-    );
-
-    this.subscriptions.push(
-      this.store.select(selectFiltrosPerfiles).subscribe(perfiles => {
-        console.log('🎨 Filtros de perfiles recibidos en mapa:', perfiles);
-        this.filtrosPerfiles = perfiles;
-        if (this.mapInicializado && this.pacientes.length > 0) {
-          this.actualizarMarcadoresConFiltros();
-        }
-      })
-    );
-
-    this.subscriptions.push(
-      this.store.select(selectFiltrosRiesgos).subscribe(riesgos => {
-        console.log('🎨 Filtros de riesgos recibidos en mapa:', riesgos);
-        this.filtrosRiesgos = riesgos;
-        if (this.mapInicializado && this.pacientes.length > 0) {
-          this.actualizarMarcadoresConFiltros();
-        }
-      })
-    );
+    console.log('🌍 [MapComponent] API URL:', this.apiUrl);
   }
 
-  // src/app/components/map/map.ts
-  // ⭐ AGREGAR ESTOS MÉTODOS
-
-  // ⭐ NUEVO: Recargar con forceRefresh
   cargarPacientesDirectamente(forceRefresh: boolean = false) {
     if (this.loadingPacientes) return;
 
-    console.log('🔄 [MapComponent] Cargando pacientes directamente del backend...');
+    console.log('🔄 [MapComponent] Cargando pacientes...');
     this.loadingPacientes = true;
 
-    // ⭐ FORZAR REFRESH DEL CACHE
     if (forceRefresh) {
       this.pacientesMapService.refreshPacientes();
     }
 
-    // ⭐ LIMPIAR BÚSQUEDA
     this.searchQuery = '';
     this.isSearching = false;
     if (this.searchMarker) {
@@ -186,43 +133,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.http.get(`${this.apiUrl}/pacientes/enfermera/${this.idEnfermera}`).subscribe({
       next: (data: any) => {
-        console.log('✅ [MapComponent] Pacientes recibidos:', data?.length || 0);
+        console.log('✅ Pacientes recibidos:', data?.length || 0);
+        this.pacientesMapService.setPacientesCache(data);
 
-        let pacientes = data;
-        console.log(`📊 [MapComponent] Total pacientes: ${pacientes.length}`);
-
-        // ⭐ ACTUALIZAR CACHE DEL SERVICIO
-        this.pacientesMapService.setPacientesCache(pacientes);
-
-        // ⭐ FILTRAR SOLO LOS QUE TIENEN COORDENADAS VÁLIDAS
-        const pacientesConCoords = pacientes.filter((p: any) =>
+        const pacientesConCoords = data.filter((p: any) =>
           p.lat && p.lng && p.lat !== 0 && p.lng !== 0
         );
-        console.log(`📍 [MapComponent] Pacientes con coordenadas: ${pacientesConCoords.length}`);
-
-        // ⭐ LOG PARA GUZMÁN
-        const guzman = pacientes.find((p: any) =>
-          p.nombre?.toLowerCase().includes('guzmán') ||
-          p.apellidoPaterno?.toLowerCase().includes('guzmán')
-        );
-        if (guzman) {
-          console.log('🔍 [MapComponent] GUZMÁN encontrado:', {
-            id: guzman.id,
-            nombre: guzman.nombre,
-            programa: guzman.programa,
-            estatus: guzman.estatus,
-            discapacidades: guzman.discapacidades,
-            lat: guzman.lat,
-            lng: guzman.lng
-          });
-        }
 
         this.pacientes = pacientesConCoords;
         this.pacientesOriginal = [...pacientesConCoords];
 
-        // ⭐ GENERAR ZONAS
         const zonasSet = new Set<string>();
-        pacientes.forEach((p: any) => {
+        data.forEach((p: any) => {
           let colonia = p.colonia || this.extraerColonia(p.direccion);
           if (colonia && colonia.length > 2) {
             colonia = colonia.toUpperCase().trim();
@@ -230,43 +152,40 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         });
 
-        const todasLasZonas = Array.from(zonasSet)
-          .sort((a, b) => a.localeCompare(b))
-          .map(zona => zona.charAt(0).toUpperCase() + zona.slice(1).toLowerCase());
-
-        console.log(`📍 ${todasLasZonas.length} zonas disponibles`);
-
-        if (todasLasZonas.length > 0) {
-          this.manzanasDisponibles = todasLasZonas;
-          this.coloresManzanas = {};
-          this.manzanasDisponibles.forEach((zona, index) => {
-            const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
-            this.coloresManzanas[zona] = color;
-          });
-
-          this.store.dispatch(AppActions.setColoresManzanas({
-            colores: this.coloresManzanas
-          }));
-
-          this.store.dispatch(AppActions.setManzanasDisponibles({
-            manzanas: this.manzanasDisponibles
-          }));
+        if (zonasSet.size === 0) {
+          zonasSet.add('TODAS LAS ZONAS');
         }
+
+        const todasLasZonas = Array.from(zonasSet).sort();
+        this.manzanasDisponibles = todasLasZonas;
+
+        this.coloresManzanas = {};
+        this.manzanasDisponibles.forEach((zona, index) => {
+          const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
+          this.coloresManzanas[zona] = color;
+        });
+
+        this.store.dispatch(AppActions.setColoresManzanas({
+          colores: this.coloresManzanas
+        }));
+
+        this.store.dispatch(AppActions.setManzanasDisponibles({
+          manzanas: this.manzanasDisponibles
+        }));
 
         this.loadingPacientes = false;
         this.datosCargados = true;
 
         if (this.mapInicializado) {
+          console.log('🔄 Forzando recreación de marcadores...');
+          this.limpiarMarcadoresPacientes();
           this.agregarMarcadoresPacientes();
-          if (this.pacientes.length > 0) {
-            this.mostrarToast('Éxito', `${this.pacientes.length} pacientes cargados en el mapa`, 'success');
-          }
         }
 
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('❌ [MapComponent] Error cargando pacientes:', error);
+        console.error('❌ Error cargando pacientes:', error);
         this.loadingPacientes = false;
         this.mostrarToast('Error', 'No se pudieron cargar los pacientes', 'error');
         this.cdr.detectChanges();
@@ -279,18 +198,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.limpiarSeleccionZona();
     this.cargarPacientesDirectamente();
 
-    // ⭐ ESCUCHAR EVENTO DE RECARGA DESDE CAPTURA
     window.addEventListener('recargarMapa', (event: any) => {
-      console.log('🔄 Recargando mapa desde evento de captura...');
-      this.cargarPacientesDirectamente();
+      console.log('🔄 Recargando mapa desde evento...');
+      this.cargarPacientesDirectamente(true);
     });
   }
 
   ngAfterViewInit() {
     console.log('👀 [MapComponent] ngAfterViewInit');
     setTimeout(() => {
-      console.log('🗺️ [MapComponent] Inicializando mapa...');
       this.inicializarMapa();
+      setTimeout(() => {
+        if (this.map && this.pacientes.length > 0) {
+          console.log('🔄 Forzando recreación de marcadores en afterViewInit...');
+          this.limpiarMarcadoresPacientes();
+          this.agregarMarcadoresPacientes();
+        }
+      }, 800);
     }, 300);
   }
 
@@ -319,38 +243,35 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.mapInicializado = false;
     window.removeEventListener('recargarMapa', () => { });
+
+    // ⭐ LIMPIAR TIMEOUT DE TOAST
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+      this.toastTimeout = null;
+    }
   }
 
-  // ⭐ ============================================
-  // ⭐ LIMPIAR SELECCIÓN DE ZONA
-  // ⭐ ============================================
-
   limpiarSeleccionZona() {
-    console.log('🧹 [Map] Limpiando selección de zona');
     this.store.dispatch(AppActions.setManzanaSeleccionada({ manzana: '' }));
     this.manzanaFiltro = '';
     this.cdr.detectChanges();
   }
 
-  // ⭐ ============================================
-  // ⭐ INICIALIZAR MAPA
-  // ⭐ ============================================
-
   private inicializarMapa() {
     if (this.map) {
-      console.log('🗺️ [MapComponent] Mapa ya inicializado');
+      console.log('🗺️ Mapa ya inicializado');
       return;
     }
 
     const mapElement = document.getElementById('leafletMap');
     if (!mapElement) {
-      console.error('❌ [MapComponent] Elemento #leafletMap no encontrado');
+      console.error('❌ Elemento #leafletMap no encontrado');
       setTimeout(() => this.inicializarMapa(), 500);
       return;
     }
 
     try {
-      console.log('🗺️ [MapComponent] Inicializando mapa...');
+      console.log('🗺️ Inicializando mapa...');
 
       this.map = L.map('leafletMap', {
         center: [this.centerLat, this.centerLng],
@@ -361,7 +282,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         attributionControl: true
       });
 
-      // ⭐⭐⭐ REGISTRAR EL MAPA EN EL SERVICIO ⭐⭐⭐
       this.mapService.setMap(this.map);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -369,44 +289,49 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         maxZoom: 19
       }).addTo(this.map);
 
-      this.clusterGroup = (L as any).markerClusterGroup({
-        maxClusterRadius: 40,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        iconCreateFunction: (cluster: any) => {
-          const childCount = cluster.getChildCount();
-          let color = '#701f2f';
-          let size = 40;
+      if (typeof (L as any).markerClusterGroup === 'function') {
+        this.clusterGroup = (L as any).markerClusterGroup({
+          maxClusterRadius: 40,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false,
+          zoomToBoundsOnClick: true,
+          iconCreateFunction: (cluster: any) => {
+            const childCount = cluster.getChildCount();
+            let color = '#6c5ce7';
+            let size = 40;
 
-          if (childCount < 10) {
-            color = '#2e7d32';
-            size = 35;
-          } else if (childCount < 30) {
-            color = '#e67e22';
-            size = 40;
-          } else if (childCount < 100) {
-            color = '#c62828';
-            size = 45;
-          } else {
-            color = '#701f2f';
-            size = 50;
+            if (childCount < 10) {
+              color = '#00b894';
+              size = 35;
+            } else if (childCount < 30) {
+              color = '#fdcb6e';
+              size = 40;
+            } else if (childCount < 100) {
+              color = '#e17055';
+              size = 45;
+            } else {
+              color = '#6c5ce7';
+              size = 50;
+            }
+
+            return L.divIcon({
+              html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${size > 40 ? 16 : 14}px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                ${childCount}
+              </div>`,
+              className: 'marker-cluster',
+              iconSize: [size, size],
+              iconAnchor: [size / 2, size / 2]
+            });
           }
+        });
 
-          return L.divIcon({
-            html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${size > 40 ? 16 : 14}px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-              ${childCount}
-            </div>`,
-            className: 'marker-cluster',
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2]
-          });
-        }
-      });
-
-      this.clusterGroup.addTo(this.map);
-      this.mapInicializado = true;
-      console.log('✅ [MapComponent] Mapa inicializado correctamente');
+        this.clusterGroup.addTo(this.map);
+        this.mapInicializado = true;
+        console.log('✅ Mapa inicializado correctamente');
+      } else {
+        console.warn('⚠️ markerClusterGroup no disponible, usando marcadores sin cluster');
+        this.mapInicializado = true;
+      }
 
       this.map.on('moveend', () => {
         const center = this.map?.getCenter();
@@ -443,109 +368,74 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
     } catch (error: any) {
-      console.error('❌ [MapComponent] Error al inicializar el mapa:', error);
+      console.error('❌ Error al inicializar el mapa:', error);
       this.mostrarToast('Error', 'Error al inicializar el mapa', 'error');
     }
   }
 
-  // ⭐ ============================================
-  // ⭐ RECARGAR MAPA POR DISTRITO
-  // ⭐ ============================================
-
   recargarMapaPorDistrito() {
     if (this.distritoActual && this.map) {
-      console.log(`🔄 [MapComponent] Recargando mapa para: ${this.distritoActual.nombre}`);
       this.map.setView([this.distritoActual.lat, this.distritoActual.lng], this.distritoActual.zoom);
-      this.cargarPacientesDirectamente();
+      this.cargarPacientesDirectamente(true);
     }
   }
 
-  // ⭐ ============================================
-  // ⭐ CARGAR PACIENTES DIRECTAMENTE
-  // ⭐ ============================================
-
-
   private extraerColonia(direccion: string): string {
     if (!direccion) return '';
-    const partes = direccion.split(',');
+    let partes = direccion.split('|');
     if (partes.length >= 2) {
-      const colonia = partes[1].trim();
-      return colonia.replace(/COL\./g, '').replace(/COLONIA/g, '').trim();
+      let colonia = partes[1].trim();
+      if (colonia.length > 2) return colonia;
+    }
+    partes = direccion.split(',');
+    if (partes.length >= 2) {
+      let colonia = partes[1].trim();
+      if (colonia.length > 2) return colonia;
     }
     return '';
   }
 
-  // ⭐ ============================================
-  // ⭐ RECARGAR PACIENTES (BOTÓN)
-  // ⭐ ============================================
-
   recargarPacientes() {
     console.log('🔄 Recargando pacientes...');
-
     this.searchQuery = '';
     this.isSearching = false;
-
     if (this.searchMarker) {
       try { this.map?.removeLayer(this.searchMarker); } catch (e) { }
       this.searchMarker = null;
     }
-
     this.datosCargados = false;
     this.limpiarMarcadoresPacientes();
-    this.cargarPacientesDirectamente();
+    this.cargarPacientesDirectamente(true);
   }
 
   actualizarPacientes() {
-    this.cargarPacientesDirectamente();
+    this.cargarPacientesDirectamente(true);
   }
 
-  // ⭐ ============================================
-  // ⭐ APLICAR FILTRO DE ZONA
-  // ⭐ ============================================
-
   private aplicarFiltroZona() {
-    if (!this.pacientesOriginal || this.pacientesOriginal.length === 0) {
-      this.cargarPacientesDirectamente();
-      return;
-    }
+    if (!this.pacientesOriginal || this.pacientesOriginal.length === 0) return;
 
     let pacientesFiltrados = [...this.pacientesOriginal];
 
-    if (this.manzanaFiltro && this.manzanaFiltro !== '') {
+    if (this.manzanaFiltro && this.manzanaFiltro !== '' && this.manzanaFiltro !== 'TODAS LAS ZONAS') {
       const zonaUpper = this.manzanaFiltro.toUpperCase();
       pacientesFiltrados = pacientesFiltrados.filter((p: any) => {
         const direccion = (p.direccion || '').toUpperCase();
         const colonia = (p.colonia || '').toUpperCase();
         return direccion.includes(zonaUpper) || colonia.includes(zonaUpper);
       });
-      console.log(`📍 Filtrando por zona: ${this.manzanaFiltro} -> ${pacientesFiltrados.length} pacientes`);
     }
 
     this.pacientes = pacientesFiltrados;
-
-    if (this.pacientes.length === 0) {
-      this.mostrarToast('Sin pacientes', 'No hay pacientes en esta zona', 'warning');
-    }
-
     this.agregarMarcadoresPacientes();
   }
-
-  // ⭐ ============================================
-  // ⭐ ACTUALIZAR MARCADORES CON FILTROS
-  // ⭐ ============================================
 
   private actualizarMarcadoresConFiltros() {
     if (this.pacientes.length === 0) return;
     this.agregarMarcadoresPacientes();
   }
 
-  // ⭐ ============================================
-  // ⭐ AGREGAR PACIENTE AL CALENDARIO
-  // ⭐ ============================================
-
   private agregarPacienteAlCalendario(paciente: any) {
-    console.log('📅 Agregando paciente al calendario:', paciente);
-
     const visitaData: VisitaData = {
       pacienteId: paciente.id,
       nombre: paciente.nombre,
@@ -558,14 +448,247 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.calendarioService.setVisitaData(visitaData);
     this.router.navigate(['/calendario'], { queryParams: { pacienteId: paciente.id } });
 
-    this.mostrarToast('Paciente agregado al calendario', `${paciente.nombre} listo para programar visita`, 'success', 3000);
+    this.mostrarToast('Paciente agregado al calendario', `${paciente.nombre} listo para programar visita`, 'success', 1000);
   }
 
-  // ⭐ ============================================
-  // ⭐ AGREGAR MARCADORES DE PACIENTES
-  // ⭐ ============================================
+  private limpiarDireccion(direccion: string): string {
+    if (!direccion) return 'Dirección no disponible';
 
-  // src/app/components/map/map.ts
+    let limpia = direccion.replace(/\|/g, ', ');
+
+    limpia = limpia
+      .replace(/,?\s*LEON\s*,?\s*GTO\.?$/i, '')
+      .replace(/,?\s*LEON\s*\|?\s*GTO\.?$/i, '')
+      .replace(/\|?\s*GTO\.?$/i, '')
+      .replace(/LEON\s*\|?\s*GTO\.?$/i, '')
+      .replace(/LEON,\s*GTO\.?$/i, '')
+      .replace(/GTO\.?$/i, '')
+      .replace(/MEXICO\.?$/i, '')
+      .replace(/LEON$/i, '')
+      .replace(/GTO$/i, '');
+
+    limpia = limpia
+      .replace(/COL\.\s*/gi, '')
+      .replace(/FRACC\.\s*/gi, '')
+      .replace(/FRACCIONAMIENTO\s*/gi, '');
+
+    limpia = limpia.replace(/CP\s*\d{5}/gi, '');
+
+    limpia = limpia
+      .replace(/\s+/g, ' ')
+      .replace(/,\s*,/g, ',')
+      .replace(/,\s*,\s*/g, ', ')
+      .trim();
+
+    limpia = limpia
+      .replace(/^FRAC\.?\s*/i, '')
+      .replace(/^COL\.?\s*/i, '');
+
+    if (limpia.length < 3) {
+      return direccion;
+    }
+
+    return limpia;
+  }
+
+  private obtenerColonia(direccion: string, coloniaOriginal: string): string {
+    if (coloniaOriginal && coloniaOriginal.length > 2 && coloniaOriginal !== 'Colonia no disponible') {
+      return coloniaOriginal;
+    }
+
+    if (!direccion) return 'Sin colonia';
+
+    let colonia = '';
+
+    const partesPipe = direccion.split('|');
+    if (partesPipe.length >= 2) {
+      colonia = partesPipe[1].trim();
+    }
+
+    if (!colonia || colonia.length < 2) {
+      const partesComa = direccion.split(',');
+      if (partesComa.length >= 2) {
+        colonia = partesComa[1].trim();
+      }
+    }
+
+    if (!colonia || colonia.length < 2) {
+      const matchCol = direccion.match(/COL\.?\s*([^,|]+)/i);
+      if (matchCol && matchCol[1]) {
+        colonia = matchCol[1].trim();
+      }
+    }
+    if (!colonia || colonia.length < 2) {
+      const matchFrac = direccion.match(/FRACC\.?\s*([^,|]+)/i);
+      if (matchFrac && matchFrac[1]) {
+        colonia = matchFrac[1].trim();
+      }
+    }
+
+    colonia = colonia
+      .replace(/COL\.\s*/gi, '')
+      .replace(/FRACC\.\s*/gi, '')
+      .replace(/FRACCIONAMIENTO\s*/gi, '')
+      .replace(/CP\s*\d{5}/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (colonia.length > 30) {
+      colonia = colonia.substring(0, 28) + '…';
+    }
+
+    if (!colonia || colonia.length < 2) {
+      colonia = 'Sin colonia';
+    }
+
+    return colonia;
+  }
+
+  // ⭐⭐⭐ POPUP - GENERAR HTML CON DISEÑO PREMIUM ⭐⭐⭐
+  private generarPopupHTML(paciente: any, color: string, estatusLower: string, nombreCompleto: string, direccionLimpia: string, coloniaMostrar: string): string {
+    const esDiscapacidad = paciente.programa === 'DISCAPACIDAD' || paciente.programa?.includes('DIS');
+    const esReferido = paciente.programa === 'REFERIDO' || paciente.programa?.includes('REF');
+
+    let p = {
+      main: '#7E101F',
+      dark: '#4A0A12',
+      soft: '#FDF2F4',
+      border: '#F4D0D5',
+      glow: 'rgba(126,16,31,0.22)'
+    };
+
+    if (esDiscapacidad) {
+      p = { main: '#5B21B6', dark: '#3B0764', soft: '#F5F0FF', border: '#E1D2FA', glow: 'rgba(91,33,182,0.22)' };
+    } else if (esReferido) {
+      p = { main: '#0369A1', dark: '#0C4A6E', soft: '#EFF8FF', border: '#CFE9FB', glow: 'rgba(3,105,161,0.22)' };
+    }
+
+    const isFinado = estatusLower === 'finado';
+    const isVisitado = estatusLower === 'visitado' || estatusLower === 'completada';
+    const isRechazo = estatusLower === 'rechazo' || estatusLower === 'incidencia';
+
+    let st = { bg: '#FFF7E6', color: '#B45309', dot: '#F59E0B', icon: 'fa-clock', text: paciente.estatus || 'Pendiente' };
+    if (isVisitado) {
+      st = { bg: '#EAFAF0', color: '#15803D', dot: '#22C55E', icon: 'fa-check-circle', text: 'Completado' };
+    } else if (isRechazo) {
+      st = { bg: '#FDECEC', color: '#B91C1C', dot: '#EF4444', icon: 'fa-triangle-exclamation', text: 'Incidencia' };
+    } else if (isFinado) {
+      st = { bg: '#F1F5F9', color: '#475569', dot: '#94A3B8', icon: 'fa-skull', text: 'Finado' };
+    }
+
+    const iniciales = nombreCompleto
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(n => n[0])
+      .join('')
+      .toUpperCase() || '👤';
+
+    const telefonoLimpio = (paciente.telefono || '').replace(/[^\d+]/g, '');
+
+    const nombreEscapado = nombreCompleto.replace(/'/g, "\\'");
+    const telefonoEscapado = (paciente.telefono || '').replace(/'/g, "\\'");
+    const direccionEscapada = direccionLimpia.replace(/'/g, "\\'");
+    const curpEscapado = (paciente.curp || '').replace(/'/g, "\\'");
+    const coloniaEscapada = coloniaMostrar.replace(/'/g, "\\'");
+    const seccionEscapada = (paciente.seccion || '').replace(/'/g, "\\'");
+
+    return `
+    <div class="pp-card">
+
+      <div class="pp-header" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);">
+        <div class="pp-header-glow"></div>
+        <div class="pp-header-glow--bottom"></div>
+
+        <div class="pp-header-row">
+          <div class="pp-avatar">${iniciales}</div>
+
+          <div class="pp-header-main">
+            <div class="pp-tags">
+  <span class="pp-tag">${paciente.programa || 'PAM'}</span>
+  ${paciente.seccion ? `<span class="pp-tag pp-tag--ghost"><i class="fas fa-layer-group"></i>Sec. ${paciente.seccion}</span>` : ''}
+  ${this.hayFiltrosActivos() ? `<span class="pp-filter-badge"><i class="fas fa-filter"></i> Filtrado</span>` : ''}
+</div>
+            <div class="pp-name" title="${nombreEscapado}">${nombreCompleto}</div>
+          </div>
+
+          ${paciente.id ? `<span class="pp-id-ribbon"><i class="fas fa-hashtag"></i>${paciente.id}</span>` : ''}
+        </div>
+      </div>
+
+      <div class="pp-status-wrap">
+        <div class="pp-status" style="background:${st.bg}; color:${st.color};">
+          <span class="pp-status-dot" style="background:${st.dot};"></span>
+          <i class="fas ${st.icon}"></i>
+          <span>${st.text}</span>
+        </div>
+      </div>
+
+      <div class="pp-body">
+
+        <div class="pp-row pp-row--wrap pp-row--location" style="--pp-main:${p.main}; --pp-soft:${p.soft}; --pp-border:${p.border};">
+          <div class="pp-icon"><i class="fas fa-location-dot"></i></div>
+          <div class="pp-row-text">
+            <span class="pp-label">Ubicación</span>
+            <span class="pp-value" title="${coloniaEscapada}">${coloniaMostrar}</span>
+            <span class="pp-value pp-value--sub pp-value--wrap" title="${direccionEscapada}">${direccionLimpia}</span>
+          </div>
+        </div>
+
+        <div class="pp-row" style="--pp-main:${p.main}; --pp-soft:${p.soft}; --pp-border:${p.border};">
+          <div class="pp-icon"><i class="fas fa-phone"></i></div>
+          <div class="pp-row-text">
+            <span class="pp-label">Teléfono</span>
+            <span class="pp-value" title="${telefonoEscapado}">${paciente.telefono || 'Sin número'}</span>
+          </div>
+          ${telefonoLimpio ? `<a href="tel:${telefonoLimpio}" class="pp-call-btn" style="background:${p.main};" onclick="event.stopPropagation();"><i class="fas fa-phone-volume"></i></a>` : ''}
+        </div>
+
+        ${paciente.finado ? `
+        <div class="pp-finado">
+          <i class="fas fa-skull"></i>
+          <span>Paciente finado</span>
+        </div>` : ''}
+      </div>
+
+      <div class="pp-divider" style="--pp-border:${p.border};"></div>
+
+      <div class="pp-actions">
+        <button class="pp-btn pp-btn--primary" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%); box-shadow: 0 6px 18px ${p.glow};"
+          onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
+            pacienteId: ${paciente.id},
+            nombre: '${nombreEscapado}',
+            telefono: '${telefonoEscapado}',
+            direccion: '${direccionEscapada}',
+            curp: '${curpEscapado}',
+            colonia: '${coloniaEscapada}'
+          } }))">
+          <i class="fas fa-calendar-plus"></i>
+          Agendar
+        </button>
+
+        <button class="pp-btn pp-btn--ghost" style="color:${p.main}; border-color:${p.border};"
+          onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { detail: {
+            pacienteId: ${paciente.id},
+            nombre: '${nombreEscapado}',
+            telefono: '${telefonoEscapado}',
+            direccion: '${direccionEscapada}',
+            curp: '${curpEscapado}',
+            colonia: '${coloniaEscapada}',
+            seccion: '${seccionEscapada}'
+          } }))">
+          <i class="fas fa-flag"></i>
+          Reporte
+        </button>
+      </div>
+    </div>
+  `;
+  }
+
+  // ⭐⭐⭐ AGREGAR MARCADORES DE PACIENTES ⭐⭐⭐
+  // ⭐ REEMPLAZA EL MÉTODO agregarMarcadoresPacientes COMPLETO CON ESTE ⭐
+
+  // ⭐ REEMPLAZA EL MÉTODO agregarMarcadoresPacientes COMPLETO CON ESTE ⭐
 
   agregarMarcadoresPacientes() {
     if (!this.map) {
@@ -573,9 +696,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.limpiarMarcadoresPacientes();
+    // ⭐ LIMPIAR COMPLETAMENTE LOS POPUPS ANTES DE RECREAR
+    if (this.map) {
+      this.map.closePopup();
+      const popupPane = this.map.getPane('popupPane');
+      if (popupPane) {
+        popupPane.innerHTML = '';
+      }
+    }
 
-    console.log(`📍 Agregando ${this.pacientes.length} marcadores al mapa`);
+    this.limpiarMarcadoresPacientes();
 
     if (this.pacientes.length === 0) {
       console.warn('⚠️ No hay pacientes para mostrar');
@@ -588,42 +718,49 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const hayFiltros = hayFiltrosPerfil || hayFiltrosRiesgo;
 
     const esBusqueda = this.pacientes.length < 50;
-    const abrirPopup = esBusqueda && this.pacientes.length <= 10;
 
-    this.clusterGroup = (L as any).markerClusterGroup({
-      maxClusterRadius: 40,
-      spiderfyOnMaxZoom: true,
-      showCoverageOnHover: false,
-      zoomToBoundsOnClick: true,
-      iconCreateFunction: (cluster: any) => {
-        const childCount = cluster.getChildCount();
-        let color = '#701f2f';
-        let size = 40;
+    if (typeof (L as any).markerClusterGroup === 'function') {
+      this.clusterGroup = (L as any).markerClusterGroup({
+        maxClusterRadius: 40,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        iconCreateFunction: (cluster: any) => {
+          const childCount = cluster.getChildCount();
+          let color = '#6c5ce7';
+          let size = 40;
 
-        if (childCount < 10) {
-          color = '#2e7d32';
-          size = 35;
-        } else if (childCount < 30) {
-          color = '#e67e22';
-          size = 40;
-        } else if (childCount < 100) {
-          color = '#c62828';
-          size = 45;
-        } else {
-          color = '#701f2f';
-          size = 50;
+          if (childCount < 10) {
+            color = '#00b894';
+            size = 35;
+          } else if (childCount < 30) {
+            color = '#fdcb6e';
+            size = 40;
+          } else if (childCount < 100) {
+            color = '#e17055';
+            size = 45;
+          } else {
+            color = '#6c5ce7';
+            size = 50;
+          }
+
+          return L.divIcon({
+            html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${size > 40 ? 16 : 14}px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+            ${childCount}
+          </div>`,
+            className: 'marker-cluster',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          });
         }
-
-        return L.divIcon({
-          html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${size > 40 ? 16 : 14}px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                    ${childCount}
-                </div>`,
-          className: 'marker-cluster',
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2]
-        });
-      }
-    });
+      });
+    } else {
+      this.clusterGroup = {
+        addLayer: (layer: any) => { this.map?.addLayer(layer); },
+        addTo: (map: any) => { },
+        getBounds: () => { return null; }
+      };
+    }
 
     let marcadoresAgregados = 0;
     const markers: L.Marker[] = [];
@@ -671,25 +808,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       const fontSize = esBusqueda ? 18 : 12;
       const borderWidth = esBusqueda ? 4 : 3;
 
-      let opacity = 1;
-      let scale = 1;
-      let glowEffect = '';
-
-      if (hayFiltros) {
-        if (!cumpleFiltros) {
-          opacity = 0.25;
-          scale = 0.7;
-        } else {
-          glowEffect = `
-                    box-shadow: 0 0 0 4px ${color}40, 0 0 20px ${color}60;
-                    animation: filterPulse 1.5s ease-in-out infinite;
-                `;
-        }
-      }
-
-      const finalSize = Math.round(size * scale);
-      const finalFontSize = Math.round(fontSize * scale);
-
       let icon = 'fa-user';
       const estatusLower = (paciente.estatus || '').toLowerCase();
 
@@ -705,175 +823,34 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const markerIcon = L.divIcon({
         html: `<div style="
-                background: ${cumpleFiltros ? color : '#cccccc'};
-                width: ${finalSize}px;
-                height: ${finalSize}px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: ${finalFontSize}px;
-                border: ${borderWidth}px solid ${cumpleFiltros ? 'white' : '#999'};
-                box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-                cursor: pointer;
-                transition: transform 0.2s;
-                opacity: ${opacity};
-                ${glowEffect}
-                ${!cumpleFiltros && hayFiltros ? 'filter: grayscale(0.8);' : ''}
-                ${esBusqueda && cumpleFiltros ? 'animation: searchPulse 1.5s ease-in-out infinite;' : ''}
-            ">
-                <i class="fas ${icon}"></i>
-            </div>
-            ${esBusqueda && cumpleFiltros ? `<style>
-                @keyframes searchPulse {
-                    0% { transform: scale(1); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-                    50% { transform: scale(1.15); box-shadow: 0 2px 24px rgba(0,0,0,0.5); }
-                    100% { transform: scale(1); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-                }
-            </style>` : ''}
-            ${hayFiltros && cumpleFiltros ? `<style>
-                @keyframes filterPulse {
-                    0% { transform: scale(1); box-shadow: 0 0 0 4px ${color}40; }
-                    50% { transform: scale(1.05); box-shadow: 0 0 0 8px ${color}60, 0 0 20px ${color}40; }
-                    100% { transform: scale(1); box-shadow: 0 0 0 4px ${color}40; }
-                }
-            </style>` : ''}`,
+              background: ${cumpleFiltros ? color : '#cccccc'};
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: ${fontSize}px;
+              border: ${borderWidth}px solid ${cumpleFiltros ? 'white' : '#999'};
+              box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+              cursor: pointer;
+              opacity: ${cumpleFiltros ? 1 : 0.25};
+              ${!cumpleFiltros && hayFiltros ? 'filter: grayscale(0.8);' : ''}
+          ">
+              <i class="fas ${icon}"></i>
+          </div>`,
         className: `custom-marker ${cumpleFiltros ? 'filter-active' : 'filter-inactive'}`,
-        iconSize: [finalSize, finalSize],
-        iconAnchor: [finalSize / 2, finalSize / 2],
-        popupAnchor: [0, -(finalSize / 2)]
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -(size / 2)]
       });
 
-      const nombreCompleto = paciente.apellidoPaterno || paciente.apellidoMaterno ?
-        `${paciente.apellidoPaterno || ''} ${paciente.apellidoMaterno || ''} ${paciente.nombre || ''}`.trim() :
-        paciente.nombre || 'Nombre no disponible';
+      const nombreCompleto = paciente.nombre || 'Nombre no disponible';
+      const direccionLimpia = this.limpiarDireccion(paciente.direccion || '');
+      const coloniaMostrar = this.obtenerColonia(paciente.direccion || '', paciente.colonia || '');
 
-      let telefonoCompleto = 'No disponible';
-      if (paciente.telefonoFijo && paciente.telefonoCelular) {
-        telefonoCompleto = `${paciente.telefonoFijo} / ${paciente.telefonoCelular}`;
-      } else if (paciente.telefonoCelular) {
-        telefonoCompleto = `${paciente.telefonoCelular}`;
-      } else if (paciente.telefonoFijo) {
-        telefonoCompleto = `${paciente.telefonoFijo}`;
-      }
-
-      // ⭐ ESCAPAR CARACTERES ESPECIALES PARA EVITAR ERRORES EN EL POPUP
-      const nombreEscapado = this.escapeHtml(nombreCompleto);
-      const direccionEscapada = this.escapeHtml(paciente.direccion || 'Dirección no disponible');
-      const telefonoEscapado = this.escapeHtml(telefonoCompleto);
-      const curpEscapado = this.escapeHtml(paciente.curp || '');
-      const coloniaEscapada = this.escapeHtml(paciente.colonia || 'Sin colonia');
-      const programaEscapado = this.escapeHtml(paciente.programa || 'Sin programa');
-      const estatusEscapado = this.escapeHtml(paciente.estatus || 'Pendiente');
-      const seccionEscapada = this.escapeHtml(paciente.seccion || '');
-
-      // ⭐ ⭐ ⭐ POPUP COMPLETO CON BOTONES SIEMPRE VISIBLES ⭐ ⭐ ⭐
-      const popupContent = `
-            <div style="font-family: 'Montserrat', 'Segoe UI', sans-serif; max-width: 340px; min-width: 300px; padding: 4px 0;">
-                <!-- HEADER -->
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #f0ece8;">
-                    <div style="width: 44px; height: 44px; border-radius: 50%; background: ${cumpleFiltros ? color : '#cccccc'}; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-shrink: 0; opacity: ${cumpleFiltros ? 1 : 0.5};">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-weight: 700; font-size: 15px; color: #701f2f; line-height: 1.2;">${nombreEscapado}</div>
-                        <div style="font-size: 11px; color: #999;">
-                            ${programaEscapado} ${seccionEscapada ? '· Sec: ' + seccionEscapada : ''}
-                        </div>
-                        <div style="font-size: 10px; color: ${cumpleFiltros ? color : '#999'}; font-weight: 600; margin-top: 2px;">
-                            <i class="fas fa-map-pin"></i> ${coloniaEscapada}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- INFORMACIÓN DEL PACIENTE -->
-                <div style="font-size: 12px; color: #333; line-height: 1.6;">
-                    <div style="display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
-                        <i class="fas fa-map-marker-alt" style="color: #701f2f; width: 16px; margin-top: 2px; flex-shrink: 0; font-size: 13px;"></i>
-                        <span style="word-break: break-word; font-size: 12px;">${direccionEscapada}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                        <i class="fas fa-phone" style="color: #701f2f; width: 16px; flex-shrink: 0; font-size: 13px;"></i>
-                        <span style="font-size: 12px; word-break: break-all;">${telefonoEscapado}</span>
-                    </div>
-                    ${curpEscapado ? `
-                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-                        <i class="fas fa-id-card" style="color: #701f2f; width: 16px; flex-shrink: 0; font-size: 13px;"></i>
-                        <span style="font-size: 11px; color: #666; word-break: break-all; font-weight: 500;">CURP: ${curpEscapado}</span>
-                    </div>
-                    ` : `
-                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-                        <i class="fas fa-id-card" style="color: #999; width: 16px; flex-shrink: 0; font-size: 13px;"></i>
-                        <span style="font-size: 11px; color: #999;">Sin CURP registrado</span>
-                    </div>
-                    `}
-                </div>
-
-                <!-- ESTATUS -->
-                <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
-                    <span style="display: inline-block; background: ${estatusLower === 'pendiente' ? '#fff3e0' : estatusLower === 'visitado' ? '#e8f5e9' : estatusLower === 'rechazo' ? '#ffebee' : '#f0ece8'}; color: ${estatusLower === 'pendiente' ? '#e67e22' : estatusLower === 'visitado' ? '#2e7d32' : estatusLower === 'rechazo' ? '#c62828' : '#6c757d'}; padding: 3px 12px; border-radius: 14px; font-size: 11px; font-weight: 700;">
-                        <i class="fas ${estatusLower === 'pendiente' ? 'fa-clock' : estatusLower === 'visitado' ? 'fa-check-circle' : estatusLower === 'rechazo' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
-                        ${estatusEscapado}
-                    </span>
-                    <span style="display: inline-block; background: #f0ece8; color: #666; padding: 3px 12px; border-radius: 14px; font-size: 11px; font-weight: 600;">
-                        <i class="fas fa-hashtag"></i> ID: ${paciente.id || 'N/A'}
-                    </span>
-                </div>
-
-                <!-- ⭐ BOTONES - SIEMPRE VISIBLES ⭐ -->
-                <div style="margin-top: 14px; padding-top: 12px; border-top: 2px solid #f0ece8; display: flex; flex-direction: column; gap: 8px;">
-                    
-                    <!-- BOTÓN AGENDAR VISITA -->
-                    <button onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { 
-                        detail: { 
-                            pacienteId: ${paciente.id}, 
-                            nombre: '${nombreEscapado.replace(/'/g, "\\'")}', 
-                            telefono: '${telefonoEscapado.replace(/'/g, "\\'")}', 
-                            direccion: '${direccionEscapada.replace(/'/g, "\\'")}', 
-                            curp: '${curpEscapado.replace(/'/g, "\\'")}', 
-                            colonia: '${coloniaEscapada.replace(/'/g, "\\'")}' 
-                        } 
-                    }))" 
-                        style="background: #701f2f; color: white; border: none; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; width: 100%; font-family: 'Montserrat', sans-serif; box-shadow: 0 2px 8px rgba(112, 31, 47, 0.3);" 
-                        onmouseover="this.style.background='#8b2e4a'; this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 16px rgba(112, 31, 47, 0.4)';" 
-                        onmouseout="this.style.background='#701f2f'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(112, 31, 47, 0.3)';">
-                        <i class="fas fa-calendar-plus"></i> Agendar Visita
-                    </button>
-
-                    <!-- BOTÓN REPORTAR INCIDENCIA -->
-                    <button onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { 
-                        detail: { 
-                            pacienteId: ${paciente.id}, 
-                            nombre: '${nombreEscapado.replace(/'/g, "\\'")}', 
-                            telefono: '${telefonoEscapado.replace(/'/g, "\\'")}', 
-                            direccion: '${direccionEscapada.replace(/'/g, "\\'")}', 
-                            curp: '${curpEscapado.replace(/'/g, "\\'")}', 
-                            colonia: '${coloniaEscapada.replace(/'/g, "\\'")}', 
-                            seccion: '${seccionEscapada.replace(/'/g, "\\'")}' 
-                        } 
-                    }))" 
-                        style="background: #e67e22; color: white; border: none; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; width: 100%; font-family: 'Montserrat', sans-serif; box-shadow: 0 2px 8px rgba(230, 126, 34, 0.3);" 
-                        onmouseover="this.style.background='#d35400'; this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 16px rgba(230, 126, 34, 0.4)';" 
-                        onmouseout="this.style.background='#e67e22'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(230, 126, 34, 0.3)';">
-                        <i class="fas fa-exclamation-triangle"></i> Reportar Incidencia
-                    </button>
-                </div>
-
-                <!-- FOOTER -->
-                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f0ece8; display: flex; justify-content: center;">
-                    <span style="font-size: 9px; color: #bbb; font-weight: 400; letter-spacing: 0.3px;">SALUD CASA POR CASA</span>
-                </div>
-            </div>
-        `;
-
-      const tooltipContent = `
-            <div style="font-family: 'Montserrat', sans-serif; padding: 6px 12px; text-align: center; min-width: 100px;">
-                <div style="font-weight: 700; font-size: 13px; color: ${cumpleFiltros ? '#701f2f' : '#999'};">${nombreEscapado}</div>
-                <div style="font-size: 11px; color: ${cumpleFiltros ? color : '#999'}; font-weight: 600;">${paciente.estatus || 'Pendiente'}</div>
-                ${hayFiltros && !cumpleFiltros ? '<div style="font-size: 9px; color: #c62828;">(Filtrado)</div>' : ''}
-            </div>
-        `;
+      const popupContent = this.generarPopupHTML(paciente, color, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
 
       const marker = L.marker([paciente.lat, paciente.lng], {
         icon: markerIcon,
@@ -881,52 +858,64 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       })
         .bindPopup(popupContent, {
           maxWidth: 380,
-          minWidth: 300,
+          minWidth: 280,
           className: 'paciente-popup',
           autoPan: true,
           autoPanPadding: [20, 20]
-        })
-        .bindTooltip(tooltipContent, {
-          permanent: esBusqueda && cumpleFiltros,
-          direction: 'top',
-          className: 'paciente-tooltip',
-          offset: [0, -8]
         });
 
-      if (abrirPopup && cumpleFiltros) {
+      // ⭐ FORZAR RE-APLICACIÓN DE ESTILOS CUANDO SE ABRE EL POPUP
+      marker.on('popupopen', function () {
         setTimeout(() => {
-          marker.openPopup();
-        }, 500);
-      }
-
-      marker.on('click', () => {
-        marker.openPopup();
+          const popupWrapper = document.querySelector('.paciente-popup .leaflet-popup-content-wrapper');
+          if (popupWrapper) {
+            // Forzar reflow para re-aplicar estilos
+            (popupWrapper as HTMLElement).style.display = 'none';
+            setTimeout(() => {
+              (popupWrapper as HTMLElement).style.display = '';
+            }, 10);
+          }
+        }, 50);
       });
 
-      this.clusterGroup.addLayer(marker);
+      if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
+        this.clusterGroup.addLayer(marker);
+      } else {
+        this.map?.addLayer(marker);
+      }
+
       markers.push(marker);
       marcadoresAgregados++;
     });
 
     if (marcadoresAgregados > 0) {
-      this.clusterGroup.addTo(this.map);
-      this.marcadoresPacientes = markers;
+      if (this.clusterGroup && typeof this.clusterGroup.addTo === 'function') {
+        this.clusterGroup.addTo(this.map);
+      }
 
-      console.log(`✅ ${marcadoresAgregados} marcadores agregados al mapa con cluster`);
+      this.marcadoresPacientes = markers;
+      console.log(`✅ ${marcadoresAgregados} marcadores agregados al mapa`);
 
       try {
-        const bounds = this.clusterGroup.getBounds();
-        if (bounds.isValid()) {
-          this.map.fitBounds(bounds, { padding: [80, 80] });
+        if (this.clusterGroup && typeof this.clusterGroup.getBounds === 'function') {
+          const bounds = this.clusterGroup.getBounds();
+          if (bounds && bounds.isValid()) {
+            this.map.fitBounds(bounds, { padding: [80, 80] });
+          }
         }
       } catch (e) {
         console.warn('No se pudo ajustar el mapa a los marcadores');
       }
-    } else {
-      console.warn('⚠️ No se pudieron agregar marcadores (todos sin coordenadas)');
     }
 
-    // ⭐ ESCUCHAR EVENTOS DE LOS BOTONES
+    // ⭐ FORZAR ACTUALIZACIÓN DEL MAPA Y ESTILOS
+    setTimeout(() => {
+      if (this.map) {
+        this.map.invalidateSize();
+      }
+    }, 100);
+
+    // ⭐ EVENT LISTENERS
     if (this._eventListener) {
       window.removeEventListener('agregarAlCalendario', this._eventListener);
     }
@@ -943,7 +932,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           curp: data.curp,
           colonia: data.colonia
         };
-        this.agregarPacienteAlCalendario(paciente);
+        localStorage.setItem('pacienteSeleccionado', JSON.stringify(paciente));
+        this.router.navigate(['/calendario'], {
+          queryParams: {
+            pacienteId: paciente.id,
+            abrirModal: 'true'
+          }
+        });
+        this.mostrarToast('📅 Calendario', `Programando visita para ${paciente.nombre}`, 'success');
       });
     };
 
@@ -956,8 +952,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this._incidenciaListener = (event: any) => {
       this.ngZone.run(() => {
         const data = event.detail;
-        console.log('📋 Reportando incidencia para:', data);
-
         const pacienteData = {
           id: data.pacienteId,
           nombre: data.nombre,
@@ -967,7 +961,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           colonia: data.colonia || '',
           seccion: data.seccion || ''
         };
-
         localStorage.setItem('incidenciaPaciente', JSON.stringify(pacienteData));
         this.router.navigate(['/incidencias']);
       });
@@ -976,28 +969,46 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     window.addEventListener('reportarIncidencia', this._incidenciaListener);
   }
 
-  // ⭐ FUNCIÓN PARA ESCAPAR HTML Y EVITAR INYECCIÓN
-  escapeHtml(text: string): string {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
+  // ⭐ REEMPLAZA EL MÉTODO limpiarMarcadoresPacientes COMPLETO CON ESTE ⭐
 
   limpiarMarcadoresPacientes() {
+    console.log('🧹 Limpiando marcadores...');
+
     if (this.map) {
+      // ⭐ CERRAR TODOS LOS POPUPS
+      this.map.closePopup();
+
+      // ⭐ LIMPIAR EL PANE DE POPUPS COMPLETAMENTE
+      const popupPane = this.map.getPane('popupPane');
+      if (popupPane) {
+        popupPane.innerHTML = '';
+      }
+
+      // ⭐ ELIMINAR CLUSTER GROUP
       if (this.clusterGroup) {
-        this.map.removeLayer(this.clusterGroup);
+        try { this.map.removeLayer(this.clusterGroup); } catch (e) { }
         this.clusterGroup = null;
       }
+
+      // ⭐ ELIMINAR MARCADORES INDIVIDUALES
       this.marcadoresPacientes.forEach(marker => {
         if (this.map) {
-          this.map.removeLayer(marker);
+          try { this.map.removeLayer(marker); } catch (e) { }
+        }
+      });
+
+      // ⭐ LIMPIAR TODAS LAS CAPAS ADICIONALES
+      this.map.eachLayer((layer: any) => {
+        if (layer instanceof L.Marker || layer instanceof L.MarkerClusterGroup) {
+          try { this.map?.removeLayer(layer); } catch (e) { }
         }
       });
     }
-    this.marcadoresPacientes = [];
 
+    this.marcadoresPacientes = [];
+    this.clusterGroup = null;
+
+    // ⭐ LIMPIAR EVENT LISTENERS
     if (this._eventListener) {
       window.removeEventListener('agregarAlCalendario', this._eventListener);
       this._eventListener = null;
@@ -1008,10 +1019,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // ⭐ ============================================
-  // ⭐ OBTENER COLOR DEL PACIENTE
-  // ⭐ ============================================
-
   private obtenerColorPaciente(paciente: any): string {
     const hayFiltrosPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido;
     const hayFiltrosRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 ||
@@ -1020,23 +1027,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (hayFiltrosPerfil) {
       const programa = (paciente.programa || '').toUpperCase();
       if (this.filtrosPerfiles.adulto && (programa === 'PAM' || programa.includes('ADULTO'))) {
-        return '#2e7d32';
+        return '#00b894';
       }
       if (this.filtrosPerfiles.discapacitado && (programa === 'DISCAPACIDAD' || programa.includes('DIS'))) {
-        return '#7B1FA2';
+        return '#6c5ce7';
       }
       if (this.filtrosPerfiles.referido && (programa === 'REFERIDO' || programa.includes('REF'))) {
-        return '#1565C0';
+        return '#0984e3';
       }
     }
 
     if (hayFiltrosRiesgo) {
       const estatus = (paciente.estatus || '').toUpperCase();
       const riesgo = this.asignarRiesgo(estatus);
-      if (this.filtrosRiesgos.g1 && riesgo === 'g1') return '#4CAF50';
-      if (this.filtrosRiesgos.g2 && riesgo === 'g2') return '#FFC107';
-      if (this.filtrosRiesgos.g3 && riesgo === 'g3') return '#FF9800';
-      if (this.filtrosRiesgos.g4 && riesgo === 'g4') return '#D32F2F';
+      if (this.filtrosRiesgos.g1 && riesgo === 'g1') return '#00b894';
+      if (this.filtrosRiesgos.g2 && riesgo === 'g2') return '#fdcb6e';
+      if (this.filtrosRiesgos.g3 && riesgo === 'g3') return '#e17055';
+      if (this.filtrosRiesgos.g4 && riesgo === 'g4') return '#d63031';
     }
 
     const estatus = (paciente.estatus || '').toUpperCase();
@@ -1044,7 +1051,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return this.coloresEstatus[estatus];
     }
 
-    return this.colorDefault;
+    return '#6c5ce7';
   }
 
   private asignarRiesgo(estatus: string): string {
@@ -1056,17 +1063,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return 'g2';
   }
 
-  // ⭐ ============================================
-  // ⭐ BÚSQUEDA DE DIRECCIÓN - CORREGIDA
-  // ⭐ ============================================
-
+  // ⭐⭐⭐ BÚSQUEDA DE DIRECCIÓN - CORREGIDA ⭐⭐⭐
   buscarDireccion() {
+    if (this.busquedaEnProgreso) {
+      console.log('⏳ Búsqueda en progreso, ignorando nueva solicitud...');
+      return;
+    }
+
     const query = this.searchQuery?.trim();
     if (!query) {
       this.mostrarToast('Error', 'Ingresa una dirección para buscar', 'warning');
       return;
     }
 
+    this.busquedaEnProgreso = true;
     this.isSearching = true;
     this.cdr.detectChanges();
 
@@ -1075,213 +1085,213 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.searchMarker = null;
     }
 
-    const pacientesOriginales = [...this.pacientesOriginal];
+    const backupOriginal = [...this.pacientesOriginal];
 
     this.http.get(`${this.apiUrl}/pacientes/buscar?direccion=${encodeURIComponent(query)}`).subscribe({
       next: (response: any) => {
         console.log('📦 Respuesta de búsqueda en BD:', response);
 
         let pacientes = response || [];
+        const pacientesConCoords = pacientes.filter((p: any) =>
+          p.lat && p.lng && p.lat !== 0 && p.lng !== 0
+        );
 
-        if (pacientes && pacientes.length > 0) {
-          const pacientesConCoords = pacientes.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
+        if (pacientesConCoords.length > 0) {
+          this.mostrarPacientesEncontrados(pacientesConCoords, backupOriginal, query);
+          this.busquedaEnProgreso = false;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+          return;
+        }
 
-          if (pacientesConCoords.length > 0) {
-            // ⭐ EXTRAER CALLE, NÚMERO Y COLONIA DE LA BÚSQUEDA
-            const numeroMatch = query.match(/\d+/);
-            const numero = numeroMatch ? numeroMatch[0] : null;
-            let calleSinNumero = query.replace(/\d+/g, '').replace(/#/g, '').replace(/\./g, '').trim().toUpperCase();
-            calleSinNumero = calleSinNumero.replace(/\s+/g, ' ').trim();
+        const queryUpper = query.toUpperCase();
+        const locales = backupOriginal.filter((p: any) => {
+          const dir = (p.direccion || '').toUpperCase();
+          const colonia = (p.colonia || '').toUpperCase();
+          return dir.includes(queryUpper) || colonia.includes(queryUpper);
+        });
 
-            // ⭐ EXTRAER LA COLONIA DE LA BÚSQUEDA
-            const queryParts = query.split(',');
-            const coloniaBuscada = queryParts.length > 1 ? queryParts[1].trim().toUpperCase() : '';
+        if (locales.length > 0) {
+          this.mostrarPacientesEncontrados(locales, backupOriginal, query);
+          this.busquedaEnProgreso = false;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+          return;
+        }
 
-            console.log(`🔍 Buscando: Calle="${calleSinNumero}", Número="${numero}", Colonia="${coloniaBuscada}"`);
+        console.log('🌍 No se encontraron pacientes, buscando ubicación con geocoding...');
+        this.buscarUbicacionPorDireccion(query);
 
-            let finalPacientes: any[] = pacientesConCoords;
+      },
+      error: (error) => {
+        console.error('❌ Error en búsqueda de pacientes:', error);
 
-            // ⭐ FILTRAR POR CALLE + NÚMERO
-            if (numero && calleSinNumero.length > 2) {
-              // ⭐ PASO 1: Filtrar por calle
-              const conCalle = pacientesConCoords.filter((p: any) => {
-                const dirUpper = (p.direccion || '').toUpperCase();
-                return dirUpper.includes(calleSinNumero);
-              });
+        const queryUpper = this.searchQuery.toUpperCase();
+        const locales = backupOriginal.filter((p: any) => {
+          const dir = (p.direccion || '').toUpperCase();
+          const colonia = (p.colonia || '').toUpperCase();
+          return dir.includes(queryUpper) || colonia.includes(queryUpper);
+        });
 
-              console.log(`📋 Pacientes con calle "${calleSinNumero}": ${conCalle.length}`);
+        if (locales.length > 0) {
+          this.mostrarPacientesEncontrados(locales, backupOriginal, query);
+          this.busquedaEnProgreso = false;
+          this.isSearching = false;
+          this.cdr.detectChanges();
+          return;
+        }
 
-              if (conCalle.length > 0) {
-                // ⭐ PASO 2: Filtrar por número exacto
-                finalPacientes = conCalle.filter((p: any) => {
-                  const dirUpper = (p.direccion || '').toUpperCase();
-                  return dirUpper.includes(`#${numero}`) ||
-                    dirUpper.includes(` ${numero} `) ||
-                    dirUpper.includes(` ${numero},`) ||
-                    dirUpper.includes(` ${numero}.`) ||
-                    dirUpper.includes(`-${numero}`);
-                });
+        console.log('🌍 Buscando ubicación con geocoding (fallback)...');
+        this.buscarUbicacionPorDireccion(query);
+      }
+    });
+  }
 
-                console.log(`📋 Pacientes con calle + número exacto: ${finalPacientes.length}`);
+  // ⭐ MÉTODO: MOSTRAR PACIENTES ENCONTRADOS Y ABRIR POPUP AUTOMÁTICAMENTE
+  private mostrarPacientesEncontrados(pacientes: any[], backupOriginal: any[], query: string) {
+    const idsExistentes = new Set();
+    const finalPacientes: any[] = [];
 
-                // ⭐ Si no hay coincidencia exacta, usar los de la calle
-                if (finalPacientes.length === 0) {
-                  finalPacientes = conCalle;
-                  console.log(`⚠️ No hay coincidencia exacta, usando ${conCalle.length} pacientes de la calle`);
+    pacientes.forEach((p: any) => {
+      if (!idsExistentes.has(p.id)) {
+        idsExistentes.add(p.id);
+        finalPacientes.push(p);
+      }
+    });
+
+    console.log(`✅ Mostrando ${finalPacientes.length} pacientes encontrados`);
+
+    this.pacientes = finalPacientes;
+
+    const zonasSet = new Set<string>();
+    finalPacientes.forEach((p: any) => {
+      const colonia = p.colonia || this.extraerColonia(p.direccion);
+      if (colonia && colonia.length > 2) {
+        zonasSet.add(colonia.toUpperCase().trim());
+      }
+    });
+
+    if (zonasSet.size > 0) {
+      const nuevasZonas = Array.from(zonasSet).sort();
+      this.manzanasDisponibles = nuevasZonas;
+
+      const nuevosColores: { [key: string]: string } = {};
+      nuevasZonas.forEach((zona, index) => {
+        const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
+        nuevosColores[zona] = color;
+      });
+      this.coloresManzanas = nuevosColores;
+
+      this.store.dispatch(AppActions.setColoresManzanas({ colores: nuevosColores }));
+      this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: nuevasZonas }));
+    }
+
+    this.agregarMarcadoresPacientes();
+
+    // ⭐ ABRIR POPUP AUTOMÁTICAMENTE
+    const primero = finalPacientes[0];
+    if (this.map && primero.lat && primero.lng) {
+      this.map.setView([primero.lat, primero.lng], 17);
+
+      setTimeout(() => {
+        let popupAbierto = false;
+
+        // ⭐ BUSCAR EN MARCADORES PRINCIPALES
+        this.marcadoresPacientes.forEach(marker => {
+          const popup = marker.getPopup();
+          if (popup) {
+            const content = popup.getContent();
+            if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
+              marker.openPopup();
+              popupAbierto = true;
+              console.log(`✅ Popup abierto automáticamente para: ${primero.nombre}`);
+            }
+          }
+        });
+
+        // ⭐ BUSCAR EN CLUSTER SI NO SE ENCONTRÓ
+        if (!popupAbierto && this.clusterGroup && typeof this.clusterGroup.eachLayer === 'function') {
+          this.clusterGroup.eachLayer((layer: any) => {
+            if (layer instanceof L.Marker) {
+              const popup = layer.getPopup();
+              if (popup) {
+                const content = popup.getContent();
+                if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
+                  layer.openPopup();
+                  popupAbierto = true;
+                  console.log(`✅ Popup abierto desde cluster para: ${primero.nombre}`);
                 }
-              } else {
-                // ⭐ Si no hay pacientes con la calle, buscar solo por número
-                finalPacientes = pacientesConCoords.filter((p: any) => {
-                  const dirUpper = (p.direccion || '').toUpperCase();
-                  return dirUpper.includes(`#${numero}`) ||
-                    dirUpper.includes(` ${numero} `) ||
-                    dirUpper.includes(`-${numero}`);
-                });
-                console.log(`📋 Pacientes solo por número: ${finalPacientes.length}`);
-              }
-
-              // ⭐ PASO 3: Si hay múltiples resultados, priorizar por colonia
-              if (finalPacientes.length > 1) {
-                // ⭐ ORDENAR: primero los que tienen la colonia exacta
-                finalPacientes.sort((a: any, b: any) => {
-                  const dirA = (a.direccion || '').toUpperCase();
-                  const dirB = (b.direccion || '').toUpperCase();
-
-                  // ⭐ Verificar si la colonia está en la dirección
-                  const aTieneColonia = coloniaBuscada ? dirA.includes(coloniaBuscada) : true;
-                  const bTieneColonia = coloniaBuscada ? dirB.includes(coloniaBuscada) : true;
-
-                  // ⭐ Priorizar los que tienen la colonia exacta
-                  if (aTieneColonia && !bTieneColonia) return -1;
-                  if (!aTieneColonia && bTieneColonia) return 1;
-
-                  // ⭐ Si ambos tienen o no tienen la colonia, priorizar el que tiene la calle exacta
-                  const aExacto = dirA.includes(calleSinNumero) ? 1 : 0;
-                  const bExacto = dirB.includes(calleSinNumero) ? 1 : 0;
-                  return bExacto - aExacto;
-                });
-
-                // ⭐ Si el primero tiene la colonia exacta, mostrar solo ese
-                const primero = finalPacientes[0];
-                const dirPrimero = (primero.direccion || '').toUpperCase();
-
-                if (coloniaBuscada && dirPrimero.includes(coloniaBuscada)) {
-                  finalPacientes = [primero];
-                  console.log(`✅ Mostrando solo el más relevante: ${primero.nombre} (ID: ${primero.id})`);
-                } else {
-                  console.log(`⚠️ Mostrando ${finalPacientes.length} pacientes (sin colonia clara)`);
-                }
               }
             }
+          });
+        }
 
-            if (finalPacientes.length === 0) {
-              this.mostrarToast('Sin resultados', `No se encontró "${query}"`, 'warning');
-              this.isSearching = false;
-              this.cdr.detectChanges();
-              return;
-            }
+        if (!popupAbierto) {
+          console.warn('⚠️ No se pudo abrir el popup automáticamente');
+        }
 
-            console.log(`✅ Mostrando ${finalPacientes.length} pacientes`);
+      }, 1000);
+    }
 
-            this.pacientes = finalPacientes;
-            this.pacientesOriginal = [...finalPacientes];
+    this.mostrarToast('Pacientes encontrados', `${finalPacientes.length} paciente(s) encontrado(s)`, 'success', 500);
+  }
 
-            // ⭐ ACTUALIZAR ZONAS
-            const zonasSet = new Set<string>();
-            this.pacientes.forEach((p: any) => {
-              const colonia = p.colonia || this.extraerColonia(p.direccion);
-              if (colonia) {
-                zonasSet.add(colonia);
-              }
-            });
-            this.manzanasDisponibles = Array.from(zonasSet).sort();
+  // ⭐ MÉTODO: BUSCAR UBICACIÓN POR DIRECCIÓN (GEOCODING)
+  private buscarUbicacionPorDireccion(query: string) {
+    this.mostrarToast('Buscando ubicación', `Buscando "${query}" en el mapa...`, 'info', 1000);
 
-            this.coloresManzanas = {};
-            this.manzanasDisponibles.forEach((zona, index) => {
-              const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
-              this.coloresManzanas[zona] = color;
+    const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=mx`;
+
+    this.http.get(geocodingUrl).subscribe({
+      next: (results: any) => {
+        console.log('🌍 Resultados de geocoding:', results);
+
+        if (results && results.length > 0) {
+          const result = results[0];
+          const lat = parseFloat(result.lat);
+          const lon = parseFloat(result.lon);
+
+          if (!isNaN(lat) && !isNaN(lon)) {
+            this.mostrarMarcadorUbicacion({
+              lat: lat,
+              lon: lon,
+              display_name: result.display_name || query
             });
 
-            this.store.dispatch(AppActions.setColoresManzanas({
-              colores: this.coloresManzanas
-            }));
-
-            this.store.dispatch(AppActions.setManzanasDisponibles({
-              manzanas: this.manzanasDisponibles
-            }));
-
-            this.agregarMarcadoresPacientes();
-
-            const primero = finalPacientes[0];
-            if (this.map && primero.lat && primero.lng) {
-              this.map.setView([primero.lat, primero.lng], 16);
-            }
-
-            let mensaje = `${finalPacientes.length} paciente(s) encontrado(s)`;
-            if (finalPacientes.length === 1) {
-              mensaje = `1 paciente encontrado en "${query}"`;
-            }
-
-            this.mostrarToast('📍 Pacientes encontrados', mensaje, 'success');
-
-            this.isSearching = false;
-            this.cdr.detectChanges();
-            return;
-          } else {
-            this.mostrarToast('Sin coordenadas', 'Los pacientes encontrados no tienen ubicación registrada', 'warning');
+            this.mostrarToast('Ubicación encontrada', `📍 ${result.display_name || query}`, 'success', 3000);
+            this.busquedaEnProgreso = false;
             this.isSearching = false;
             this.cdr.detectChanges();
             return;
           }
         }
 
-        console.log('🌍 No hay pacientes en BD, buscando ubicación con AWS Location...');
+        this.mostrarToast('No encontrado', `No se encontró "${query}" en el mapa`, 'warning', 3000);
 
-        this.pacientes = pacientesOriginales;
-        this.pacientesOriginal = [...pacientesOriginales];
+        this.pacientes = [...this.pacientesOriginal];
+        this.agregarMarcadoresPacientes();
 
-        this.http.get(`${this.apiUrl}/geocode?direccion=${encodeURIComponent(query)}`).subscribe({
-          next: (geoResponse: any) => {
-            if (geoResponse && geoResponse.success && geoResponse.lat && geoResponse.lng) {
-              this.mostrarMarcadorUbicacion({
-                lat: geoResponse.lat,
-                lon: geoResponse.lng,
-                display_name: geoResponse.display_name || query
-              });
-              this.mostrarToast('📍 Dirección Ubicada', `Se encontró: ${geoResponse.display_name || query}`, 'success');
-            } else {
-              this.mostrarToast('Sin resultados', `No pudimos encontrar "${query}"`, 'warning');
-            }
-            this.isSearching = false;
-            this.cdr.detectChanges();
-          },
-          error: (geoError) => {
-            console.error('❌ Error en AWS Location:', geoError);
-            this.mostrarToast('Error', 'No se pudo conectar con el servicio de ubicación', 'error');
-            this.isSearching = false;
-            this.cdr.detectChanges();
-          }
-        });
+        this.busquedaEnProgreso = false;
+        this.isSearching = false;
+        this.cdr.detectChanges();
+
       },
       error: (error) => {
-        console.error('❌ Error buscando en BD:', error);
-        this.pacientes = pacientesOriginales;
-        this.pacientesOriginal = [...pacientesOriginales];
+        console.error('❌ Error en geocoding:', error);
+
+        this.mostrarToast('Error', 'No se pudo encontrar la ubicación', 'error', 3000);
+
+        this.pacientes = [...this.pacientesOriginal];
+        this.agregarMarcadoresPacientes();
+
+        this.busquedaEnProgreso = false;
         this.isSearching = false;
         this.cdr.detectChanges();
       }
     });
   }
 
-  // ⭐ BÚSQUEDA AVANZADA
-  buscarDireccionConEntrecalles() {
-    this.buscarDireccion();
-  }
-
-  // ⭐ ============================================
-  // ⭐ MOSTRAR MARCADOR DE UBICACIÓN
-  // ⭐ ============================================
-
+  // ⭐ MÉTODO: MOSTRAR MARCADOR DE UBICACIÓN (CUANDO NO HAY PACIENTES)
   private mostrarMarcadorUbicacion(result: any) {
     if (!this.map) return;
 
@@ -1292,9 +1302,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const searchIcon = L.divIcon({
       html: `<div style="
-        background: #1565C0;
-        width: 44px;
-        height: 44px;
+        background: #7E101F;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -1302,42 +1312,100 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         color: white;
         font-size: 22px;
         border: 4px solid white;
-        box-shadow: 0 0 0 6px rgba(21, 101, 192, 0.3), 0 4px 20px rgba(0,0,0,0.4);
-        animation: searchPulse 1.5s ease-in-out infinite;
+        box-shadow: 0 0 0 6px rgba(126, 16, 31, 0.25), 0 4px 24px rgba(0,0,0,0.3);
+        animation: searchPulseMarker 1.8s ease-in-out infinite;
         z-index: 9999;
         pointer-events: auto;
       ">
-        <i class="fas fa-search-location"></i>
+        <i class="fas fa-map-pin"></i>
       </div>
       <style>
-        @keyframes searchPulse {
-          0% { transform: scale(1); box-shadow: 0 0 0 6px rgba(21, 101, 192, 0.3); }
-          50% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(21, 101, 192, 0.1); }
-          100% { transform: scale(1); box-shadow: 0 0 0 6px rgba(21, 101, 192, 0.3); }
+        @keyframes searchPulseMarker {
+          0% { transform: scale(1); box-shadow: 0 0 0 6px rgba(126, 16, 31, 0.25); }
+          50% { transform: scale(1.15); box-shadow: 0 0 0 16px rgba(126, 16, 31, 0.08); }
+          100% { transform: scale(1); box-shadow: 0 0 0 6px rgba(126, 16, 31, 0.25); }
         }
       </style>`,
       className: 'search-marker',
-      iconSize: [44, 44],
-      iconAnchor: [22, 22],
-      popupAnchor: [0, -22]
+      iconSize: [48, 48],
+      iconAnchor: [24, 24],
+      popupAnchor: [0, -24]
     });
 
-    const popupContent = `
-      <div style="font-family: 'Montserrat', sans-serif; max-width: 320px; padding: 8px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-          <div style="width: 40px; height: 40px; border-radius: 50%; background: #1565C0; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; flex-shrink: 0;">
+    const searchPopupContent = `
+      <div style="
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 340px;
+        min-width: 280px;
+        padding: 0;
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        animation: ppSlideIn 0.3s ease;
+      ">
+        <div style="
+          background: linear-gradient(135deg, #7E101F, #5B0C16);
+          padding: 16px 20px;
+          color: white;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        ">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.10);
+          ">
             <i class="fas fa-search-location"></i>
           </div>
-          <div>
-            <div style="font-weight: 700; font-size: 15px; color: #1565C0;">📍 Ubicación buscada</div>
-            <div style="font-size: 12px; color: #666; word-break: break-word;">${result.display_name || 'Dirección no encontrada'}</div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 700;">📍 Ubicación encontrada</div>
+            <div style="font-size: 11px; opacity: 0.7; line-height: 1.3;">No hay pacientes registrados aquí</div>
           </div>
         </div>
-        <div style="font-size: 11px; color: #999; border-top: 1px solid #f0ece8; padding-top: 8px; margin-top: 4px;">
-          <i class="fas fa-crosshairs"></i> Lat: ${result.lat.toFixed(6)}, Lng: ${result.lon.toFixed(6)}
+
+        <div style="padding: 16px 20px;">
+          <div style="
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #F8F7F6;
+            border-radius: 10px;
+            margin-bottom: 10px;
+          ">
+            <i class="fas fa-location-dot" style="color: #7E101F; font-size: 14px; margin-top: 2px;"></i>
+            <span style="font-size: 13px; color: #333; line-height: 1.4; word-break: break-word;">
+              ${result.display_name || 'Dirección no disponible'}
+            </span>
+          </div>
+
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #999;
+            background: #F5F5F5;
+            padding: 6px 14px;
+            border-radius: 8px;
+          ">
+            <i class="fas fa-crosshairs" style="color: #7E101F; font-size: 10px;"></i>
+            <span>Lat: ${result.lat.toFixed(6)}, Lng: ${result.lon.toFixed(6)}</span>
+          </div>
         </div>
-        <div style="margin-top: 6px; font-size: 11px; color: #e67e22; background: #fff3e0; padding: 6px 10px; border-radius: 8px;">
-          <i class="fas fa-info-circle"></i> No se encontraron pacientes en esta dirección
+
+        <div style="padding: 0 20px 16px 20px;">
+          
         </div>
       </div>
     `;
@@ -1346,7 +1414,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       icon: searchIcon,
       zIndexOffset: 10000
     })
-      .bindPopup(popupContent, {
+      .bindPopup(searchPopupContent, {
         maxWidth: 340,
         className: 'search-popup',
         autoClose: false,
@@ -1358,64 +1426,97 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.searchMarker) {
         this.searchMarker.openPopup();
       }
-    }, 500);
+    }, 300);
 
     if (this.map) {
       this.map.setView([result.lat, result.lon], 16);
     }
-
-    console.log('📍 Marcador de ubicación mostrado en:', result.lat, result.lon);
   }
 
-  // ⭐ ============================================
-  // ⭐ GETTER PARA EL MAPA
-  // ⭐ ============================================
+  buscarDireccionConEntrecalles() {
+    this.buscarDireccion();
+  }
 
   getMap(): L.Map | null {
     return this.map;
   }
 
-  // ⭐ ============================================
   // ⭐ LIMPIAR BÚSQUEDA
-  // ⭐ ============================================
-
   limpiarBusqueda() {
-    console.log('🧹 [Map] Limpiando búsqueda...');
-
     this.searchQuery = '';
     this.isSearching = false;
+    this.busquedaEnProgreso = false;
 
     if (this.searchMarker) {
       try { this.map?.removeLayer(this.searchMarker); } catch (e) { }
       this.searchMarker = null;
     }
 
+    if (this.map) {
+      this.map.closePopup();
+    }
+
     if (this.pacientesOriginal && this.pacientesOriginal.length > 0) {
       this.pacientes = [...this.pacientesOriginal];
+
+      const zonasSet = new Set<string>();
+      this.pacientesOriginal.forEach((p: any) => {
+        const colonia = p.colonia || this.extraerColonia(p.direccion);
+        if (colonia && colonia.length > 2) {
+          zonasSet.add(colonia.toUpperCase().trim());
+        }
+      });
+
+      if (zonasSet.size > 0) {
+        const nuevasZonas = Array.from(zonasSet).sort();
+        this.manzanasDisponibles = nuevasZonas;
+
+        const nuevosColores: { [key: string]: string } = {};
+        nuevasZonas.forEach((zona, index) => {
+          const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
+          nuevosColores[zona] = color;
+        });
+        this.coloresManzanas = nuevosColores;
+
+        this.store.dispatch(AppActions.setColoresManzanas({ colores: nuevosColores }));
+        this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: nuevasZonas }));
+      }
+
       this.agregarMarcadoresPacientes();
-      this.mostrarToast('📍 Vista completa', 'Mostrando todos los pacientes', 'info');
+      this.mostrarToast('Vista completa', `Mostrando ${this.pacientes.length} pacientes`, 'info', 2000);
     } else {
       this.cargarPacientesDirectamente();
     }
 
     this.cdr.detectChanges();
   }
+  // ⭐ MÉTODO PARA VERIFICAR SI HAY FILTROS ACTIVOS
+  private hayFiltrosActivos(): boolean {
+    const hayPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido;
+    const hayRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 || this.filtrosRiesgos.g3 || this.filtrosRiesgos.g4;
+    return hayPerfil || hayRiesgo;
+  }
+  // ⭐ TOAST CORREGIDO - SIN DUPLICADOS
+  mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'info', duracion: number = 1000) {
+    // ⭐ CANCELAR TIMEOUT ANTERIOR
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+      this.toastTimeout = null;
+    }
 
-  // ⭐ ============================================
-  // ⭐ MOSTRAR TOAST
-  // ⭐ ============================================
-
-  mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'info', duracion: number = 3000) {
+    // ⭐ ELIMINAR TOASTS ANTERIORES
     const toastsAnteriores = document.querySelectorAll('.custom-toast-map');
     toastsAnteriores.forEach(el => el.remove());
 
     const config = {
-      success: { color: '#701f2f', bgColor: '#fdf8f6', icon: 'fa-check-circle' },
-      error: { color: '#c62828', bgColor: '#ffebee', icon: 'fa-exclamation-circle' },
-      info: { color: '#701f2f', bgColor: '#fefaf7', icon: 'fa-info-circle' },
-      warning: { color: '#e67e22', bgColor: '#fff3e0', icon: 'fa-exclamation-triangle' }
+      success: { color: '#00b894', bgColor: '#e6f5f0', icon: 'fa-check-circle' },
+      error: { color: '#e17055', bgColor: '#fee8e4', icon: 'fa-exclamation-circle' },
+      info: { color: '#0984e3', bgColor: '#e6f0fa', icon: 'fa-info-circle' },
+      warning: { color: '#fdcb6e', bgColor: '#fff8e6', icon: 'fa-exclamation-triangle' }
     };
     const cfg = config[tipo];
+
+    const toastId = ++this.toastIdCounter;
 
     Toastify({
       text: titulo,
@@ -1429,33 +1530,49 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         borderRadius: '16px',
         padding: '0',
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        fontFamily: "'Montserrat', sans-serif",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         borderLeft: `5px solid ${cfg.color}`,
         overflow: 'hidden',
         minWidth: '320px',
-        maxWidth: '450px'
+        maxWidth: '450px',
+        opacity: '1',
+        transform: 'translateX(0)',
+        transition: 'all 0.3s ease'
       },
-      className: 'custom-toast-map'
+      className: `custom-toast-map toast-${toastId}`
     }).showToast();
 
-    setTimeout(() => {
-      const toastElement = document.querySelector('.custom-toast-map') as HTMLElement;
+    this.toastTimeout = setTimeout(() => {
+      const toastElement = document.querySelector(`.custom-toast-map.toast-${toastId}`) as HTMLElement;
       if (toastElement) {
         toastElement.innerHTML = `
-          <div style="display: flex; align-items: stretch; gap: 0;">
-            <div style="background: ${cfg.bgColor}; padding: 18px 16px; display: flex; align-items: center; justify-content: center; min-width: 60px;">
+          <div style="display: flex; align-items: stretch; gap: 0; min-height: 70px;">
+            <div style="background: ${cfg.bgColor}; padding: 18px 16px; display: flex; align-items: center; justify-content: center; min-width: 60px; flex-shrink: 0;">
               <i class="fas ${cfg.icon}" style="font-size: 24px; color: ${cfg.color};"></i>
             </div>
-            <div style="padding: 16px 20px 16px 16px; flex: 1;">
-              <div style="font-weight: 700; font-size: 15px; color: #1a1a1a; margin-bottom: 4px;">${titulo}</div>
+            <div style="padding: 16px 20px 16px 16px; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+              <div style="font-weight: 700; font-size: 15px; color: #1a1a1a; margin-bottom: 4px; line-height: 1.2;">${titulo}</div>
               <div style="font-size: 13px; color: #555; line-height: 1.4; white-space: pre-line;">${mensaje}</div>
             </div>
-            <button onclick="this.closest('.custom-toast-map').remove()" style="background: none; border: none; color: #bbb; cursor: pointer; padding: 8px 12px; font-size: 16px; transition: color 0.2s;">
+            <button onclick="this.closest('.custom-toast-map').remove()" style="background: none; border: none; color: #ccc; cursor: pointer; padding: 8px 16px; font-size: 16px; transition: color 0.2s; flex-shrink: 0;">
               <i class="fas fa-times"></i>
             </button>
           </div>
         `;
+
+        setTimeout(() => {
+          if (toastElement && toastElement.parentNode) {
+            toastElement.style.opacity = '0';
+            toastElement.style.transform = 'translateX(50px)';
+            setTimeout(() => {
+              if (toastElement.parentNode) {
+                toastElement.remove();
+              }
+            }, 300);
+          }
+        }, duracion - 300);
       }
-    }, 50);
+      this.toastTimeout = null;
+    }, 100);
   }
 }

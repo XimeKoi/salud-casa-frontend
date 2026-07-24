@@ -31,7 +31,12 @@
             <div class="notificaciones-actions">
                 <div class="badge-total">
                     <i class="fas fa-bell"></i>
-                    <!-- ⭐ ELIMINADO COMPLETAMENTE EL BADGE DE NO LEÍDAS -->
+                    <span>{{ notificaciones.length }}</span>
+                    <span>notificaciones</span>
+                    <span class="badge-no-leidas" *ngIf="contador.noLeidas > 0">
+                        <span class="dot"></span>
+                        {{ contador.noLeidas }} sin leer
+                    </span>
                 </div>
                 <div class="header-actions">
                     <button class="btn-eliminar-seleccionadas" (click)="eliminarSeleccionadas()"
@@ -100,7 +105,7 @@
                         [class.tipo-sistema]="notificacion.tipo === 'sistema'"
                         [class.tipo-emergencia]="notificacion.tipo === 'emergencia'"
                         [class.tipo-recordatorio]="notificacion.tipo === 'recordatorio'"
-                        style="animation-delay: {{ i * 50 }}ms;">
+                        [style.animation-delay]="(i * 50) + 'ms'">
 
                         <!-- CHECKBOX -->
                         <div class="notificacion-checkbox" (click)="$event.stopPropagation()">

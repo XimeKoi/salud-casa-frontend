@@ -5,7 +5,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import Swal from 'sweetalert2';  // ⭐ IMPORTADO CORRECTAMENTE
+import { environment } from '../../../environments/environment';
+import Swal from 'sweetalert2';
 
 interface Incidencia {
     id?: number;
@@ -76,11 +77,15 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         return '';
     }
 
+    private apiUrl = environment.apiUrl;
+
     constructor(
         private cdr: ChangeDetectorRef,
         private router: Router,
         private http: HttpClient
-    ) { }
+    ) {
+        console.log(' [Incidencias] API URL:', this.apiUrl);
+    }
 
     ngOnInit() {
         this.cargarDatosPaciente();
@@ -95,7 +100,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         this.cdr.detectChanges();
     }
 
-    // ⭐ CARGAR DATOS DEL PACIENTE DESDE LOCALSTORAGE
     cargarDatosPaciente() {
         const datosGuardados = localStorage.getItem('incidenciaPaciente');
         if (datosGuardados) {
@@ -109,11 +113,10 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                 console.error('Error al cargar datos del paciente:', e);
             }
         } else {
-            console.log(' No hay paciente seleccionado para la incidencia');
+            console.log('ℹ No hay paciente seleccionado para la incidencia');
         }
     }
 
-    // ⭐ LIMPIAR DATOS DEL PACIENTE
     limpiarDatosPaciente() {
         localStorage.removeItem('incidenciaPaciente');
         this.datosPaciente = null;
@@ -123,7 +126,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         this.loading = true;
         this.usandoLocalStorage = false;
 
-        this.http.get<any[]>('http://localhost:3000/incidencias')
+        this.http.get<any[]>(`${this.apiUrl}/incidencias`)
             .subscribe({
                 next: (data) => {
                     console.log('Incidencias cargadas desde BD:', data);
@@ -197,6 +200,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
 
     guardarIncidenciaEnBD(incidencia: Incidencia) {
         this.loading = true;
+
         const incidenciaData = {
             tipo: incidencia.tipo,
             descripcion: incidencia.descripcion,
@@ -211,7 +215,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
 
         console.log('Guardando incidencia en BD:', incidenciaData);
 
-        this.http.post('http://localhost:3000/incidencias', incidenciaData)
+        this.http.post(`${this.apiUrl}/incidencias`, incidenciaData)
             .subscribe({
                 next: (response: any) => {
                     console.log('Incidencia guardada en BD:', response);
@@ -220,7 +224,11 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                     this.guardarIncidencias();
                     this.aplicarFiltro();
                     this.loading = false;
-                    this.mostrarToast('✅ Incidencia guardada correctamente', 'success');
+
+                    // ⭐ SOLO UNA NOTIFICACIÓN - YA NO ENVIAMOS DESDE EL FRONTEND
+                    // El backend crea la notificación automáticamente
+
+                    this.mostrarToast(' Incidencia guardada correctamente', 'success');
                     this.cdr.detectChanges();
 
                     if (incidencia.pacienteId) {
@@ -241,7 +249,11 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                     this.incidencias.unshift(nuevaIncidencia);
                     this.guardarIncidencias();
                     this.aplicarFiltro();
-                    this.mostrarToast('⚠️ Incidencia guardada localmente (sin conexión a BD)', 'warning');
+
+                    // ⭐ SOLO UNA NOTIFICACIÓN - LOCAL
+                    this.enviarNotificacionLocal(nuevaIncidencia);
+
+                    this.mostrarToast(' Incidencia guardada localmente (sin conexión a BD)', 'warning');
                     this.usandoLocalStorage = true;
                     this.cdr.detectChanges();
 
@@ -255,8 +267,47 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             });
     }
 
+    // ⭐ SOLO PARA CUANDO NO HAY CONEXIÓN AL BACKEND
+    private enviarNotificacionLocal(incidencia: Incidencia) {
+        const nombrePaciente = incidencia.datosPaciente?.nombre || 'Paciente';
+
+        const notificacion = {
+            titulo: `⚠️ Nueva Incidencia - ${nombrePaciente}`,
+            mensaje: `Se registró una incidencia para ${nombrePaciente}: ${incidencia.descripcion}`,
+            tipo: 'incidencia',
+            prioridad: 'alta',
+            usuarioId: 1,
+            metadata: {
+                incidenciaId: incidencia.id,
+                pacienteId: incidencia.pacienteId,
+                tipo: incidencia.tipo
+            },
+            url: `/incidencias/${incidencia.id}`
+        };
+
+        try {
+            const notificaciones = JSON.parse(localStorage.getItem('notificacionesCache') || '[]');
+            // ⭐ EVITAR DUPLICADOS
+            const existe = notificaciones.some((n: any) =>
+                n.metadata?.incidenciaId === incidencia.id
+            );
+            if (!existe) {
+                notificaciones.unshift({
+                    ...notificacion,
+                    id: Date.now(),
+                    leida: false,
+                    createdAt: new Date().toISOString()
+                });
+                localStorage.setItem('notificacionesCache', JSON.stringify(notificaciones));
+                console.log(' Notificación guardada localmente');
+            }
+        } catch (error) {
+            console.error('Error guardando notificación local:', error);
+        }
+    }
+
     actualizarEstadoPaciente(pacienteId: number, estado: string) {
-        this.http.patch(`http://localhost:3000/pacientes/${pacienteId}/estatus`, { estatus: estado })
+        this.http.patch(`${this.apiUrl}/pacientes/${pacienteId}/estatus`, { estatus: estado })
             .subscribe({
                 next: () => console.log('Estado del paciente actualizado a:', estado),
                 error: (err) => console.error('Error actualizando estado:', err)
@@ -307,7 +358,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
     }
 
     toggleFormulario() {
-        // ⭐ VALIDAR QUE HAYA UN PACIENTE ANTES DE ABRIR EL FORMULARIO
         if (!this.mostrarFormulario && !this.datosPaciente) {
             Swal.fire({
                 icon: 'warning',
@@ -332,11 +382,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                     </div>
                 `,
                 confirmButtonColor: '#701f2f',
-                confirmButtonText: 'Entendido',
-                customClass: {
-                    popup: 'swal-popup-bienestar',
-                    confirmButton: 'swal-confirm-bienestar'
-                }
+                confirmButtonText: 'Entendido'
             });
             return;
         }
@@ -492,53 +538,17 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         this.mostrarToast('Foto eliminada', 'info');
     }
 
-    // ⭐ ============================================
-    // ⭐ REGISTRAR INCIDENCIA - CORREGIDO CON VALIDACIONES
-    // ⭐ ============================================
-
     registrarIncidencia() {
-        // ⭐ VALIDAR QUE HAYA UN PACIENTE SELECCIONADO
         if (!this.datosPaciente) {
-            this.mostrarToast('⚠️ No hay un paciente seleccionado', 'warning');
-            Swal.fire({
-                icon: 'warning',
-                title: 'Paciente no seleccionado',
-                html: `
-                    <div style="text-align: left; padding: 10px 0;">
-                        <div style="background: #fff3e0; padding: 16px; border-radius: 10px; border-left: 4px solid #e67e22; margin-bottom: 12px;">
-                            <p style="margin: 0; color: #e67e22; font-weight: 600;">
-                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
-                                No se ha seleccionado un paciente.
-                            </p>
-                        </div>
-                        <div style="color: #666; font-size: 14px;">
-                            Las incidencias deben estar asociadas a un paciente.
-                            <br><br>
-                            <strong>¿Cómo seleccionar un paciente?</strong>
-                            <br>
-                            1. Ve al mapa y selecciona un paciente
-                            <br>
-                            2. Haz clic en el botón "Reportar Incidencia" en el popup
-                        </div>
-                    </div>
-                `,
-                confirmButtonColor: '#701f2f',
-                confirmButtonText: 'Entendido',
-                customClass: {
-                    popup: 'swal-popup-bienestar',
-                    confirmButton: 'swal-confirm-bienestar'
-                }
-            });
+            this.mostrarToast(' No hay un paciente seleccionado', 'warning');
             return;
         }
 
-        // ⭐ VALIDAR DESCRIPCIÓN
         if (!this.nuevaIncidencia.descripcion || this.nuevaIncidencia.descripcion.trim() === '') {
             this.mostrarToast('Complete la descripción de la incidencia', 'error');
             return;
         }
 
-        // ⭐ CONFIRMAR ANTES DE GUARDAR
         Swal.fire({
             title: 'Confirmar incidencia',
             html: `
@@ -567,14 +577,9 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             showCancelButton: true,
             confirmButtonColor: '#701f2f',
             cancelButtonColor: '#999999',
-            confirmButtonText: '✅ Guardar incidencia',
-            cancelButtonText: '❌ Cancelar',
-            reverseButtons: true,
-            customClass: {
-                popup: 'swal-popup-bienestar',
-                confirmButton: 'swal-confirm-bienestar',
-                cancelButton: 'swal-cancel-bienestar'
-            }
+            confirmButtonText: ' Guardar incidencia',
+            cancelButtonText: ' Cancelar',
+            reverseButtons: true
         }).then((result: any) => {
             if (result.isConfirmed) {
                 const nuevaIncidencia: Incidencia = {
@@ -601,13 +606,13 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         if (inc) {
             inc.resuelta = true;
 
-            this.http.patch(`http://localhost:3000/incidencias/${id}`, { resuelta: true })
+            this.http.patch(`${this.apiUrl}/incidencias/${id}`, { resuelta: true })
                 .subscribe({
                     next: () => {
                         console.log('Incidencia marcada como resuelta en BD');
                         this.guardarIncidencias();
                         this.aplicarFiltro();
-                        this.mostrarToast('✅ Incidencia marcada como resuelta', 'success');
+                        this.mostrarToast(' Incidencia marcada como resuelta', 'success');
                         this.cdr.detectChanges();
 
                         if (inc.pacienteId) {
@@ -618,7 +623,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                         console.error('Error al marcar como resuelta:', err);
                         this.guardarIncidencias();
                         this.aplicarFiltro();
-                        this.mostrarToast('⚠️ Marcada localmente (sin conexión a BD)', 'warning');
+                        this.mostrarToast(' Marcada localmente (sin conexión a BD)', 'warning');
                         this.cdr.detectChanges();
                     }
                 });
@@ -642,10 +647,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
     closeModal() {
         this.fotoModal = null;
     }
-
-    // ⭐ ============================================
-    // ⭐ MÉTODO DE TOAST CON DISEÑO BIENESTAR
-    // ⭐ ============================================
 
     mostrarToast(mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'success') {
         const colores = {

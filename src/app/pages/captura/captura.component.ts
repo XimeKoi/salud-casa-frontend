@@ -5,9 +5,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import Swal from 'sweetalert2';
 
-// ⭐ DECLARAR TOASTIFY
 declare const Toastify: any;
 
 @Component({
@@ -21,7 +21,6 @@ declare const Toastify: any;
     }
 })
 export class CapturaComponent implements OnInit {
-    // Datos del formulario
     busquedaBeneficiario: string = '';
     pacienteId: string = '';
     pacienteNombre: string = '';
@@ -41,7 +40,6 @@ export class CapturaComponent implements OnInit {
     mostrarAdvertenciaSeleccion: boolean = false;
     programaActual: string = '';
 
-    // Discapacidades
     discapacidades = {
         motriz: false,
         visual: false,
@@ -50,28 +48,23 @@ export class CapturaComponent implements OnInit {
         psicosocial: false
     };
 
-    // Lista de pacientes desde la BD
     pacientes: any[] = [];
     pacientesFiltrados: any[] = [];
-
-    // Lista de finados (local)
     finados: any[] = [];
-
-    // Almacenar visitas por paciente (local)
     visitasPorPaciente: Map<string, any[]> = new Map();
-
-    // Sugerencias
     sugerencias: any[] = [];
     mostrarSugerencias: boolean = true;
-
     loading: boolean = false;
-    private apiUrl = 'http://localhost:3000';
+
+    private apiUrl = environment.apiUrl;
     private usuarioId: number = 1;
 
     constructor(
         private http: HttpClient,
         private cdr: ChangeDetectorRef
-    ) { }
+    ) {
+        console.log(' [Captura] API URL:', this.apiUrl);
+    }
 
     ngOnInit() {
         this.cargarPacientesDesdeBD();
@@ -79,7 +72,6 @@ export class CapturaComponent implements OnInit {
         this.cargarVisitas();
     }
 
-    // ==================== CARGAR PACIENTES DESDE BD ====================
     cargarPacientesDesdeBD() {
         this.loading = true;
         const idEnfermera = 1;
@@ -87,8 +79,7 @@ export class CapturaComponent implements OnInit {
         this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`)
             .subscribe({
                 next: (data) => {
-                    console.log('📋 Pacientes recibidos desde BD:', data.length);
-
+                    console.log(' Pacientes recibidos desde BD:', data.length);
                     this.pacientes = data.map(p => {
                         const apellidoPaterno = p.apellidoPaterno || '';
                         const apellidoMaterno = p.apellidoMaterno || '';
@@ -121,7 +112,6 @@ export class CapturaComponent implements OnInit {
                             region: p.region,
                             municipio: p.municipio,
                             genero: p.genero || '',
-                            // ⭐ CAMPOS DE DISCAPACIDAD DESDE LA BD
                             discapacidadMotriz: p.discapacidadMotriz || false,
                             discapacidadVisual: p.discapacidadVisual || false,
                             discapacidadAuditiva: p.discapacidadAuditiva || false,
@@ -150,9 +140,8 @@ export class CapturaComponent implements OnInit {
         return partes.length >= 2 ? partes[1].trim() : '';
     }
 
-    // ==================== DATOS LOCALES DE FALLBACK ====================
     cargarPacientesLocal() {
-        console.log('📋 Usando datos locales de fallback');
+        console.log(' Usando datos locales de fallback');
         this.pacientes = [
             {
                 id: 30,
@@ -188,7 +177,6 @@ export class CapturaComponent implements OnInit {
         this.pacientesFiltrados = [...this.pacientes];
     }
 
-    // ==================== FINADOS Y VISITAS (LOCAL STORAGE) ====================
     cargarFinados() {
         const finadosGuardados = localStorage.getItem('pacientes_finados');
         if (finadosGuardados) {
@@ -244,7 +232,6 @@ export class CapturaComponent implements OnInit {
         return null;
     }
 
-    // ==================== BÚSQUEDA Y SELECCIÓN ====================
     onBusquedaChange() {
         const busqueda = this.busquedaBeneficiario;
 
@@ -269,12 +256,12 @@ export class CapturaComponent implements OnInit {
                 coincideApellidoPaterno || coincideApellidoMaterno || coincideCurp;
         });
 
-        console.log('🔍 Búsqueda:', busqueda, 'Resultados:', this.sugerencias.length);
+        console.log(' Búsqueda:', busqueda, 'Resultados:', this.sugerencias.length);
         this.mostrarSugerencias = true;
     }
 
     seleccionarSugerencia(paciente: any) {
-        console.log('✅ Seleccionado:', paciente);
+        console.log(' Seleccionado:', paciente);
 
         this.pacienteId = String(paciente.id);
         this.pacienteNombre = paciente.nombreCompleto || paciente.nombre || 'Sin nombre';
@@ -292,7 +279,6 @@ export class CapturaComponent implements OnInit {
 
         this.programaActual = paciente.programa || 'PAM';
 
-        // ⭐ CARGAR DISCAPACIDADES DESDE LA BD
         const tieneDiscapacidadBD = paciente.discapacidadMotriz || paciente.discapacidadVisual ||
             paciente.discapacidadAuditiva || paciente.discapacidadIntelectual ||
             paciente.discapacidadPsicosocial;
@@ -316,14 +302,13 @@ export class CapturaComponent implements OnInit {
             };
         }
 
-        console.log('📋 Datos seleccionados:', {
+        console.log(' Datos seleccionados:', {
             id: this.pacienteId,
             nombreCompleto: this.pacienteNombre,
             programa: this.programaActual,
             discapacidades: this.discapacidades
         });
 
-        // ⭐ VERIFICAR SI ESTÁ FINADO (BD)
         const estatusBD = (paciente.estatus || '').toUpperCase();
         const fechaFinadoBD = paciente.fechaFinado;
 
@@ -333,7 +318,6 @@ export class CapturaComponent implements OnInit {
             this.estatusVital = 'finado';
             this.mostrarToast('Paciente finado', `${this.pacienteNombre} está registrado como finado.`, 'warning');
         } else {
-            // ⭐ VERIFICAR EN LOCAL STORAGE
             const finadoInfo = this.isFinado(paciente.curp);
             if (finadoInfo) {
                 this.pacienteFinado = true;
@@ -370,7 +354,6 @@ export class CapturaComponent implements OnInit {
         }
     }
 
-    // ==================== LIMPIAR SELECCIÓN ====================
     limpiarSeleccion() {
         this.busquedaBeneficiario = '';
         this.pacienteId = '';
@@ -401,7 +384,6 @@ export class CapturaComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
-    // ==================== ESTATUS VITAL ====================
     onEstatusVivo() {
         this.mostrarAdvertenciaSeleccion = false;
         if (this.pacienteId && !this.pacienteFinado) {
@@ -410,14 +392,7 @@ export class CapturaComponent implements OnInit {
         }
     }
 
-    // ⭐ ============================================
-    // ⭐ ESTATUS FINADO - CON ACTUALIZACIÓN EN BD
-    // ⭐ ============================================
-
-    // src/app/pages/captura/captura.component.ts
-
     async onEstatusFinado() {
-        // ⭐ VALIDAR QUE HAYA UN PACIENTE SELECCIONADO
         if (!this.pacienteId || !this.pacienteNombre) {
             this.mostrarAdvertenciaSeleccion = true;
             this.estatusVital = 'vivo';
@@ -432,7 +407,6 @@ export class CapturaComponent implements OnInit {
             return;
         }
 
-        // ⭐ VALIDAR QUE NO ESTÉ YA FINADO
         if (this.pacienteFinado) {
             this.mostrarToast(
                 'Paciente ya finado',
@@ -445,9 +419,8 @@ export class CapturaComponent implements OnInit {
 
         this.mostrarAdvertenciaSeleccion = false;
 
-        // ⭐ ALERTA DE CONFIRMACIÓN
         const result = await Swal.fire({
-            title: '⚠️ Confirmar Finado',
+            title: ' Confirmar Finado',
             html: `
             <div style="text-align: left; padding: 10px 0;">
                 <p style="font-size: 16px; margin-bottom: 15px;">
@@ -476,8 +449,8 @@ export class CapturaComponent implements OnInit {
             showCancelButton: true,
             confirmButtonColor: '#701f2f',
             cancelButtonColor: '#999999',
-            confirmButtonText: '✅ Confirmar Finado',
-            cancelButtonText: '❌ Cancelar',
+            confirmButtonText: ' Confirmar Finado',
+            cancelButtonText: ' Cancelar',
             reverseButtons: true,
             focusCancel: true,
             backdrop: 'rgba(0,0,0,0.5)',
@@ -489,8 +462,7 @@ export class CapturaComponent implements OnInit {
 
         if (result.isConfirmed) {
             try {
-                // ⭐ ⭐ ⭐ PASO 1: ACTUALIZAR ESTATUS EN LA BD ⭐ ⭐ ⭐
-                console.log(`🔄 Marcando paciente ${this.pacienteId} como FINADO en la BD...`);
+                console.log(` Marcando paciente ${this.pacienteId} como FINADO en la BD...`);
 
                 const response = await firstValueFrom(
                     this.http.patch(`${this.apiUrl}/pacientes/${this.pacienteId}/estatus`, {
@@ -499,9 +471,8 @@ export class CapturaComponent implements OnInit {
                     })
                 );
 
-                console.log('✅ Respuesta del backend:', response);
+                console.log(' Respuesta del backend:', response);
 
-                // ⭐ PASO 2: ACTUALIZAR DISCAPACIDADES (si las tiene)
                 const tieneDiscapacidad = this.discapacidades.motriz || this.discapacidades.visual ||
                     this.discapacidades.auditiva || this.discapacidades.intelectual ||
                     this.discapacidades.psicosocial;
@@ -517,10 +488,9 @@ export class CapturaComponent implements OnInit {
                             psicosocial: this.discapacidades.psicosocial || false
                         })
                     );
-                    console.log('✅ Discapacidades guardadas');
+                    console.log(' Discapacidades guardadas');
                 }
 
-                // ⭐ PASO 3: ACTUALIZAR LOCAL
                 this.pacienteFinado = true;
                 this.fechaFinado = new Date().toLocaleDateString('es-MX', {
                     year: 'numeric',
@@ -529,7 +499,6 @@ export class CapturaComponent implements OnInit {
                 });
                 this.estatusVital = 'finado';
 
-                // ⭐ PASO 4: GUARDAR EN LOCAL STORAGE (backup)
                 if (this.pacienteCurp) {
                     this.guardarFinado(this.pacienteCurp, this.pacienteNombre);
                 }
@@ -538,19 +507,18 @@ export class CapturaComponent implements OnInit {
                 this.comentarios = '';
 
                 this.mostrarToast(
-                    '✅ Registro completado',
+                    ' Registro completado',
                     `El paciente ${this.pacienteNombre} ha sido registrado como finado.`,
                     'success'
                 );
 
-                // ⭐ PASO 5: RECARGAR EL MAPA
                 setTimeout(() => {
                     window.dispatchEvent(new CustomEvent('recargarMapa'));
-                    console.log('🔄 Evento de recarga de mapa disparado');
+                    console.log(' Evento de recarga de mapa disparado');
                 }, 500);
 
             } catch (error) {
-                console.error('❌ Error al marcar como finado:', error);
+                console.error(' Error al marcar como finado:', error);
                 this.mostrarToast(
                     'Error',
                     'No se pudo actualizar el estatus del paciente en la BD',
@@ -568,7 +536,6 @@ export class CapturaComponent implements OnInit {
         }
     }
 
-    // ==================== ENVIAR NOTIFICACIÓN ====================
     private enviarNotificacionVisitaGuardada(numVisita: number) {
         const nombreCompleto = this.pacienteNombre || 'Paciente';
 
@@ -586,14 +553,14 @@ export class CapturaComponent implements OnInit {
             url: `/pacientes/${this.pacienteId}`
         };
 
-        console.log('📤 Enviando notificación al backend:', notificacion);
+        console.log(' Enviando notificación al backend:', notificacion);
 
         this.http.post(`${this.apiUrl}/notificaciones`, notificacion).subscribe({
             next: (response) => {
-                console.log('✅ Notificación enviada al backend:', response);
+                console.log(' Notificación enviada al backend:', response);
             },
             error: (error) => {
-                console.error('❌ Error enviando notificación al backend:', error);
+                console.error(' Error enviando notificación al backend:', error);
                 this.guardarNotificacionLocal(notificacion);
             }
         });
@@ -611,7 +578,7 @@ export class CapturaComponent implements OnInit {
                 createdAt: new Date().toISOString()
             });
             localStorage.setItem('notificacionesCache', JSON.stringify(notificaciones));
-            console.log('📌 Notificación guardada localmente');
+            console.log(' Notificación guardada localmente');
 
             window.dispatchEvent(new CustomEvent('nuevaNotificacion', {
                 detail: notificacion
@@ -620,10 +587,6 @@ export class CapturaComponent implements OnInit {
             console.error('Error guardando notificación local:', error);
         }
     }
-
-    // ⭐ ============================================
-    // ⭐ GUARDAR VISITA - COMPLETO Y CORREGIDO
-    // ⭐ ============================================
 
     async guardarFormulario() {
         if (!this.pacienteId || !this.pacienteNombre) {
@@ -636,20 +599,17 @@ export class CapturaComponent implements OnInit {
             return;
         }
 
-        // ⭐ VERIFICAR SI TIENE ALGUNA DISCAPACIDAD
         const tieneDiscapacidad = this.discapacidades.motriz || this.discapacidades.visual ||
             this.discapacidades.auditiva || this.discapacidades.intelectual ||
             this.discapacidades.psicosocial;
 
         const nuevoPrograma = tieneDiscapacidad ? 'DISCAPACIDAD' : 'PAM';
 
-        // ⭐ ⭐ ⭐ ACTUALIZAR DISCAPACIDADES Y PROGRAMA EN LA BD ⭐ ⭐ ⭐
         try {
-            console.log(`🔄 Actualizando paciente ${this.pacienteId}...`);
-            console.log('📋 Discapacidades:', this.discapacidades);
-            console.log('📋 Nuevo programa:', nuevoPrograma);
+            console.log(` Actualizando paciente ${this.pacienteId}...`);
+            console.log(' Discapacidades:', this.discapacidades);
+            console.log(' Nuevo programa:', nuevoPrograma);
 
-            // ⭐ PASO 1: Actualizar discapacidades
             const discapacidadesData = {
                 motriz: this.discapacidades.motriz || false,
                 visual: this.discapacidades.visual || false,
@@ -664,25 +624,23 @@ export class CapturaComponent implements OnInit {
                 this.http.patch(`${this.apiUrl}/pacientes/${this.pacienteId}/discapacidades`, discapacidadesData)
             );
 
-            console.log(`✅ Discapacidades actualizadas`);
+            console.log(` Discapacidades actualizadas`);
 
-            // ⭐ PASO 2: Actualizar programa
             await firstValueFrom(
                 this.http.patch(`${this.apiUrl}/pacientes/${this.pacienteId}/programa`, {
                     programa: nuevoPrograma
                 })
             );
 
-            console.log(`✅ Programa actualizado a ${nuevoPrograma}`);
+            console.log(` Programa actualizado a ${nuevoPrograma}`);
             this.programaActual = nuevoPrograma;
 
         } catch (error) {
-            console.error('❌ Error actualizando paciente:', error);
+            console.error(' Error actualizando paciente:', error);
             this.mostrarToast('Error', 'No se pudo actualizar el paciente en la BD', 'error');
-            return; // ⭐ SALIR SI HAY ERROR
+            return;
         }
 
-        // ⭐ GUARDAR LA VISITA
         const datosVisita = {
             id: Date.now(),
             pacienteId: this.pacienteId,
@@ -708,7 +666,7 @@ export class CapturaComponent implements OnInit {
 
         let mensajeExito = 'Los datos se han registrado correctamente';
         if (tieneDiscapacidad) {
-            mensajeExito = '✅ Visita guardada. Paciente marcado como DISCAPACIDAD';
+            mensajeExito = ' Visita guardada. Paciente marcado como DISCAPACIDAD';
         }
         if (!this.fechaVisita && this.estatusVital === 'vivo') {
             mensajeExito += ' Recuerde programar la próxima visita.';
@@ -717,10 +675,9 @@ export class CapturaComponent implements OnInit {
         this.mostrarToast('Visita guardada', mensajeExito, 'success');
         this.resetearFormulario();
 
-        // ⭐ DISPARAR EVENTO PARA RECARGAR EL MAPA
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('recargarMapa'));
-            console.log('🔄 Evento de recarga de mapa disparado');
+            console.log(' Evento de recarga de mapa disparado');
         }, 500);
     }
 
@@ -754,10 +711,6 @@ export class CapturaComponent implements OnInit {
         this.comentarios = '';
         this.cdr.detectChanges();
     }
-
-    // ⭐ ============================================
-    // ⭐ TOAST - CORREGIDO
-    // ⭐ ============================================
 
     mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'info', duracion: number = 3000) {
         const toastsAnteriores = document.querySelectorAll('.custom-toast-captura');

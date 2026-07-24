@@ -1,3 +1,5 @@
+// src/app/components/header/header.scss
+
 .main-header {
   background-repeat: no-repeat;
   background-size: cover;
@@ -43,14 +45,13 @@
   transition: all 0.2s ease;
   color: #9F2241;
   backdrop-filter: blur(2px);
-
-  &:hover {
-    background: rgba(159, 34, 65, 0.15);
-    transform: scale(0.96);
-  }
 }
 
-/* Botón de notificaciones */
+.hamburger:hover {
+  background: rgba(159, 34, 65, 0.15);
+  transform: scale(0.96);
+}
+
 .btn-notificacion {
   background: rgba(255, 255, 245, 0.85);
   color: #9F2241;
@@ -66,32 +67,31 @@
   position: relative;
   transition: all 0.25s ease;
   font-size: 1rem;
-
-  &:hover {
-    background: #9F2241;
-    color: #ffffff;
-    border-color: #9F2241;
-    backdrop-filter: none;
-  }
-
-  .badge-notificacion {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #e74c3c;
-    color: white;
-    font-size: 0.65rem;
-    font-weight: bold;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 }
 
-/* Botón de perfil */
+.btn-notificacion:hover {
+  background: #9F2241;
+  color: #ffffff;
+  border-color: #9F2241;
+  backdrop-filter: none;
+}
+
+.btn-notificacion .badge-notificacion {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #e74c3c;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-perfil {
   background: rgba(255, 255, 245, 0.85);
   color: #9F2241;
@@ -106,13 +106,13 @@
   justify-content: center;
   transition: all 0.25s ease;
   font-size: 1.2rem;
+}
 
-  &:hover {
-    background: #9F2241;
-    color: #ffffff;
-    border-color: #9F2241;
-    backdrop-filter: none;
-  }
+.btn-perfil:hover {
+  background: #9F2241;
+  color: #ffffff;
+  border-color: #9F2241;
+  backdrop-filter: none;
 }
 
 .header-logo-title {
@@ -206,50 +206,49 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-
-  &.open {
-    left: 0;
-  }
-
-  ul {
-    list-style: none;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    backdrop-filter: none;
-    box-shadow: none;
-    flex: 1;
-  }
-
-  li {
-    margin: 8px 0;
-    color: #9F2241;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    font-size: 0.95rem;
-
-    &:hover {
-      background: #BC955C30;
-      transform: translateX(5px);
-      color: #6d1732;
-    }
-
-    i {
-      width: 28px;
-      font-size: 1.2rem;
-      color: #BC955C;
-    }
-  }
 }
 
-/* Footer del sidebar con botón cerrar sesión */
+.sidebar-demo.open {
+  left: 0;
+}
+
+.sidebar-demo ul {
+  list-style: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  backdrop-filter: none;
+  box-shadow: none;
+  flex: 1;
+}
+
+.sidebar-demo li {
+  margin: 8px 0;
+  color: #9F2241;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.sidebar-demo li:hover {
+  background: #BC955C30;
+  transform: translateX(5px);
+  color: #6d1732;
+}
+
+.sidebar-demo li i {
+  width: 28px;
+  font-size: 1.2rem;
+  color: #BC955C;
+}
+
 .sidebar-footer {
   margin-top: 20px;
   padding-top: 16px;
@@ -273,13 +272,13 @@
   gap: 10px;
   width: 100%;
   transition: all 0.25s ease;
+}
 
-  &:hover {
-    background: #9F2241;
-    color: #ffffff;
-    border-color: #9F2241;
-    backdrop-filter: none;
-  }
+.btn-cerrar-sesion-sidebar:hover {
+  background: #9F2241;
+  color: #ffffff;
+  border-color: #9F2241;
+  backdrop-filter: none;
 }
 
 .overlay {
@@ -291,10 +290,10 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
   z-index: 998;
+}
 
-  &.active {
-    display: block;
-  }
+.overlay.active {
+  display: block;
 }
 
 .btn-mapa {
@@ -311,59 +310,180 @@
   justify-content: center;
   transition: all 0.25s ease;
   font-size: 1rem;
-
-  &:hover {
-    background: #9F2241;
-    color: #ffffff;
-    border-color: #9F2241;
-    backdrop-filter: none;
-  }
 }
 
-/* ========== RESPONSIVE ========== */
-@media (max-width: 768px) {
+.btn-mapa:hover {
+  background: #9F2241;
+  color: #ffffff;
+  border-color: #9F2241;
+  backdrop-filter: none;
+}
+
+/* ========== RESPONSIVE HEADER ========== */
+@media (max-width: 992px) {
   .main-header {
-    padding: 0 12px;
-    height: 54px;
+    padding: 0 16px;
+    height: 56px;
   }
 
   .brand-logo {
-    height: 32px;
-    min-height: 32px;
+    height: 34px;
   }
 
   .bienestar {
-    font-size: 0.95rem;
+    font-size: 1rem;
+  }
+
+  .secretaria {
+    font-size: 0.55rem;
+  }
+
+  .title-main {
+    font-size: 0.75rem;
+  }
+
+  .subtitle-main {
+    font-size: 0.55rem;
+  }
+
+  .brand-divider {
+    height: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    padding: 0 12px;
+    height: 52px;
+  }
+
+  .brand-logo {
+    height: 30px;
+  }
+
+  .header-logo-title {
+    gap: 6px;
+  }
+
+  .bienestar {
+    font-size: 0.85rem;
     letter-spacing: 0.5px;
   }
 
   .secretaria {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
   }
 
   .btn-notificacion,
-  .btn-perfil {
+  .btn-perfil,
+  .btn-mapa {
     width: 30px;
     height: 30px;
     font-size: 0.85rem;
+    border-width: 1.5px;
   }
 
   .hamburger {
     font-size: 16px;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
   .sidebar-demo {
-    top: 54px;
+    top: 52px;
     width: 260px;
     left: -260px;
+  }
+
+  .title-main {
+    font-size: 0.65rem;
+  }
+
+  .subtitle-main {
+    font-size: 0.5rem;
+  }
+
+  .brand-divider {
+    display: none;
+  }
+
+  .btn-notificacion .badge-notificacion {
+    width: 16px;
+    height: 16px;
+    font-size: 0.55rem;
+    top: -4px;
+    right: -4px;
   }
 }
 
 @media (max-width: 480px) {
+  .main-header {
+    padding: 0 8px;
+    height: 48px;
+  }
+
   .brand-logo {
+    height: 26px;
+  }
+
+  .bienestar {
+    font-size: 0.75rem;
+  }
+
+  .secretaria {
+    font-size: 0.4rem;
+  }
+
+  .header-right-area {
+    gap: 6px;
+  }
+
+  .btn-notificacion,
+  .btn-perfil,
+  .btn-mapa {
+    width: 28px;
     height: 28px;
-    min-height: 28px;
+    font-size: 0.75rem;
+    border-width: 1.5px;
+  }
+
+  .hamburger {
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .sidebar-demo {
+    top: 48px;
+    width: 240px;
+    left: -240px;
+    padding: 16px 12px;
+  }
+
+  .sidebar-demo li {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+
+  .sidebar-demo li i {
+    font-size: 1rem;
+    width: 24px;
+  }
+
+  .btn-cerrar-sesion-sidebar {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+
+  .program-text {
+    display: none;
+  }
+
+  .btn-notificacion .badge-notificacion {
+    width: 14px;
+    height: 14px;
+    font-size: 0.5rem;
+    top: -3px;
+    right: -3px;
   }
 }

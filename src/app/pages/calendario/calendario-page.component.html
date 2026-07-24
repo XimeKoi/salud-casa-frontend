@@ -120,12 +120,9 @@
                 </div>
             </div>
 
-
-
             <!-- MODAL DE DETALLE DEL DÍA -->
             <div class="modal-overlay" *ngIf="mostrarModalDetalle" (click)="cerrarModalDetalle()">
                 <div class="modal-container-detalle" (click)="$event.stopPropagation()">
-
                     <div class="modal-detalle-header">
                         <div class="modal-detalle-header-left">
                             <div class="modal-detalle-icon">
@@ -147,7 +144,8 @@
                         <div class="detalle-lista" *ngIf="tieneVisitasDelDia">
                             <div class="visita-card-detalle" *ngFor="let visita of visitasDelDia"
                                 [class.visita-completada]="visita.estado === 'completada'"
-                                [class.visita-cancelada]="visita.estado === 'cancelada'">
+                                [class.visita-cancelada]="visita.estado === 'cancelada'"
+                                [class.visita-pendiente]="visita.estado === 'pendiente'">
 
                                 <div class="visita-card-header-detalle">
                                     <div class="visita-paciente-detalle">
@@ -173,8 +171,7 @@
                                     </div>
                                     <div class="visita-info-item-detalle">
                                         <i class="fas fa-flag"></i>
-                                        <span class="prioridad-text"
-                                            [style.color]="getPrioridadColor(visita.prioridad)">
+                                        <span class="prioridad-text" [class]="getPrioridadClass(visita.prioridad)">
                                             {{ visita.prioridad === 'alta' ? 'Alta' : visita.prioridad === 'media' ?
                                             'Media' : 'Baja' }}
                                         </span>
@@ -202,7 +199,9 @@
                         <div class="detalle-vacio-detalle" *ngIf="!tieneVisitasDelDia">
                             <i class="fas fa-calendar-plus"></i>
                             <p>No hay visitas programadas para este dia</p>
-
+                            <button class="btn-programar-vacio" (click)="abrirModalProgramar()">
+                                <i class="fas fa-plus-circle"></i> Programar visita
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -388,7 +387,7 @@
                             </div>
                         </div>
 
-                        <!-- Botones -->
+                        <!-- ⭐ BOTONES - MEJORADOS ⭐ -->
                         <div class="form-actions-modern">
                             <button class="btn-cancelar-modern" (click)="cerrarModalProgramar()">
                                 <i class="fas fa-times"></i> Cancelar
@@ -399,8 +398,7 @@
                                 <span *ngIf="pacientesSeleccionados.length === 0">Programar visitas</span>
                                 <span *ngIf="pacientesSeleccionados.length === 1">Programar 1 visita</span>
                                 <span *ngIf="pacientesSeleccionados.length > 1">Programar {{
-                                    pacientesSeleccionados.length
-                                    }} visitas</span>
+                                    pacientesSeleccionados.length }} visitas</span>
                             </button>
                         </div>
                     </div>

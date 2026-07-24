@@ -1,3 +1,5 @@
+// src/app/pages/pacientes/pacientes.component.ts
+
 import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,6 +7,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 interface VisitaCompletada {
   fecha: Date;
@@ -30,6 +33,7 @@ interface Paciente {
   nombres?: string;
   programa?: string;
   curp?: string;
+  nivelRiesgo: 'g1' | 'g2' | 'g3' | 'g4' | null;
 }
 
 interface Visita {
@@ -81,6 +85,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   intentoEnvio = false;
   diaSeleccionado: DiaCalendario | null = null;
 
+  // ⭐ SOLO ESTO - UBICACIÓN GPS
   fotosPreview: string[] = [];
   ubicacionCoordenadas: string = '';
   ubicacionDireccionReal: string = '';
@@ -99,20 +104,24 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = false;
   private initialLoadDone = false;
 
-  // Paginación
   paginaActual: number = 1;
   itemsPorPagina: number = 10;
   totalPaginas: number = 1;
   paginas: number[] = [];
 
-  // Para la recarga automática
   private navigationSubscription: Subscription = new Subscription();
+
+  private apiUrl = environment.apiUrl;
+
+  riesgoAbierto: number | null = null;
 
   constructor(
     private router: Router,
     private http: HttpClient,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {
+    console.log('🌍 [Pacientes] API URL:', this.apiUrl);
+  }
 
   ngOnInit() {
     this.cargarPacientes();
@@ -141,10 +150,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  verificarElementosPaginacion() {
-    const paginationElement = document.querySelector('.pagination-container');
-    const scrollElement = document.querySelector('.tabla-scroll-wrapper');
-  }
+  verificarElementosPaginacion() { }
 
   get pacientesPaginados(): Paciente[] {
     const inicio = (this.paginaActual - 1) * this.itemsPorPagina;
@@ -184,15 +190,19 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.calcularPaginas();
   }
 
+  // ⭐ ============================================
+  // ⭐ CARGAR PACIENTES
+  // ⭐ ============================================
+
   cargarPacientes() {
     this.loading = true;
     const idEnfermera = 1;
 
-    this.http.get<any[]>(`http://localhost:3000/pacientes/enfermera/${idEnfermera}`)
+    this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}/con-riesgo`)
       .subscribe({
-        next: (data) => {
+        next: (data: any[]) => {
           if (Array.isArray(data) && data.length > 0) {
-            this.pacientes = data.map(p => ({
+            this.pacientes = data.map((p: any) => ({
               id: p.id,
               nombre: this.construirNombreCompleto(p),
               direccion: p.direccion || '',
@@ -207,26 +217,230 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
               apellidoMaterno: p.apellidoMaterno || '',
               nombres: p.nombre || '',
               programa: p.programa,
-              curp: p.curp
+              curp: p.curp,
+              nivelRiesgo: p.nivelRiesgo || this.obtenerNivelRiesgoPorEstatus(p.estatus)
             }));
           } else {
-            this.cargarPacientesLocal();
+            this.cargarPacientesSinNiveles();
           }
           this.cargarHistorialDesdeLocalStorage();
           this.aplicarFiltros();
           this.loading = false;
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          console.error('Error al cargar pacientes:', err);
-          this.cargarPacientesLocal();
+        error: (err: any) => {
+          console.error('Error al cargar pacientes con niveles:', err);
+          this.cargarPacientesSinNiveles();
           this.loading = false;
         }
       });
   }
 
+  cargarPacientesSinNiveles() {
+    const idEnfermera = 1;
+    this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`)
+      .subscribe({
+        next: (data: any[]) => {
+          if (Array.isArray(data) && data.length > 0) {
+            this.pacientes = data.map((p: any) => ({
+              id: p.id,
+              nombre: this.construirNombreCompleto(p),
+              direccion: p.direccion || '',
+              telefono: p.telefonoCelular || p.telefonoFijo || '',
+              colonia: p.zonaTrabajo || this.extraerColonia(p.direccion),
+              seccion: p.zonaTrabajo?.split('-').pop() || '',
+              estadoVisita: this.mapearEstatus(p.estatus),
+              fechaProgramada: new Date(),
+              tieneIncidencia: p.estatus === 'RECHAZO' || p.estatus === 'incidencia',
+              historialVisitas: [],
+              apellidoPaterno: p.apellidoPaterno || '',
+              apellidoMaterno: p.apellidoMaterno || '',
+              nombres: p.nombre || '',
+              programa: p.programa,
+              curp: p.curp,
+              nivelRiesgo: this.obtenerNivelRiesgoPorEstatus(p.estatus)
+            }));
+          }
+          this.aplicarFiltros();
+          this.cdr.detectChanges();
+        },
+        error: (err: any) => {
+          console.error('Error en fallback:', err);
+          this.cargarPacientesLocal();
+        }
+      });
+  }
+
+  private construirNombreCompleto(paciente: any): string {
+    const apellidoPaterno = paciente.apellidoPaterno || paciente.paterno || '';
+    const apellidoMaterno = paciente.apellidoMaterno || paciente.materno || '';
+    const nombres = paciente.nombre || paciente.nombres || '';
+    const partes = [];
+    if (apellidoPaterno) partes.push(apellidoPaterno);
+    if (apellidoMaterno) partes.push(apellidoMaterno);
+    if (nombres) partes.push(nombres);
+    if (partes.length === 0) return paciente.nombreCompleto || 'Nombre no disponible';
+    return partes.join(' ').trim();
+  }
+
+  private extraerColonia(direccion: string): string {
+    if (!direccion) return '';
+    const partes = direccion.split(',');
+    if (partes.length >= 2) return partes[1].trim();
+    return '';
+  }
+
+  private mapearEstatus(estatus: string): 'completada' | 'pendiente' | 'incidencia' {
+    if (estatus === 'VISITADO' || estatus === 'completada') return 'completada';
+    if (estatus === 'RECHAZO' || estatus === 'incidencia') return 'incidencia';
+    return 'pendiente';
+  }
+
+  // ⭐ ============================================
+  // ⭐ LIMPIAR DIRECCIÓN
+  // ⭐ ============================================
+
+  limpiarDireccion(direccion: string): string {
+    if (!direccion) return 'Dirección no disponible';
+
+    let limpia = direccion.replace(/\|/g, ', ').replace(/\s+/g, ' ').trim();
+
+    limpia = limpia.replace(/, LEON, GTO$/i, '');
+    limpia = limpia.replace(/, LEON\| GTO$/i, '');
+    limpia = limpia.replace(/\| GTO$/i, '');
+    limpia = limpia.replace(/LEON\| GTO$/i, '');
+    limpia = limpia.replace(/LEON, GTO$/i, '');
+    limpia = limpia.replace(/GTO\.?$/i, '');
+    limpia = limpia.replace(/MEXICO\.?$/i, '');
+    limpia = limpia.replace(/LEON$/i, '');
+
+    const partes = limpia.split(', ');
+    if (partes.length > 2) {
+      const colonia = partes[1] || '';
+      const ultima = partes[partes.length - 1] || '';
+      if (colonia === ultima) {
+        limpia = partes.slice(0, -1).join(', ');
+      }
+    }
+
+    limpia = limpia.replace(/, , /g, ', ');
+    limpia = limpia.replace(/ ,/g, '');
+    limpia = limpia.replace(/,,/g, ',');
+
+    if (limpia.length < 3) return direccion;
+
+    return limpia;
+  }
+
+  // ⭐ ============================================
+  // ⭐ NIVELES DE RIESGO
+  // ⭐ ============================================
+
+  toggleRiesgoDropdown(pacienteId: number) {
+    this.riesgoAbierto = this.riesgoAbierto === pacienteId ? null : pacienteId;
+  }
+
+  seleccionarNivelRiesgo(paciente: Paciente, nivel: 'g1' | 'g2' | 'g3' | 'g4' | null) {
+    this.cambiarNivelRiesgo(paciente, nivel);
+    this.riesgoAbierto = null;
+  }
+
+  cambiarNivelRiesgo(paciente: Paciente, nivel: 'g1' | 'g2' | 'g3' | 'g4' | null) {
+    const nivelAnterior = paciente.nivelRiesgo;
+    paciente.nivelRiesgo = nivel;
+
+    this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/nivel-riesgo`, {
+      nivelRiesgo: nivel,
+      usuarioId: 1
+    }).subscribe({
+      next: () => {
+        console.log(`✅ Nivel de riesgo actualizado para paciente ${paciente.id}: ${nivel}`);
+        this.aplicarFiltros();
+        this.cdr.detectChanges();
+        this.actualizarDashboard(paciente.id, nivel);
+        this.crearNotificacion(
+          '📊 Riesgo actualizado',
+          `${paciente.nombre} ahora es ${this.getLabelNivelRiesgo(nivel)}`,
+          'success'
+        );
+      },
+      error: (err: any) => {
+        console.error('❌ Error guardando nivel de riesgo:', err);
+        paciente.nivelRiesgo = nivelAnterior;
+        this.crearNotificacion(
+          '❌ Error',
+          'No se pudo guardar el nivel de riesgo. Intenta de nuevo.',
+          'error'
+        );
+      }
+    });
+  }
+
+  private actualizarDashboard(pacienteId: number, nivelRiesgo: string | null) {
+    window.dispatchEvent(new CustomEvent('nivelesRiesgoActualizados', {
+      detail: {
+        pacienteId: pacienteId,
+        nivelRiesgo: nivelRiesgo,
+        timestamp: new Date().toISOString()
+      }
+    }));
+  }
+
+  getLabelNivelRiesgo(nivel: string | null): string {
+    const labels: Record<string, string> = {
+      'g1': '🟢 Grupo 1 (Bajo)',
+      'g2': '🟡 Grupo 2 (Medio)',
+      'g3': '🟠 Grupo 3 (Alto)',
+      'g4': '🔴 Grupo 4 (Crítico)'
+    };
+    return nivel ? labels[nivel] || 'Sin asignar' : 'Sin asignar';
+  }
+
+  getLabelNivelRiesgoCorto(nivel: string | null): string {
+    switch (nivel) {
+      case 'g1': return 'Bajo';
+      case 'g2': return 'Medio';
+      case 'g3': return 'Alto';
+      case 'g4': return 'Crítico';
+      default: return 'Sin';
+    }
+  }
+
+  getColorNivelRiesgo(nivel: string | null): string {
+    switch (nivel) {
+      case 'g1': return '#22c55e';
+      case 'g2': return '#eab308';
+      case 'g3': return '#f97316';
+      case 'g4': return '#ef4444';
+      default: return '#94a3b8';
+    }
+  }
+
+  getIconoNivelRiesgo(nivel: string | null): string {
+    switch (nivel) {
+      case 'g1': return 'fas fa-check-circle';
+      case 'g2': return 'fas fa-exclamation-circle';
+      case 'g3': return 'fas fa-exclamation-triangle';
+      case 'g4': return 'fas fa-skull';
+      default: return 'fas fa-minus-circle';
+    }
+  }
+
+  private obtenerNivelRiesgoPorEstatus(estatus: string): 'g1' | 'g2' | 'g3' | 'g4' | null {
+    const estatusUpper = (estatus || '').toUpperCase();
+    if (estatusUpper === 'VISITADO' || estatusUpper === 'COMPLETADA') return 'g1';
+    if (estatusUpper === 'PENDIENTE' || estatusUpper === 'SIN VISITA') return 'g2';
+    if (estatusUpper === 'RECHAZO' || estatusUpper === 'INCIDENCIA') return 'g3';
+    if (estatusUpper === 'FINADO') return 'g4';
+    return null;
+  }
+
+  // ⭐ ============================================
+  // ⭐ FILTROS Y PAGINACIÓN
+  // ⭐ ============================================
+
   aplicarFiltros() {
-    this.pacientesFiltrados = this.pacientes.filter(p => {
+    this.pacientesFiltrados = this.pacientes.filter((p: Paciente) => {
       const cumpleBusqueda = !this.filtroBusqueda ||
         p.nombre.toLowerCase().includes(this.filtroBusqueda.toLowerCase()) ||
         p.direccion.toLowerCase().includes(this.filtroBusqueda.toLowerCase()) ||
@@ -239,30 +453,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.calcularPaginas();
   }
 
-  construirNombreCompleto(paciente: any): string {
-    const apellidoPaterno = paciente.apellidoPaterno || paciente.paterno || '';
-    const apellidoMaterno = paciente.apellidoMaterno || paciente.materno || '';
-    const nombres = paciente.nombre || paciente.nombres || '';
-    const partes = [];
-    if (apellidoPaterno) partes.push(apellidoPaterno);
-    if (apellidoMaterno) partes.push(apellidoMaterno);
-    if (nombres) partes.push(nombres);
-    if (partes.length === 0) return paciente.nombreCompleto || 'Nombre no disponible';
-    return partes.join(' ').trim();
-  }
-
-  extraerColonia(direccion: string): string {
-    if (!direccion) return '';
-    const partes = direccion.split(',');
-    if (partes.length >= 2) return partes[1].trim();
-    return '';
-  }
-
-  mapearEstatus(estatus: string): 'completada' | 'pendiente' | 'incidencia' {
-    if (estatus === 'VISITADO' || estatus === 'completada') return 'completada';
-    if (estatus === 'RECHAZO' || estatus === 'incidencia') return 'incidencia';
-    return 'pendiente';
-  }
+  // ⭐ ============================================
+  // ⭐ DATOS LOCALES (FALLBACK)
+  // ⭐ ============================================
 
   cargarPacientesLocal() {
     this.pacientes = [];
@@ -277,7 +470,8 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         estadoVisita: i % 3 === 0 ? 'completada' : (i % 3 === 1 ? 'pendiente' : 'incidencia'),
         fechaProgramada: new Date(),
         tieneIncidencia: i % 3 === 2,
-        historialVisitas: []
+        historialVisitas: [],
+        nivelRiesgo: i % 4 === 0 ? 'g1' : (i % 4 === 1 ? 'g2' : (i % 4 === 2 ? 'g3' : 'g4'))
       });
     }
     localStorage.setItem('pacientesCache', JSON.stringify(this.pacientes));
@@ -290,7 +484,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       const historialGuardado = localStorage.getItem('historialVisitasPacientes');
       if (historialGuardado) {
         const historial = JSON.parse(historialGuardado);
-        this.pacientes.forEach(paciente => {
+        this.pacientes.forEach((paciente: Paciente) => {
           if (historial[paciente.id] && Array.isArray(historial[paciente.id])) {
             paciente.historialVisitas = historial[paciente.id];
           }
@@ -304,7 +498,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   guardarHistorialEnLocalStorage() {
     try {
       const historial: any = {};
-      this.pacientes.forEach(paciente => {
+      this.pacientes.forEach((paciente: Paciente) => {
         if (paciente.historialVisitas && paciente.historialVisitas.length > 0) {
           historial[paciente.id] = paciente.historialVisitas.slice(0, 3);
         }
@@ -314,6 +508,10 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       console.error('Error al guardar:', error);
     }
   }
+
+  // ⭐ ============================================
+  // ⭐ UBICACIÓN GPS - SIMPLIFICADO
+  // ⭐ ============================================
 
   async obtenerDireccionDesdeCoordenadas(lat: number, lng: number): Promise<string> {
     try {
@@ -359,7 +557,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // ==================== MÉTODOS DE CALENDARIO (MODAL) ====================
+  // ⭐ ============================================
+  // ⭐ CALENDARIO
+  // ⭐ ============================================
 
   generarDiasSemana() {
     const hoy = new Date();
@@ -378,9 +578,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         completadas: 0
       });
     }
-    this.diasSemana.forEach(dia => {
+    this.diasSemana.forEach((dia: DiaCalendario) => {
       dia.totalVisitas = dia.visitas.length;
-      dia.completadas = dia.visitas.filter(v => v.estatus === 'completada').length;
+      dia.completadas = dia.visitas.filter((v: Visita) => v.estatus === 'completada').length;
     });
   }
 
@@ -410,6 +610,10 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     return today.toISOString().split('T')[0];
   }
 
+  // ⭐ ============================================
+  // ⭐ MODALES
+  // ⭐ ============================================
+
   abrirModalCalendario(paciente: Paciente) {
     this.selectedPaciente = paciente;
     this.generarDiasSemana();
@@ -438,12 +642,10 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleSeleccionVisita(visita: Visita) {
     if (visita.estatus === 'completada') return;
-    const index = this.visitasSeleccionadas.findIndex(v => v === visita);
+    const index = this.visitasSeleccionadas.findIndex((v: Visita) => v === visita);
     if (index === -1) this.visitasSeleccionadas.push(visita);
     else this.visitasSeleccionadas.splice(index, 1);
   }
-
-  // ==================== MÉTODOS DE REAGENDAR ====================
 
   abrirModalReagendarIndividual(visita: Visita, event: Event) {
     event.stopPropagation();
@@ -478,7 +680,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.selectedPaciente) {
-      this.http.post(`http://localhost:3000/pacientes/${this.selectedPaciente.id}/visita/reagendar`, {
+      this.http.post(`${this.apiUrl}/pacientes/${this.selectedPaciente.id}/visita/reagendar`, {
         fechaAnterior: this.visitaParaReagendar?.hora || 'No especificada',
         fechaNueva: `${this.nuevaFechaReagendar} ${this.nuevaHoraReagendar}`,
         usuarioId: 1
@@ -490,7 +692,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
           );
           this.cerrarModalReagendar();
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Error al reagendar visita:', err);
           this.crearNotificacion('❌ Error', 'No se pudo reagendar la visita', 'error');
         }
@@ -500,7 +702,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // ==================== MÉTODOS DE HISTORIAL ====================
+  // ⭐ ============================================
+  // ⭐ HISTORIAL
+  // ⭐ ============================================
 
   verHistorial(paciente: Paciente) {
     this.pacienteHistorial = paciente;
@@ -524,11 +728,13 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fotoModalSrc = '';
   }
 
-  // ==================== MÉTODOS PARA CAMBIAR ESTADO ====================
+  // ⭐ ============================================
+  // ⭐ ACCIONES DE PACIENTES
+  // ⭐ ============================================
 
   marcarPendiente(paciente: Paciente) {
     paciente.estadoVisita = 'pendiente';
-    this.http.patch(`http://localhost:3000/pacientes/${paciente.id}/estatus`, {
+    this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/estatus`, {
       estatus: 'pendiente',
       usuarioId: 1
     }).subscribe({
@@ -537,7 +743,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.aplicarFiltros();
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error:', err);
         this.crearNotificacion('❌ Error', 'No se pudo actualizar el estado', 'error');
         this.cargarPacientes();
@@ -547,7 +753,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   marcarFinado(paciente: Paciente) {
     if (confirm(`⚠️ ¿Estás seguro de marcar como FINADO a ${paciente.nombre}?`)) {
-      this.http.patch(`http://localhost:3000/pacientes/${paciente.id}/estatus`, {
+      this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/estatus`, {
         estatus: 'finado',
         usuarioId: 1
       }).subscribe({
@@ -557,7 +763,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
           this.aplicarFiltros();
           this.cdr.detectChanges();
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Error:', err);
           this.crearNotificacion('❌ Error', 'No se pudo marcar como finado', 'error');
         }
@@ -565,12 +771,15 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // ⭐ ABRIR MODAL COMPLETADA - SIMPLIFICADO
   abrirModalCompletada(paciente: Paciente) {
     this.selectedPaciente = paciente;
     this.fotosPreview = [];
     this.ubicacionCoordenadas = '';
     this.ubicacionDireccionReal = '';
     this.mostrarModalCompletada = true;
+
+    // ⭐ OBTENER UBICACIÓN GPS AUTOMÁTICAMENTE
     setTimeout(() => {
       this.obtenerUbicacion();
     }, 300);
@@ -582,30 +791,46 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fotosPreview = [];
   }
 
+  // ⭐ OBTENER UBICACIÓN GPS ACTUAL
   obtenerUbicacion() {
     this.obteniendoUbicacion = true;
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           this.latitud = position.coords.latitude;
           this.longitud = position.coords.longitude;
           this.ubicacionCoordenadas = `${this.latitud.toFixed(6)}, ${this.longitud.toFixed(6)}`;
+
+          // ⭐ OBTENER DIRECCIÓN REAL (OPCIONAL)
           const direccion = await this.obtenerDireccionDesdeCoordenadas(this.latitud, this.longitud);
           this.ubicacionDireccionReal = direccion;
+
           this.obteniendoUbicacion = false;
           this.crearNotificacion('📍 Ubicación obtenida', direccion, 'info');
+          this.cdr.detectChanges();
         },
         (error) => {
-          console.error('Error:', error);
+          console.error('Error al obtener ubicación:', error);
           this.obteniendoUbicacion = false;
+          this.ubicacionCoordenadas = 'No disponible';
+          this.ubicacionDireccionReal = 'No se pudo obtener la ubicación';
           this.crearNotificacion('⚠️ Error', 'No se pudo obtener la ubicación', 'error');
-        }
+          this.cdr.detectChanges();
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
       this.ubicacionCoordenadas = 'Geolocalización no soportada';
       this.obteniendoUbicacion = false;
       this.crearNotificacion('⚠️ Error', 'Geolocalización no soportada', 'error');
+      this.cdr.detectChanges();
     }
+  }
+
+  // ⭐ ACTUALIZAR UBICACIÓN
+  actualizarUbicacion() {
+    this.obtenerUbicacion();
   }
 
   async onFotosSeleccionadas(event: any) {
@@ -659,6 +884,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     input.click();
   }
 
+  // ⭐ GUARDAR COMPLETADA - SIMPLIFICADO
   async guardarCompletada() {
     if (!this.selectedPaciente) {
       this.crearNotificacion('Error', 'No hay paciente seleccionado', 'error');
@@ -668,11 +894,13 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       this.crearNotificacion('⚠️ Requerido', 'Debes tomar al menos una foto', 'error');
       return;
     }
+
     const fotosComprimidas: string[] = [];
     for (const foto of this.fotosPreview) {
       const comprimida = await this.comprimirImagen(foto);
       fotosComprimidas.push(comprimida);
     }
+
     const nuevaVisita: VisitaCompletada = {
       fecha: new Date(),
       ubicacionCoordenadas: this.ubicacionCoordenadas || 'No registrada',
@@ -680,6 +908,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       fotos: fotosComprimidas.slice(0, 1),
       coordenadas: this.ubicacionCoordenadas || 'No registradas'
     };
+
     if (!this.selectedPaciente.historialVisitas) {
       this.selectedPaciente.historialVisitas = [];
     }
@@ -687,22 +916,27 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedPaciente.historialVisitas.length > 3) {
       this.selectedPaciente.historialVisitas = this.selectedPaciente.historialVisitas.slice(0, 3);
     }
+
     this.guardarHistorialEnLocalStorage();
-    this.http.patch(`http://localhost:3000/pacientes/${this.selectedPaciente.id}/estatus`, {
+
+    this.http.patch(`${this.apiUrl}/pacientes/${this.selectedPaciente.id}/estatus`, {
       estatus: 'completada',
       usuarioId: 1
     }).subscribe({
       next: () => {
-        this.selectedPaciente!.estadoVisita = 'completada';
-        this.selectedPaciente!.fechaProgramada = new Date();
+        if (this.selectedPaciente) {
+          this.selectedPaciente.estadoVisita = 'completada';
+          this.selectedPaciente.fechaProgramada = new Date();
+        }
         this.mostrarModalCompletada = false;
         this.selectedPaciente = null;
         this.fotosPreview = [];
         this.aplicarFiltros();
-        this.crearNotificacion('✅ Visita completada', `Se guardó ${fotosComprimidas.length} foto(s)`, 'success');
+        this.crearNotificacion('✅ Visita completada',
+          `Ubicación: ${this.ubicacionDireccionReal || this.ubicacionCoordenadas}`, 'success');
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error:', err);
         this.crearNotificacion('❌ Error', 'No se pudo completar la visita', 'error');
       }
@@ -710,7 +944,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   abrirIncidencia(paciente: Paciente) {
-    this.http.patch(`http://localhost:3000/pacientes/${paciente.id}/estatus`, {
+    this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/estatus`, {
       estatus: 'incidencia',
       usuarioId: 1
     }).subscribe({
@@ -728,14 +962,16 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         localStorage.setItem('incidenciaPaciente', JSON.stringify(datosPaciente));
         this.router.navigate(['/incidencias']);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error:', err);
         this.crearNotificacion('❌ Error', 'No se pudo marcar la incidencia', 'error');
       }
     });
   }
 
-  // ==================== NOTIFICACIONES ====================
+  // ⭐ ============================================
+  // ⭐ NOTIFICACIONES (TOAST)
+  // ⭐ ============================================
 
   crearNotificacion(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'info') {
     const config = {
@@ -774,7 +1010,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 4000);
   }
 
-  // ==================== MÉTODOS PARA ESTADOS ====================
+  // ⭐ ============================================
+  // ⭐ UTILIDADES
+  // ⭐ ============================================
 
   getEstadoClass(estado: string): string {
     switch (estado) {

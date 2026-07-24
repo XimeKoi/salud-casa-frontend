@@ -7,6 +7,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '../../store/app.state';
 import { selectUserData } from '../../store/app.selectors';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-perfil',
@@ -22,19 +23,21 @@ export class PerfilComponent implements OnInit {
   datosUsuario: any = null;
   esMujer: boolean = true;
   cargando: boolean = true;
-  private apiUrl = 'http://localhost:3000';
+
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private router: Router,
     private store: Store<{ app: AppState }>,
     private cdr: ChangeDetectorRef,
     private http: HttpClient
-  ) { }
+  ) {
+    console.log('🌍 [Perfil] API URL:', this.apiUrl);
+  }
 
   ngOnInit() {
     console.log('🔍 [PERFIL] ngOnInit - INICIADO');
 
-    // ⭐ 1. INTENTAR DEL STORE
     this.store.select(selectUserData).subscribe((userData: any) => {
       if (userData) {
         console.log('✅ [PERFIL] Datos desde STORE:', userData);
@@ -45,7 +48,6 @@ export class PerfilComponent implements OnInit {
         return;
       }
 
-      // ⭐ 2. SI NO HAY EN EL STORE, INTENTAR DEL LOCALSTORAGE
       const storedUser = localStorage.getItem('userData');
       if (storedUser) {
         try {
@@ -61,7 +63,6 @@ export class PerfilComponent implements OnInit {
         }
       }
 
-      // ⭐ 3. SI NO HAY EN NINGÚN LADO, CARGAR DEL BACKEND
       console.log('🔄 [PERFIL] Cargando desde el backend...');
       this.http.get(`${this.apiUrl}/personal/1`).subscribe({
         next: (data: any) => {

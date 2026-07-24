@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, interval } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Notificacion {
     id: number;
@@ -23,7 +24,10 @@ export interface Notificacion {
 export class NotificacionesService {
     private notificacionesSubject = new BehaviorSubject<Notificacion[]>([]);
     private contadorSubject = new BehaviorSubject<any>({ total: 0, noLeidas: 0, urgentes: 0 });
-    private apiUrl = 'http://localhost:3000';
+
+    // ⭐⭐⭐ USAR ENVIRONMENT ⭐⭐⭐
+    private apiUrl = environment.apiUrl;
+
     private usuarioId: number = 1;
     private allNotificaciones: Notificacion[] = [];
     private pageSize: number = 10;
@@ -32,6 +36,7 @@ export class NotificacionesService {
     private totalItems: number = 0;
 
     constructor(private http: HttpClient) {
+        console.log('🌍 [NotificacionesService] API URL:', this.apiUrl);
         this.cargarNotificaciones();
         interval(30000).subscribe(() => this.cargarNotificaciones());
     }
@@ -145,7 +150,6 @@ export class NotificacionesService {
         });
     }
 
-    // ⭐ CAMBIAR ESTADO DE NOTIFICACIÓN (LEÍDA / NO LEÍDA) - Toggle
     cambiarEstado(id: number, leida: boolean): Observable<any> {
         return this.http.patch(`${this.apiUrl}/notificaciones/${id}/estado`, {
             leida,

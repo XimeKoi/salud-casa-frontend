@@ -1,4 +1,5 @@
-// src/app/pages/login/login.component.ts
+// src/app/components/login/login.ts
+
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +9,7 @@ import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AppState } from '../../store/app.state';
 import * as AppActions from '../../store/app.actions';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -22,11 +24,15 @@ export class LoginComponent {
   errorMsg = '';
   loading = false;
 
+  private apiUrl = environment.apiUrl;
+
   constructor(
     private router: Router,
     private store: Store<{ app: AppState }>,
     private http: HttpClient
-  ) { }
+  ) {
+    console.log('🌍 [Login] API URL:', this.apiUrl);
+  }
 
   login() {
     if (!this.username || !this.password) {
@@ -37,7 +43,7 @@ export class LoginComponent {
     this.loading = true;
     this.errorMsg = '';
 
-    this.http.post('http://localhost:3000/auth/login', {
+    this.http.post(`${this.apiUrl}/auth/login`, {
       usuario: this.username,
       password: this.password
     }).subscribe({
@@ -75,9 +81,6 @@ export class LoginComponent {
     });
   }
 
-  // ==================== MÉTODOS PARA ENLACES ====================
-
-  // ¿Olvidaste tu contraseña?
   olvidasteContrasena(event: Event) {
     event.preventDefault();
     Swal.fire({
@@ -97,7 +100,6 @@ export class LoginComponent {
     });
   }
 
-  // Aviso de Privacidad - Salud Casa por Casa
   avisoPrivacidad(event: Event) {
     event.preventDefault();
     Swal.fire({

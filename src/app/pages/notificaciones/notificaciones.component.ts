@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 import { NotificacionesService, Notificacion } from '../../services/notificaciones.service';
 import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-notificaciones',
@@ -31,19 +32,22 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
   private todasLasNotificaciones: Notificacion[] = [];
   private notificacionEliminando: boolean = false;
 
-  // ⭐ VARIABLES PARA SELECCIÓN MÚLTIPLE
   notificacionesSeleccionadas: number[] = [];
   modalEliminarMultipleVisible: boolean = false;
   notificacionesAEliminarMultiple: any[] = [];
 
-  // ⭐ VARIABLES PARA MODAL DE ELIMINACIÓN INDIVIDUAL
   modalEliminarVisible: boolean = false;
   notificacionAEliminar: any = null;
+
+  // ⭐⭐⭐ USAR ENVIRONMENT ⭐⭐⭐
+  private apiUrl = environment.apiUrl;
 
   constructor(
     private notificacionesService: NotificacionesService,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {
+    console.log('🌍 [Notificaciones] API URL:', this.apiUrl);
+  }
 
   ngOnInit() {
     console.log('🔄 Iniciando notificaciones...');
@@ -61,7 +65,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     }, 500);
   }
 
-  // ⭐ GETTERS PARA SELECCIÓN MÚLTIPLE
   get todasSeleccionadas(): boolean {
     return this.notificacionesFiltradas.length > 0 &&
       this.notificacionesFiltradas.every(n => this.notificacionesSeleccionadas.includes(n.id));
@@ -337,14 +340,11 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     );
   }
 
-  // ⭐ TOGGLE LEÍDA / NO LEÍDA
   toggleLeida(notificacion: Notificacion) {
     const nuevoEstado = !notificacion.leida;
 
-    // Cambiar visualmente primero
     notificacion.leida = nuevoEstado;
 
-    // Actualizar contador
     if (nuevoEstado) {
       if (this.contador.noLeidas > 0) {
         this.contador.noLeidas--;
@@ -353,23 +353,19 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
       this.contador.noLeidas++;
     }
 
-    // Actualizar en la lista original
     const original = this.todasLasNotificaciones.find(n => n.id === notificacion.id);
     if (original) original.leida = nuevoEstado;
 
-    // Guardar en localStorage
     localStorage.setItem('notificacionesCache', JSON.stringify(this.todasLasNotificaciones));
 
     this.cdr.detectChanges();
 
-    // Llamar al servicio
     this.notificacionesService.cambiarEstado(notificacion.id, nuevoEstado).subscribe({
       next: () => {
         console.log(`✅ Notificación ${notificacion.id} cambiada a ${nuevoEstado ? 'leída' : 'no leída'}`);
       },
       error: (error: any) => {
         console.error('Error al cambiar estado:', error);
-        // Revertir el cambio si hay error
         notificacion.leida = !nuevoEstado;
         if (original) original.leida = !nuevoEstado;
         if (nuevoEstado) {
@@ -382,7 +378,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     });
   }
 
-  // ⭐ MARCAR COMO LEÍDA (MANTENIDO POR COMPATIBILIDAD)
   marcarLeida(notificacion: Notificacion) {
     this.toggleLeida(notificacion);
   }
@@ -422,7 +417,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     });
   }
 
-  // ⭐ ELIMINAR NOTIFICACIÓN INDIVIDUAL
   eliminarNotificacion(id: number) {
     this.notificacionesService.eliminarNotificacion(id).subscribe({
       next: () => {
@@ -454,7 +448,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     }
   }
 
-  // ⭐ TOGGLE SELECCIÓN INDIVIDUAL
   toggleSeleccion(id: number) {
     const index = this.notificacionesSeleccionadas.indexOf(id);
     if (index > -1) {
@@ -464,7 +457,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     }
   }
 
-  // ⭐ TOGGLE SELECCIONAR TODAS
   toggleSeleccionarTodas(event: any) {
     const checked = event.target.checked;
     if (checked) {
@@ -474,12 +466,10 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     }
   }
 
-  // ⭐ VERIFICAR SI UNA NOTIFICACIÓN ESTÁ SELECCIONADA
   isSeleccionada(id: number): boolean {
     return this.notificacionesSeleccionadas.includes(id);
   }
 
-  // ⭐ ELIMINAR SELECCIONADAS
   eliminarSeleccionadas() {
     if (this.notificacionesSeleccionadas.length === 0) return;
 
@@ -490,13 +480,11 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     this.modalEliminarMultipleVisible = true;
   }
 
-  // ⭐ CERRAR MODAL ELIMINAR MÚLTIPLE
   cerrarModalEliminarMultiple() {
     this.modalEliminarMultipleVisible = false;
     this.notificacionesAEliminarMultiple = [];
   }
 
-  // ⭐ EJECUTAR ELIMINAR MÚLTIPLE
   ejecutarEliminarMultiple() {
     const ids = this.notificacionesSeleccionadas;
     let eliminadas = 0;
@@ -546,19 +534,16 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     });
   }
 
-  // ⭐ ABRIR MODAL DE CONFIRMACIÓN INDIVIDUAL
   confirmarEliminar(notificacion: any) {
     this.notificacionAEliminar = notificacion;
     this.modalEliminarVisible = true;
   }
 
-  // ⭐ CERRAR MODAL DE ELIMINACIÓN INDIVIDUAL
   cerrarModalEliminar() {
     this.modalEliminarVisible = false;
     this.notificacionAEliminar = null;
   }
 
-  // ⭐ EJECUTAR ELIMINACIÓN INDIVIDUAL
   ejecutarEliminar() {
     if (this.notificacionAEliminar) {
       this.eliminarNotificacion(this.notificacionAEliminar.id);
@@ -566,7 +551,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     }
   }
 
-  // ⭐ MÉTODOS DE UTILIDAD
   getPrioridadClass(prioridad: string): string {
     const clases: { [key: string]: string } = {
       'urgente': 'prioridad-urgente',

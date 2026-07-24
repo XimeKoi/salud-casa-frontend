@@ -2,9 +2,9 @@
 
 export const environment = {
     production: true,
-    // ⭐ CAMBIA ESTA URL POR LA DE TU BACKEND EN RENDER
-    apiUrl: 'https://salud-casa-api.onrender.com',
-    geocodingApiUrl: 'https://salud-casa-api.onrender.com/geocode',
+    // ⭐ CAMBIA ESTA URL POR LA DE TU BACKEND EN RAILWAY
+    apiUrl: 'https://salud-casa-backend-production.up.railway.app',
+    geocodingApiUrl: 'https://salud-casa-backend-production.up.railway.app/geocode',
 
     // ============================================
     // CONFIGURACIÓN DEL DISTRITO ACTUAL
