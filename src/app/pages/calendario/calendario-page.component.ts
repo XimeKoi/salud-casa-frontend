@@ -238,43 +238,33 @@ export class CalendarioPageComponent implements OnInit {
         }
     }
 
-    // ⭐⭐⭐ FUNCIÓN PARA COMPARAR FECHAS COMO STRINGS ⭐⭐⭐
     private compararFechas(fechaStr: string, dia: number, mes: number, anio: number): boolean {
         if (!fechaStr) return false;
 
-        // ⭐ Limpiar la fecha: eliminar cualquier hora, timezone, etc.
         let fechaLimpia = fechaStr;
 
-        // Si tiene formato ISO con T, extraer solo la fecha
         if (fechaLimpia.includes('T')) {
             fechaLimpia = fechaLimpia.split('T')[0];
         }
 
-        // Si tiene formato DD/MM/YYYY, convertir a YYYY-MM-DD
         if (fechaLimpia.includes('/')) {
             const parts = fechaLimpia.split('/');
             if (parts.length === 3) {
-                // Si es DD/MM/YYYY
                 if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
                     fechaLimpia = `${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
             }
         }
 
-        // ⭐ Crear la fecha esperada en formato YYYY-MM-DD
         const mesStr = String(mes + 1).padStart(2, '0');
         const diaStr = String(dia).padStart(2, '0');
         const fechaEsperada = `${anio}-${mesStr}-${diaStr}`;
 
-        console.log(`🔍 Comparando: "${fechaLimpia}" vs "${fechaEsperada}"`);
-
         return fechaLimpia === fechaEsperada;
     }
 
-    // ⭐⭐⭐ GENERAR CALENDARIO - COMPARACIÓN POR STRINGS ⭐⭐⭐
     generarCalendario() {
         console.log('📅 Generando calendario para:', this.nombreMeses[this.mesActual], this.anioActual);
-        console.log('📅 Visitas disponibles:', this.visitasProgramadas.length);
 
         const primerDia = new Date(this.anioActual, this.mesActual, 1).getDay();
         const diasEnMes = new Date(this.anioActual, this.mesActual + 1, 0).getDate();
@@ -301,15 +291,10 @@ export class CalendarioPageComponent implements OnInit {
                 fecha.getMonth() === hoy.getMonth() &&
                 fecha.getFullYear() === hoy.getFullYear();
 
-            // ⭐⭐⭐ COMPARAR FECHAS POR STRING ⭐⭐⭐
             const visitasDelDia = this.visitasProgramadas.filter(v => {
                 if (!v.fecha) return false;
                 return this.compararFechas(v.fecha, i, this.mesActual, this.anioActual);
             });
-
-            if (visitasDelDia.length > 0) {
-                console.log(`📅 Día ${i}: ${visitasDelDia.length} visitas`);
-            }
 
             this.diasCalendario.push({
                 dia: i,
@@ -333,10 +318,6 @@ export class CalendarioPageComponent implements OnInit {
                 fecha: new Date(this.anioActual, this.mesActual + 1, i)
             });
         }
-
-        // ⭐ Log de días con visitas
-        const diasConVisitas = this.diasCalendario.filter(d => d.tieneVisitas);
-        console.log(`📅 Días con visitas: ${diasConVisitas.length}`, diasConVisitas.map(d => d.dia));
     }
 
     mesAnterior() {
@@ -380,7 +361,6 @@ export class CalendarioPageComponent implements OnInit {
         this.generarCalendario();
     }
 
-    // ⭐⭐⭐ SELECCIONAR DÍA - COMPARACIÓN POR STRING ⭐⭐⭐
     seleccionarDia(dia: any) {
         if (!dia.esMesActual) return;
 
@@ -394,7 +374,6 @@ export class CalendarioPageComponent implements OnInit {
             year: 'numeric'
         });
 
-        // ⭐⭐⭐ COMPARAR FECHAS POR STRING ⭐⭐⭐
         this.visitasDelDia = this.visitasProgramadas.filter(v => {
             if (!v.fecha) return false;
             return this.compararFechas(v.fecha, dia.dia, this.mesActual, this.anioActual);
@@ -467,7 +446,6 @@ export class CalendarioPageComponent implements OnInit {
         }
 
         this.mostrarSugerencias = this.sugerenciasPacientes.length > 0;
-        console.log('📋 Resultados encontrados:', this.sugerenciasPacientes.length);
         this.cdr.detectChanges();
     }
 
@@ -478,7 +456,6 @@ export class CalendarioPageComponent implements OnInit {
             return;
         }
 
-        // ⭐⭐⭐ FECHA LOCAL SIN DESFASE UTC ⭐⭐⭐
         let fechaSeleccionada = this.obtenerFechaLocal();
         if (this.diaSeleccionado !== null) {
             const fecha = new Date(this.anioActual, this.mesActual, this.diaSeleccionado);
@@ -575,6 +552,58 @@ export class CalendarioPageComponent implements OnInit {
         return `${anio}-${mes}-${dia}`;
     }
 
+    // ⭐⭐⭐ NUEVO: Enviar confirmación por WhatsApp ⭐⭐⭐
+    private enviarConfirmacionWhatsApp(visita: VisitaProgramada) {
+        if (!visita.pacienteTelefono) {
+            console.warn(`⚠️ No hay teléfono para ${visita.pacienteNombre}`);
+            return;
+        }
+
+        const fechaFormateada = this.formatearFechaLegible(visita.fecha);
+
+        const payload = {
+            telefono: visita.pacienteTelefono,
+            nombrePaciente: visita.pacienteNombre,
+            fecha: fechaFormateada,
+            hora: visita.hora,
+            direccion: visita.pacienteDireccion
+        };
+
+        console.log('📤 Enviando confirmación WhatsApp:', payload);
+
+        this.http.post(`${this.apiUrl}/whatsapp/confirmacion`, payload).subscribe({
+            next: (response: any) => {
+                if (response.success) {
+                    console.log(`✅ Confirmación WhatsApp enviada a ${visita.pacienteNombre}`);
+                    // ⭐ CORREGIDO: SOLO 3 ARGUMENTOS
+                    this.mostrarToast(
+                        '📱 Confirmación enviada',
+                        `Se envió confirmación por WhatsApp a ${visita.pacienteNombre}`,
+                        'success'
+                    );
+                } else {
+                    console.warn('⚠️ No se pudo enviar confirmación:', response.message);
+                }
+            },
+            error: (error) => {
+                console.error('❌ Error enviando confirmación WhatsApp:', error);
+            }
+        });
+    }
+
+    // ⭐⭐⭐ NUEVO: Formatear fecha para mensajes ⭐⭐⭐
+    private formatearFechaLegible(fechaStr: string): string {
+        if (!fechaStr) return 'Fecha no especificada';
+        const parts = fechaStr.split('-');
+        if (parts.length === 3) {
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            const mes = meses[parseInt(parts[1]) - 1];
+            return `${parseInt(parts[2])} de ${mes} de ${parts[0]}`;
+        }
+        return fechaStr;
+    }
+
     private enviarNotificacionVisitaProgramada(visita: VisitaProgramada) {
         const notificacion = {
             titulo: `📅 Visita programada - ${visita.pacienteNombre}`,
@@ -645,7 +674,6 @@ export class CalendarioPageComponent implements OnInit {
         }
     }
 
-    // ⭐⭐⭐ FUNCIÓN PARA OBTENER FECHA CORRECTA (SIN DESFASE UTC) ⭐⭐⭐
     private obtenerFechaCorrecta(fechaStr: string): string {
         if (!fechaStr) {
             const hoy = new Date();
@@ -655,25 +683,20 @@ export class CalendarioPageComponent implements OnInit {
             return `${anio}-${mes}-${dia}`;
         }
 
-        // Si la fecha tiene formato YYYY-MM-DD, mantenerla
         if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
             return fechaStr;
         }
 
-        // Si tiene formato ISO, extraer solo la fecha
         if (fechaStr.includes('T')) {
             return fechaStr.split('T')[0];
         }
 
-        // Si tiene formato DD/MM/YYYY o similar, convertir
         if (fechaStr.includes('/')) {
             const parts = fechaStr.split('/');
             if (parts.length === 3) {
-                // Si es DD/MM/YYYY
                 if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
                     return `${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
-                // Si es MM/DD/YYYY
                 return `${parts[2]}-${parts[0]}-${parts[1]}`;
             }
         }
@@ -681,7 +704,6 @@ export class CalendarioPageComponent implements OnInit {
         return fechaStr;
     }
 
-    // ⭐⭐⭐ GET PRIORIDAD CLASS ⭐⭐⭐
     getPrioridadClass(prioridad: string): string {
         switch (prioridad) {
             case 'alta': return 'prioridad-alta';
@@ -690,7 +712,6 @@ export class CalendarioPageComponent implements OnInit {
         }
     }
 
-    // ⭐⭐⭐ GET ESTADO CLASS ⭐⭐⭐
     getEstadoClass(estado: string): string {
         switch (estado) {
             case 'completada': return 'estado-completada';
@@ -699,8 +720,9 @@ export class CalendarioPageComponent implements OnInit {
         }
     }
 
-    // ⭐⭐⭐ GUARDAR VISITA CON FECHA CORRECTA ⭐⭐⭐
     guardarVisitaProgramada() {
+        console.log('🔴 [CALENDARIO] guardarVisitaProgramada() ejecutado');
+
         if (this.pacientesSeleccionados.length === 0) {
             this.mostrarToast('Error', 'Debes seleccionar al menos un paciente', 'error');
             return;
@@ -718,12 +740,8 @@ export class CalendarioPageComponent implements OnInit {
             return;
         }
 
-        // ⭐⭐⭐ CREAR VISITAS CON FECHA CORRECTA (SIN DESFASE UTC) ⭐⭐⭐
         const nuevasVisitas: VisitaProgramada[] = this.pacientesSeleccionados.map((p, index) => {
-            // ⭐ Obtener fecha correcta sin desfase UTC
             let fechaCorrecta = this.obtenerFechaCorrecta(p.fecha);
-
-            console.log(`📅 Paciente: ${p.nombreCompleto}, Fecha original: ${p.fecha}, Fecha corregida: ${fechaCorrecta}`);
 
             return {
                 id: Date.now() + index,
@@ -733,7 +751,7 @@ export class CalendarioPageComponent implements OnInit {
                 pacienteDireccion: p.direccion || '',
                 pacienteTelefono: p.telefono || '',
                 colonia: p.colonia || 'Sin colonia',
-                fecha: fechaCorrecta,  // ⭐⭐⭐ FECHA CORRECTA ⭐⭐⭐
+                fecha: fechaCorrecta,
                 hora: p.hora || '09:00',
                 prioridad: p.prioridad || 'media',
                 notas: p.notas || '',
@@ -741,25 +759,55 @@ export class CalendarioPageComponent implements OnInit {
             };
         });
 
-        console.log('📅 Guardando visitas con fechas:', nuevasVisitas.map(v => ({
-            paciente: v.pacienteNombre,
-            fecha: v.fecha,
-            hora: v.hora
-        })));
+        console.log('🔴 [CALENDARIO] Nuevas visitas creadas:', nuevasVisitas.length);
 
         this.visitasProgramadas = [...this.visitasProgramadas, ...nuevasVisitas];
         this.guardarVisitasEnStorage();
 
+        // ⭐⭐⭐ ENVIAR CONFIRMACIÓN POR WHATSAPP - LLAMADA DIRECTA ⭐⭐⭐
         nuevasVisitas.forEach(visita => {
+            console.log('🔴 [CALENDARIO] Procesando visita para:', visita.pacienteNombre);
+            console.log('🔴 [CALENDARIO] Teléfono:', visita.pacienteTelefono);
+
+            // Enviar notificación (esto funciona)
             this.enviarNotificacionVisitaProgramada(visita);
+
+            // ⭐ LLAMADA DIRECTA AL ENDPOINT DE WHATSAPP ⭐
+            if (visita.pacienteTelefono) {
+                const payload = {
+                    telefono: visita.pacienteTelefono,
+                    nombrePaciente: visita.pacienteNombre,
+                    fecha: this.formatearFechaLegible(visita.fecha),
+                    hora: visita.hora,
+                    direccion: visita.pacienteDireccion
+                };
+
+                console.log('📤 ENVIANDO SMS DIRECTAMENTE:', payload);
+
+                this.http.post(`${this.apiUrl}/whatsapp/confirmacion`, payload).subscribe({
+                    next: (response: any) => {
+                        console.log('✅ RESPUESTA SMS:', response);
+                        if (response.success) {
+                            this.mostrarToast(
+                                '📱 SMS enviado',
+                                `Confirmación enviada a ${visita.pacienteNombre}`,
+                                'success'
+                            );
+                        }
+                    },
+                    error: (error) => {
+                        console.error('❌ Error enviando SMS:', error);
+                    }
+                });
+            } else {
+                console.warn(`⚠️ No hay teléfono para ${visita.pacienteNombre}`);
+            }
         });
 
         this.generarCalendario();
-
-        // ⭐ MOSTRAR TOAST CON COLOR SEGÚN ÉXITO
         this.mostrarToast(
             '✅ Visitas programadas',
-            `${nuevasVisitas.length} visita(s) programada(s) correctamente`,
+            `${nuevasVisitas.length} visita(s) programada(s) correctamente.`,
             'success'
         );
 
@@ -787,7 +835,6 @@ export class CalendarioPageComponent implements OnInit {
             this.guardarVisitasEnStorage();
             this.generarCalendario();
 
-            // ⭐ TOAST CON COLOR SEGÚN ESTADO
             let tipo: 'success' | 'error' | 'info' = 'info';
             let mensaje = '';
 
@@ -842,7 +889,6 @@ export class CalendarioPageComponent implements OnInit {
         this.confirmacionVisible = false;
     }
 
-    // ⭐⭐⭐ MOSTRAR TOAST CON COLORES ⭐⭐⭐
     mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' = 'info') {
         this.mensajeToast = mensaje;
         this.tipoToast = tipo;
