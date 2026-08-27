@@ -1,6 +1,6 @@
 // src/app/pages/incidencias/incidencias.component.ts
 
-import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -35,7 +35,7 @@ interface Incidencia {
     templateUrl: './incidencias.component.html',
     styleUrls: ['./incidencias.component.scss']
 })
-export class IncidenciasComponent implements OnInit, AfterViewInit {
+export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
 
     @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -54,7 +54,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
     };
 
     fotosPreview: string[] = [];
-    mostrarFormulario = false;
+    mostrarFormulario: boolean = false;
     fotoModal: string | null = null;
     procesando: boolean = false;
     datosPaciente: any = null;
@@ -82,45 +82,198 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
     constructor(
         private cdr: ChangeDetectorRef,
         private router: Router,
-        private http: HttpClient
+        private http: HttpClient,
+        private ngZone: NgZone
     ) {
-        console.log(' [Incidencias] API URL:', this.apiUrl);
+        console.log('🔍 [Incidencias] API URL:', this.apiUrl);
     }
+
+    // ⭐ ============================================
+    // ⭐ ngOnInit - COMPLETO CORREGIDO
+    // ⭐ ============================================
 
     ngOnInit() {
-        this.cargarDatosPaciente();
+        console.log('🔄 [Incidencias] ngOnInit ejecutado');
+
+        this.limpiarFormulario();
+        this.mostrarFormulario = false;
         this.cargarIncidencias();
 
-        if (this.datosPaciente) {
-            this.mostrarFormulario = true;
-        }
-    }
+        // ⭐ VERIFICAR LOCAL STORAGE
+        const pacienteLocal = localStorage.getItem('incidenciaPaciente');
+        console.log('🔍 [Incidencias] Verificando localStorage en ngOnInit:', pacienteLocal);
 
-    ngAfterViewInit() {
-        this.cdr.detectChanges();
-    }
-
-    cargarDatosPaciente() {
-        const datosGuardados = localStorage.getItem('incidenciaPaciente');
-        if (datosGuardados) {
+        if (pacienteLocal) {
             try {
-                this.datosPaciente = JSON.parse(datosGuardados);
-                this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+                const paciente = JSON.parse(pacienteLocal);
+                console.log('📝 [Incidencias] Paciente encontrado en localStorage:', paciente);
+
+                this.datosPaciente = {
+                    id: paciente.id,
+                    nombre: paciente.nombre || '',
+                    direccion: paciente.direccion || '',
+                    telefono: paciente.telefono || '',
+                    colonia: paciente.colonia || '',
+                    seccion: paciente.seccion || ''
+                };
+
                 this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
-                console.log(' Datos del paciente cargados:', this.datosPaciente);
-                this.mostrarToast(` Datos de ${this.datosPaciente.nombre} precargados`, 'success');
+                this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+                this.mostrarFormulario = true;
+
+                // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE
+                this.onTipoIncidenciaChange();
+
+                localStorage.removeItem('incidenciaPaciente');
+                sessionStorage.removeItem('pacienteParaIncidencia');
+                sessionStorage.removeItem('fromMap');
+
+                this.cdr.detectChanges();
+                console.log('✅ Formulario abierto con datos del paciente:', this.datosPaciente.nombre);
             } catch (e) {
-                console.error('Error al cargar datos del paciente:', e);
+                console.error('Error al parsear paciente de localStorage:', e);
             }
         } else {
-            console.log('ℹ No hay paciente seleccionado para la incidencia');
+            // ⭐ VERIFICAR SESSION STORAGE (FALLBACK)
+            const pacienteSession = sessionStorage.getItem('pacienteParaIncidencia');
+            console.log('🔍 [Incidencias] Verificando sessionStorage en ngOnInit:', pacienteSession);
+
+            if (pacienteSession) {
+                try {
+                    const paciente = JSON.parse(pacienteSession);
+                    console.log('📝 [Incidencias] Paciente encontrado en sessionStorage:', paciente);
+
+                    this.datosPaciente = {
+                        id: paciente.id,
+                        nombre: paciente.nombre || '',
+                        direccion: paciente.direccion || '',
+                        telefono: paciente.telefono || '',
+                        colonia: paciente.colonia || '',
+                        seccion: paciente.seccion || ''
+                    };
+
+                    this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
+                    this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+                    this.mostrarFormulario = true;
+
+                    // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE
+                    this.onTipoIncidenciaChange();
+
+                    sessionStorage.removeItem('pacienteParaIncidencia');
+                    sessionStorage.removeItem('fromMap');
+
+                    this.cdr.detectChanges();
+                    console.log('✅ Formulario abierto con datos del paciente (sessionStorage):', this.datosPaciente.nombre);
+                } catch (e) {
+                    console.error('Error al parsear paciente de sessionStorage:', e);
+                }
+            } else {
+                this.limpiarDatosPaciente();
+                console.log('❌ No se encontraron datos de paciente en ningún storage');
+            }
+        }
+
+        // ⭐ ESCUCHAR EVENTO DE PACIENTE SELECCIONADO
+        window.addEventListener('pacienteSeleccionadoParaIncidencia', this.handlePacienteSeleccionado.bind(this));
+    }
+
+    // ⭐ ============================================
+    // ⭐ HANDLE PACIENTE SELECCIONADO
+    // ⭐ ============================================
+
+    handlePacienteSeleccionado(event: any) {
+        const paciente = event.detail;
+        console.log('📝 [Incidencias] Paciente recibido para incidencia:', paciente);
+
+        if (paciente) {
+            this.datosPaciente = {
+                id: paciente.id || paciente.pacienteId,
+                nombre: paciente.nombre || '',
+                direccion: paciente.direccion || '',
+                telefono: paciente.telefono || '',
+                colonia: paciente.colonia || '',
+                seccion: paciente.seccion || ''
+            };
+
+            this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
+            this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+
+            this.mostrarFormulario = true;
+
+            // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE
+            this.onTipoIncidenciaChange();
+
+            localStorage.removeItem('incidenciaPaciente');
+            sessionStorage.removeItem('pacienteParaIncidencia');
+            sessionStorage.removeItem('fromMap');
+
+            this.cdr.detectChanges();
+            console.log('✅ Formulario abierto con datos del paciente (evento):', this.datosPaciente.nombre);
         }
     }
+
+    // ⭐ ============================================
+    // ⭐ LIMPIAR DATOS DEL PACIENTE
+    // ⭐ ============================================
 
     limpiarDatosPaciente() {
         localStorage.removeItem('incidenciaPaciente');
+        sessionStorage.removeItem('fromMap');
+        sessionStorage.removeItem('pacienteParaIncidencia');
         this.datosPaciente = null;
     }
+
+    // ⭐ ============================================
+    // ⭐ LIMPIAR FORMULARIO
+    // ⭐ ============================================
+
+    private limpiarFormulario() {
+        this.nuevaIncidencia = {
+            tipo: 'no_localizado',
+            descripcion: '',
+            direccion: '',
+            fecha: new Date(),
+            fotos: [],
+            resuelta: false,
+            otroTexto: ''
+        };
+        this.fotosPreview = [];
+        this.procesando = false;
+    }
+
+    // ⭐ ============================================
+    // ⭐ RESET FORMULARIO COMPLETO
+    // ⭐ ============================================
+
+    resetearFormulario() {
+        this.limpiarFormulario();
+        if (this.datosPaciente) {
+            this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+            this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
+            // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE AL RESETEAR
+            this.onTipoIncidenciaChange();
+        }
+        this.cdr.detectChanges();
+    }
+
+    ngAfterViewInit() {
+        console.log('👀 [Incidencias] ngAfterViewInit ejecutado');
+        this.cdr.detectChanges();
+    }
+
+    // ⭐ ============================================
+    // ⭐ ngOnDestroy - COMPLETO
+    // ⭐ ============================================
+
+    ngOnDestroy() {
+        window.removeEventListener('pacienteSeleccionadoParaIncidencia', this.handlePacienteSeleccionado.bind(this));
+        sessionStorage.removeItem('pacienteParaIncidencia');
+        sessionStorage.removeItem('fromMap');
+    }
+
+    // ⭐ ============================================
+    // ⭐ CARGAR INCIDENCIAS
+    // ⭐ ============================================
 
     cargarIncidencias() {
         this.loading = true;
@@ -129,7 +282,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         this.http.get<any[]>(`${this.apiUrl}/incidencias`)
             .subscribe({
                 next: (data) => {
-                    console.log('Incidencias cargadas desde BD:', data);
+                    console.log('✅ Incidencias cargadas desde BD:', data);
                     if (Array.isArray(data)) {
                         this.incidencias = data.map(inc => ({
                             id: inc.id,
@@ -144,7 +297,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                             otroTexto: inc.otroTexto || ''
                         }));
                     } else {
-                        console.error('La respuesta no es un array:', data);
                         this.incidencias = [];
                     }
                     this.aplicarFiltro();
@@ -153,7 +305,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                     this.cdr.detectChanges();
                 },
                 error: (error) => {
-                    console.error('Error al cargar incidencias desde BD:', error);
+                    console.error('❌ Error al cargar incidencias desde BD:', error);
                     this.usandoLocalStorage = true;
                     this.cargarIncidenciasLocal();
                     this.loading = false;
@@ -173,7 +325,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                         ...inc,
                         fecha: new Date(inc.fecha)
                     }));
-                    console.log(`Cargadas ${this.incidencias.length} incidencias desde localStorage`);
+                    console.log(`📋 Cargadas ${this.incidencias.length} incidencias desde localStorage`);
                 } else {
                     this.incidencias = [];
                 }
@@ -182,7 +334,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                 this.incidencias = [];
             }
         } else {
-            console.log('No hay incidencias guardadas en localStorage');
             this.incidencias = [];
         }
         this.aplicarFiltro();
@@ -192,7 +343,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
     guardarIncidencias() {
         try {
             localStorage.setItem('incidencias', JSON.stringify(this.incidencias));
-            console.log(`Guardadas ${this.incidencias.length} incidencias en localStorage`);
+            console.log(`💾 Guardadas ${this.incidencias.length} incidencias en localStorage`);
         } catch (error) {
             console.error('Error al guardar en localStorage:', error);
         }
@@ -213,22 +364,18 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             otroTexto: incidencia.otroTexto || ''
         };
 
-        console.log('Guardando incidencia en BD:', incidenciaData);
+        console.log('📤 Guardando incidencia en BD:', incidenciaData);
 
         this.http.post(`${this.apiUrl}/incidencias`, incidenciaData)
             .subscribe({
                 next: (response: any) => {
-                    console.log('Incidencia guardada en BD:', response);
+                    console.log('✅ Incidencia guardada en BD:', response);
                     const nuevaIncidencia = { ...incidencia, id: response.id || Date.now() };
                     this.incidencias.unshift(nuevaIncidencia);
                     this.guardarIncidencias();
                     this.aplicarFiltro();
                     this.loading = false;
-
-                    // ⭐ SOLO UNA NOTIFICACIÓN - YA NO ENVIAMOS DESDE EL FRONTEND
-                    // El backend crea la notificación automáticamente
-
-                    this.mostrarToast(' Incidencia guardada correctamente', 'success');
+                    this.mostrarToast('✅ Incidencia guardada correctamente', 'success');
                     this.cdr.detectChanges();
 
                     if (incidencia.pacienteId) {
@@ -237,28 +384,27 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
 
                     this.limpiarDatosPaciente();
                     this.datosPaciente = null;
+                    this.mostrarFormulario = false;
 
                     setTimeout(() => {
                         this.router.navigate(['/pacientes']);
                     }, 1500);
                 },
                 error: (error) => {
-                    console.error('Error al guardar incidencia en BD:', error);
+                    console.error('❌ Error al guardar incidencia en BD:', error);
                     this.loading = false;
                     const nuevaIncidencia = { ...incidencia, id: Date.now() };
                     this.incidencias.unshift(nuevaIncidencia);
                     this.guardarIncidencias();
                     this.aplicarFiltro();
-
-                    // ⭐ SOLO UNA NOTIFICACIÓN - LOCAL
                     this.enviarNotificacionLocal(nuevaIncidencia);
-
-                    this.mostrarToast(' Incidencia guardada localmente (sin conexión a BD)', 'warning');
+                    this.mostrarToast('⚠️ Incidencia guardada localmente (sin conexión a BD)', 'warning');
                     this.usandoLocalStorage = true;
                     this.cdr.detectChanges();
 
                     this.limpiarDatosPaciente();
                     this.datosPaciente = null;
+                    this.mostrarFormulario = false;
 
                     setTimeout(() => {
                         this.router.navigate(['/pacientes']);
@@ -267,7 +413,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             });
     }
 
-    // ⭐ SOLO PARA CUANDO NO HAY CONEXIÓN AL BACKEND
     private enviarNotificacionLocal(incidencia: Incidencia) {
         const nombrePaciente = incidencia.datosPaciente?.nombre || 'Paciente';
 
@@ -287,7 +432,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
 
         try {
             const notificaciones = JSON.parse(localStorage.getItem('notificacionesCache') || '[]');
-            // ⭐ EVITAR DUPLICADOS
             const existe = notificaciones.some((n: any) =>
                 n.metadata?.incidenciaId === incidencia.id
             );
@@ -299,7 +443,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                     createdAt: new Date().toISOString()
                 });
                 localStorage.setItem('notificacionesCache', JSON.stringify(notificaciones));
-                console.log(' Notificación guardada localmente');
+                console.log('📨 Notificación guardada localmente');
             }
         } catch (error) {
             console.error('Error guardando notificación local:', error);
@@ -309,10 +453,14 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
     actualizarEstadoPaciente(pacienteId: number, estado: string) {
         this.http.patch(`${this.apiUrl}/pacientes/${pacienteId}/estatus`, { estatus: estado })
             .subscribe({
-                next: () => console.log('Estado del paciente actualizado a:', estado),
-                error: (err) => console.error('Error actualizando estado:', err)
+                next: () => console.log('✅ Estado del paciente actualizado a:', estado),
+                error: (err) => console.error('❌ Error actualizando estado:', err)
             });
     }
+
+    // ⭐ ============================================
+    // ⭐ ON TIPO INCIDENCIA CHANGE - RELLENA DESCRIPCIÓN
+    // ⭐ ============================================
 
     onTipoIncidenciaChange() {
         if (this.nuevaIncidencia.tipo === 'otro') {
@@ -357,8 +505,13 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         }
     }
 
+    // ⭐ ============================================
+    // ⭐ TOGGLE FORMULARIO
+    // ⭐ ============================================
+
     toggleFormulario() {
-        if (!this.mostrarFormulario && !this.datosPaciente) {
+        // ⭐ VERIFICAR SI HAY PACIENTE SELECCIONADO
+        if (!this.datosPaciente) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Paciente no seleccionado',
@@ -391,23 +544,10 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         if (!this.mostrarFormulario) {
             this.limpiarDatosPaciente();
             this.resetearFormulario();
+        } else {
+            // ⭐ RELLENAR DESCRIPCIÓN CUANDO SE ABRE MANUALMENTE
+            this.onTipoIncidenciaChange();
         }
-        this.cdr.detectChanges();
-    }
-
-    resetearFormulario() {
-        this.nuevaIncidencia = {
-            tipo: 'no_localizado',
-            descripcion: this.getDescripcionPorDefecto(),
-            direccion: this.datosPaciente ? `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}` : '',
-            fecha: new Date(),
-            fotos: [],
-            resuelta: false,
-            otroTexto: '',
-            pacienteId: this.datosPaciente?.id
-        };
-        this.fotosPreview = [];
-        this.procesando = false;
         this.cdr.detectChanges();
     }
 
@@ -478,7 +618,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                                 }
                                 this.procesando = false;
                                 this.cdr.detectChanges();
-                                this.mostrarToast(`${total} foto(s) cargada(s) correctamente`, 'success');
+                                this.mostrarToast(`📸 ${total} foto(s) cargada(s) correctamente`, 'success');
                             }, 300);
                         }
                     };
@@ -488,7 +628,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                         if (procesadas === total) {
                             this.procesando = false;
                             this.cdr.detectChanges();
-                            this.mostrarToast(`Error al cargar algunas fotos`, 'error');
+                            this.mostrarToast(`❌ Error al cargar algunas fotos`, 'error');
                         }
                     };
 
@@ -535,8 +675,12 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         this.fotosPreview.splice(index, 1);
         this.nuevaIncidencia.fotos.splice(index, 1);
         this.cdr.detectChanges();
-        this.mostrarToast('Foto eliminada', 'info');
+        this.mostrarToast('🗑️ Foto eliminada', 'info');
     }
+
+    // ⭐ ============================================
+    // ⭐ REGISTRAR INCIDENCIA
+    // ⭐ ============================================
 
     registrarIncidencia() {
         if (!this.datosPaciente) {
@@ -545,7 +689,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         }
 
         if (!this.nuevaIncidencia.descripcion || this.nuevaIncidencia.descripcion.trim() === '') {
-            this.mostrarToast('Complete la descripción de la incidencia', 'error');
+            this.mostrarToast(' Complete la descripción de la incidencia', 'error');
             return;
         }
 
@@ -577,8 +721,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             showCancelButton: true,
             confirmButtonColor: '#701f2f',
             cancelButtonColor: '#999999',
-            confirmButtonText: ' Guardar incidencia',
-            cancelButtonText: ' Cancelar',
+            confirmButtonText: '✅ Guardar incidencia',
+            cancelButtonText: '❌ Cancelar',
             reverseButtons: true
         }).then((result: any) => {
             if (result.isConfirmed) {
@@ -609,10 +753,10 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             this.http.patch(`${this.apiUrl}/incidencias/${id}`, { resuelta: true })
                 .subscribe({
                     next: () => {
-                        console.log('Incidencia marcada como resuelta en BD');
+                        console.log('✅ Incidencia marcada como resuelta en BD');
                         this.guardarIncidencias();
                         this.aplicarFiltro();
-                        this.mostrarToast(' Incidencia marcada como resuelta', 'success');
+                        this.mostrarToast('✅ Incidencia marcada como resuelta', 'success');
                         this.cdr.detectChanges();
 
                         if (inc.pacienteId) {
@@ -620,10 +764,10 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                         }
                     },
                     error: (err) => {
-                        console.error('Error al marcar como resuelta:', err);
+                        console.error('❌ Error al marcar como resuelta:', err);
                         this.guardarIncidencias();
                         this.aplicarFiltro();
-                        this.mostrarToast(' Marcada localmente (sin conexión a BD)', 'warning');
+                        this.mostrarToast('⚠️ Marcada localmente (sin conexión a BD)', 'warning');
                         this.cdr.detectChanges();
                     }
                 });
@@ -648,9 +792,13 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
         this.fotoModal = null;
     }
 
+    // ⭐ ============================================
+    // ⭐ MOSTRAR TOAST
+    // ⭐ ============================================
+
     mostrarToast(mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'success') {
         const colores = {
-            success: '#701f2f',
+            success: '#2e7d32',
             error: '#c62828',
             info: '#1976d2',
             warning: '#e67e22'
@@ -671,7 +819,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
             box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             border-left: 5px solid ${colores[tipo]};
             animation: slideInRight 0.3s ease-out;
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         `;
         toast.innerHTML = `
@@ -679,10 +827,10 @@ export class IncidenciasComponent implements OnInit, AfterViewInit {
                 <div style="background: ${colores[tipo]}10; padding: 18px 16px; display: flex; align-items: center; justify-content: center; min-width: 60px;">
                     <i class="fas ${iconos[tipo]}" style="font-size: 24px; color: ${colores[tipo]};"></i>
                 </div>
-                <div style="padding: 16px 20px 16px 16px; flex: 1;">
+                <div style="padding: 16px 20px 16px 16px; flex: 1; display: flex; align-items: center;">
                     <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;">${mensaje}</div>
                 </div>
-                <button onclick="this.closest('div[style]').remove()" style="background: none; border: none; color: #bbb; cursor: pointer; padding: 8px 12px; font-size: 16px;">
+                <button onclick="this.closest('div[style]').remove()" style="background: none; border: none; color: #bbb; cursor: pointer; padding: 8px 12px; font-size: 16px; transition: color 0.2s;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

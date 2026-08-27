@@ -2,6 +2,7 @@
 
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NotificacionesService, Notificacion } from '../../services/notificaciones.service';
 import { Subscription } from 'rxjs';
@@ -11,7 +12,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-notificaciones',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './notificaciones.component.html',
   styleUrls: ['./notificaciones.component.scss']
 })
@@ -24,13 +25,14 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
   cargando: boolean = true;
   cargandoMas: boolean = false;
   filtroActual: string = 'todas';
+  busquedaTexto: string = '';
   private subscriptions: Subscription[] = [];
   hasMore: boolean = true;
   totalItems: number = 0;
   private paginaActual: number = 1;
   private pageSize: number = 10;
   private todasLasNotificaciones: Notificacion[] = [];
-  private notificacionEliminando: boolean = false;
+  notificacionEliminando: boolean = false;
 
   notificacionesSeleccionadas: number[] = [];
   modalEliminarMultipleVisible: boolean = false;
@@ -439,13 +441,19 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   aplicarFiltro() {
+    let base = [...this.notificaciones];
     if (this.filtroActual === 'noLeidas') {
-      this.notificacionesFiltradas = this.notificaciones.filter(n => !n.leida);
-    } else if (this.filtroActual === 'urgentes') {
-      this.notificacionesFiltradas = this.notificaciones.filter(n => n.prioridad === 'urgente');
-    } else {
-      this.notificacionesFiltradas = [...this.notificaciones];
+      base = base.filter(n => !n.leida);
     }
+    if (this.busquedaTexto && this.busquedaTexto.trim()) {
+      const q = this.busquedaTexto.trim().toLowerCase();
+      base = base.filter(n =>
+        (n.titulo && n.titulo.toLowerCase().includes(q)) ||
+        (n.mensaje && n.mensaje.toLowerCase().includes(q)) ||
+        (n.tipo && n.tipo.toLowerCase().includes(q))
+      );
+    }
+    this.notificacionesFiltradas = base;
   }
 
   toggleSeleccion(id: number) {

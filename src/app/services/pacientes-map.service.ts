@@ -2,7 +2,8 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface PacienteMap {
@@ -68,6 +69,12 @@ export class PacientesMapService {
         }
     }
 
+    getPacientes(idEnfermera: number = 1): Observable<PacienteMap[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`).pipe(
+            map(data => this.procesarPacientes(data || []))
+        );
+    }
+
     async getPacientesEnfermera(idEnfermera: number = 1): Promise<any[]> {
         try {
             console.log('📥 Intentando obtener pacientes de la BD...');
@@ -106,10 +113,75 @@ export class PacientesMapService {
         return partes.length >= 2 ? partes[1] : '';
     }
 
-    private extraerColonia(direccion: string): string {
-        if (!direccion) return '';
-        const partes = direccion.split(',');
-        return partes.length >= 2 ? partes[1].trim() : '';
+    public extraerColonia(direccion: string): string {
+        if (!direccion) return 'Santa Rosa de Lima';
+
+        let limpia = direccion.trim();
+
+        const coloniasConocidas = [
+            'SANTA ROSA DE LIMA', 'JARDINES DE LOS NARANJOS', 'LOS NARANJOS',
+            'REAL DE SAN JOSE', 'MISION DE SAN JOSE', 'RESIDENCIAL VICTORIA',
+            'SAN JOSE DEL CONSUELO', 'SAN JOSE DEL CONSUELO II', 'EL MANANTIAL',
+            'LOS MANANTIALES', 'VALLE DE SEÑORA', 'VALLE DE SEÑORA II',
+            'PREDIO SAN PABLO SUR', 'BOSQUES DE LA PRADERA', 'DELTA DE JEREZ',
+            'EL PALMAR', 'RESIDENCIAL PLATINO', 'SAN BENIGNO',
+            'SAN PEDRO DE LOS HERNANDEZ', 'SAN IGNACIO', 'SAN ISIDRO',
+            'SAN MARTIN', 'SAN LAZARO', 'QUINTA SAN LORENZO', 'PASEO DE LA CASTELLANA',
+            'PASEO DEL MOLINO', 'PEÑITAS', 'OBREGON', 'JARDINES DEL SOL',
+            'LA AZTECA', 'ZONA CENTRO'
+        ];
+
+        const upper = limpia.toUpperCase();
+        for (const col of coloniasConocidas) {
+            if (upper.includes(col)) {
+                return col;
+            }
+        }
+
+        const patrones = [
+            /COL(?:ONIA)?\.?\s*([^,|]+)/i,
+            /FRACC(?:IONAMIENTO)?\.?\s*([^,|]+)/i,
+            /RESIDENCIAL\s*([^,|]+)/i,
+            /JARDINES\s*([^,|]+)/i,
+            /MISION\s*([^,|]+)/i,
+            /VALLE\s*([^,|]+)/i,
+            /BARRIO\s*([^,|]+)/i
+        ];
+
+        for (const patron of patrones) {
+            const match = limpia.match(patron);
+            if (match && match[1]) {
+                const encontrada = match[1].replace(/CP\s*\d{5}/gi, '').trim();
+                if (encontrada.length > 2 && !/^\d+$/.test(encontrada)) {
+                    return encontrada;
+                }
+            }
+        }
+
+        const separador = limpia.includes('|') ? '|' : ',';
+        const partes = limpia.split(separador);
+        if (partes.length >= 2) {
+            let col = partes[1].trim()
+                .replace(/^COL\.\s*/i, '')
+                .replace(/^FRACC\.\s*/i, '')
+                .replace(/CP\s*\d{5}/gi, '')
+                .trim();
+            if (col.length > 2 && !/^\d+$/.test(col) && !col.toUpperCase().includes('LEON') && !col.toUpperCase().includes('GTO')) {
+                return col;
+            }
+            if (partes.length >= 3) {
+                let col3 = partes[2].trim()
+                    .replace(/^COL\.\s*/i, '')
+                    .replace(/^FRACC\.\s*/i, '')
+                    .replace(/CP\s*\d{5}/gi, '')
+                    .trim();
+                if (col3.length > 2 && !/^\d+$/.test(col3) && !col3.toUpperCase().includes('LEON') && !col3.toUpperCase().includes('GTO')) {
+                    return col3;
+                }
+            }
+        }
+
+        return 'Santa Rosa de Lima';
     }
 
     private detectarGenero(nombre: string, curp: string): string {
@@ -157,7 +229,11 @@ export class PacientesMapService {
 
             const nombreCompleto = this.construirNombreCompleto(p);
             const direccion = p.direccion || '';
-            const colonia = this.extraerColonia(direccion);
+            const coloniaValida = p.colonia && p.colonia.length > 2 &&
+                !p.colonia.toUpperCase().includes('DISPONIBLE') &&
+                !p.colonia.toUpperCase().includes('SIN COLONIA') &&
+                !p.colonia.toUpperCase().includes('NO DISPONIBLE');
+            const colonia = coloniaValida ? p.colonia : this.extraerColonia(direccion);
             const seccion = this.extraerSeccion(p.zonaTrabajo || p.seccion || '') || '277';
 
             let lat = p.lat ? parseFloat(p.lat) : null;
@@ -175,11 +251,11 @@ export class PacientesMapService {
 
             let telefonoFormateado = 'No disponible';
             if (telefonoFijo && telefonoCelular) {
-                telefonoFormateado = `📞 ${telefonoFijo} / 📱 ${telefonoCelular}`;
+                telefonoFormateado = `${telefonoFijo} / ${telefonoCelular}`;
             } else if (telefonoCelular) {
-                telefonoFormateado = `📱 ${telefonoCelular}`;
+                telefonoFormateado = `${telefonoCelular}`;
             } else if (telefonoFijo) {
-                telefonoFormateado = `📞 ${telefonoFijo}`;
+                telefonoFormateado = `${telefonoFijo}`;
             }
 
             if (telefonoFormateado !== 'No disponible') {
@@ -194,28 +270,13 @@ export class PacientesMapService {
             const discapacidades = this.extraerDiscapacidades(p);
             const finadoInfo = this.esFinado(p);
 
-            if (nombreCompleto.toLowerCase().includes('guzmán') ||
-                p.nombre?.toLowerCase().includes('guzmán') ||
-                p.apellidoPaterno?.toLowerCase().includes('guzmán')) {
-                console.log(`🔍 [PacientesMapService] Paciente GUZMÁN encontrado:`, {
-                    id: p.id,
-                    nombre: nombreCompleto,
-                    programa: p.programa,
-                    estatus: p.estatus,
-                    discapacidades: discapacidades,
-                    finado: finadoInfo.finado,
-                    lat: lat,
-                    lng: lng
-                });
-            }
-
             pacientesConCoords.push({
                 id: p.id || 0,
                 nombre: nombreCompleto,
                 apellidoPaterno: p.apellidoPaterno || '',
                 apellidoMaterno: p.apellidoMaterno || '',
                 direccion: direccion || 'Dirección no disponible',
-                colonia: colonia || 'Colonia no disponible',
+                colonia: colonia,
                 telefono: telefonoFormateado,
                 telefonoFijo: telefonoFijo,
                 telefonoCelular: telefonoCelular,
@@ -288,12 +349,12 @@ export class PacientesMapService {
 
         let resultado = [...pacientes];
 
-        if (filtros.zona) {
-            const zona = filtros.zona.toUpperCase();
+        if (filtros.zona && filtros.zona.trim() !== '' && filtros.zona.toUpperCase() !== 'TODAS LAS ZONAS' && filtros.zona.toUpperCase() !== 'TODAS') {
+            const zona = filtros.zona.toUpperCase().trim();
             resultado = resultado.filter(p => {
                 const direccion = (p.direccion || '').toUpperCase();
                 const colonia = (p.colonia || '').toUpperCase();
-                return direccion.includes(zona) || colonia.includes(zona);
+                return direccion.includes(zona) || colonia.includes(zona) || (colonia.length > 2 && zona.includes(colonia));
             });
         }
 

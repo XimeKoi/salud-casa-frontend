@@ -8,11 +8,12 @@
     <!-- ⭐ HEADER ROJO - FILTROS DISTRITALES        -->
     <!-- ============================================ -->
     <div class="header-red">
-      <img src="https://i.postimg.cc/3J7H2cJH/logo1-removebg-preview.png" alt="Salud Casa por Casa"
-        class="header-logo-icon" />
+      <div class="header-logo-box">
+        <img src="cuidalia-logo.png" alt="Cuidalia" class="header-logo-icon" />
+      </div>
       <div class="header-text">
-        <h2>SALUD CASA POR CASA</h2>
-        <span class="header-subtitle">Programa de Visitas Domiciliarias</span>
+        <img src="cuidalia-wordmark.png" alt="Cuidalia" class="header-wordmark" />
+        <span class="header-subtitle">Cercanía que cuida</span>
       </div>
     </div>
 
@@ -95,7 +96,7 @@
     <div class="section">
       <div class="sec-title"><i class="fas fa-chart-line"></i> Distribución de Riesgo</div>
 
-      <div class="risk-block">
+      <div class="risk-block" [class.checked]="riesgosSeleccionados.g1" (click)="toggleRiesgo('g1')">
         <div class="risk-upper-info">
           <span><span class="color-dot green"></span> Grupo 1 (Bajo)</span>
           <span>{{ riesgoG1 | number }}</span>
@@ -107,7 +108,7 @@
         </div>
       </div>
 
-      <div class="risk-block">
+      <div class="risk-block" [class.checked]="riesgosSeleccionados.g2" (click)="toggleRiesgo('g2')">
         <div class="risk-upper-info">
           <span><span class="color-dot yellow"></span> Grupo 2 (Medio)</span>
           <span>{{ riesgoG2 | number }}</span>
@@ -119,7 +120,7 @@
         </div>
       </div>
 
-      <div class="risk-block">
+      <div class="risk-block" [class.checked]="riesgosSeleccionados.g3" (click)="toggleRiesgo('g3')">
         <div class="risk-upper-info">
           <span><span class="color-dot orange"></span> Grupo 3 (Alto)</span>
           <span>{{ riesgoG3 | number }}</span>
@@ -131,7 +132,7 @@
         </div>
       </div>
 
-      <div class="risk-block">
+      <div class="risk-block" [class.checked]="riesgosSeleccionados.g4" (click)="toggleRiesgo('g4')">
         <div class="risk-upper-info">
           <span><span class="color-dot red"></span> Grupo 4 (Crítico)</span>
           <span>{{ riesgoG4 | number }}</span>

@@ -1,247 +1,317 @@
 <!-- src/app/pages/incidencias/incidencias.component.html -->
 
-<div class="container">
-    <header class="header">
-        <h1>Incidencias</h1>
-    </header>
+<div class="incidencias-page">
 
-    <div class="content-wrapper">
+  <!-- ⭐ HEADER INSTITUCIONAL -->
+  <header class="page-header">
+    <div class="header-main-row">
+      <div class="header-title-box">
+        <div class="header-icon-wrapper">
+          <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h1>Centro de Incidencias en Campo</h1>
+          <p class="header-subtitle">
+            Reporte y seguimiento de visitas domiciliarias no localizadas, rechazos o alertas en territorio
+          </p>
+        </div>
+      </div>
 
-        <!-- Botón para nueva incidencia -->
-        <div class="accion-boton">
-            <button class="btn-nueva-incidencia" (click)="toggleFormulario()" [disabled]="loading">
-                <i class="fas" [class.fa-plus-circle]="!mostrarFormulario"
-                    [class.fa-times-circle]="mostrarFormulario"></i>
-                {{ mostrarFormulario ? 'Cerrar formulario' : 'Registrar incidencia' }}
-            </button>
+      <!-- Métricas rápidas y botón de acción -->
+      <div class="header-badges-and-actions">
+        <div class="header-quick-badges">
+          <span class="header-pill pill-total">
+            <i class="fas fa-list-check"></i>
+            <span>Total: <strong>{{ incidencias.length }}</strong></span>
+          </span>
+          <span class="header-pill pill-pending" *ngIf="incidenciasPendientes > 0">
+            <i class="fas fa-clock"></i>
+            <span>Pendientes: <strong>{{ incidenciasPendientes }}</strong></span>
+          </span>
+          <span class="header-pill pill-resolved">
+            <i class="fas fa-circle-check"></i>
+            <span>Resueltas: <strong>{{ incidenciasResueltas }}</strong></span>
+          </span>
         </div>
 
-        <!-- Formulario -->
-        <div class="formulario-card" *ngIf="mostrarFormulario">
-            <div class="formulario-header">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Nuevo reporte de incidencia</span>
-            </div>
-
-            <!-- ⭐ ALERTA SI NO HAY PACIENTE SELECCIONADO -->
-            <div class="alert-no-paciente" *ngIf="!datosPaciente" style="
-                background: #fff3e0; 
-                padding: 16px 20px; 
-                border-radius: 10px; 
-                border-left: 4px solid #e67e22; 
-                margin-bottom: 16px;
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-            ">
-                <i class="fas fa-exclamation-triangle" style="color: #e67e22; font-size: 20px; margin-top: 2px;"></i>
-                <div>
-                    <div style="font-weight: 600; color: #7B1D2E; font-size: 14px;">⚠️ Paciente no seleccionado</div>
-                    <div style="font-size: 13px; color: #666; margin-top: 2px;">
-                        Debes seleccionar un paciente desde el mapa antes de reportar una incidencia.
-                        <br>
-                        <span style="font-size: 12px; color: #999;">
-                            <i class="fas fa-info-circle"></i> Haz clic en "Reportar Incidencia" en el popup del
-                            paciente.
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="datos-paciente-card" *ngIf="datosPaciente">
-                <div class="datos-paciente-header">
-                    <i class="fas fa-user-circle"></i>
-                    <strong>Paciente seleccionado</strong>
-                </div>
-                <div class="datos-paciente-contenido">
-                    <div class="dato-row">
-                        <i class="fas fa-user"></i>
-                        <span><strong>Paciente:</strong> {{ datosPaciente.nombre }}</span>
-                    </div>
-                    <div class="dato-row">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span><strong>Dirección:</strong> {{ datosPaciente.direccion }}</span>
-                    </div>
-                    <div class="dato-row">
-                        <i class="fas fa-phone"></i>
-                        <span><strong>Teléfono:</strong> {{ datosPaciente.telefono || 'Sin teléfono' }}</span>
-                    </div>
-                    <div class="dato-row">
-                        <i class="fas fa-building"></i>
-                        <span><strong>Colonia:</strong> {{ datosPaciente.colonia }}</span>
-                    </div>
-                    <div class="dato-row">
-                        <i class="fas fa-hashtag"></i>
-                        <span><strong>Sección:</strong> {{ datosPaciente.seccion || 'N/A' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Tipo de incidencia <span class="required">*</span></label>
-                <select [(ngModel)]="nuevaIncidencia.tipo" class="form-control" (change)="onTipoIncidenciaChange()">
-                    <option *ngFor="let tipo of tiposIncidencias" [value]="tipo.valor">
-                        {{ tipo.label }}
-                    </option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Dirección <span class="required">*</span></label>
-                <input type="text" [value]="direccionCompleta" disabled class="form-control disabled-input">
-            </div>
-
-            <div class="form-group">
-                <label>Descripción <span class="required">*</span></label>
-                <textarea rows="4" [(ngModel)]="nuevaIncidencia.descripcion"
-                    [placeholder]="nuevaIncidencia.tipo === 'otro' ? 'Describe la incidencia en detalle...' : getDescripcionPorDefecto()"
-                    class="form-control">
-                </textarea>
-                <small class="text-muted" *ngIf="nuevaIncidencia.tipo !== 'otro'">
-                    <i class="fas fa-info-circle"></i> Puedes modificar la descripción predefinida
-                </small>
-            </div>
-
-            <div class="form-group">
-                <label>Evidencia fotográfica</label>
-
-                <div class="foto-upload-area">
-                    <button type="button" class="btn-foto" (click)="abrirSelector($event)" [disabled]="procesando">
-                        <i class="fas fa-camera"></i> {{ procesando ? 'Procesando...' : 'Subir fotos' }}
-                    </button>
-
-                    <input type="file" #fileInput accept="image/*" multiple style="display: none"
-                        (change)="procesarFotos($event)">
-
-                    <div class="foto-hint">
-                        <i class="fas fa-info-circle"></i> Selecciona una o varias imágenes
-                    </div>
-                </div>
-
-                <div class="foto-contador" *ngIf="fotosPreview.length > 0">
-                    <i class="fas fa-images"></i> {{ fotosPreview.length }} foto(s) seleccionada(s)
-                </div>
-
-                <div class="fotos-preview" *ngIf="fotosPreview.length > 0">
-                    <div class="foto-item" *ngFor="let foto of fotosPreview; let i = index">
-                        <img [src]="foto" alt="Vista previa">
-                        <button type="button" class="btn-eliminar-foto" (click)="eliminarFoto(i)">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button class="btn-guardar" (click)="registrarIncidencia()"
-                    [disabled]="loading || !nuevaIncidencia.descripcion || !datosPaciente">
-                    <i class="fas fa-save"></i>
-                    {{ loading ? 'Guardando...' : 'Guardar incidencia' }}
-                </button>
-            </div>
-        </div>
-
-        <!-- Filtros -->
-        <div class="filtros-modernos">
-            <button class="filtro-modern" [class.active]="filtroActual === 'todas'" (click)="cambiarFiltro('todas')">
-                <i class="fas fa-th-list"></i> Todas
-                <span class="badge">{{ incidencias.length }}</span>
-            </button>
-            <button class="filtro-modern" [class.active]="filtroActual === 'pendientes'"
-                (click)="cambiarFiltro('pendientes')">
-                <i class="fas fa-clock"></i> Pendientes
-                <span class="badge pendiente">{{ incidenciasPendientes }}</span>
-            </button>
-            <button class="filtro-modern" [class.active]="filtroActual === 'resueltas'"
-                (click)="cambiarFiltro('resueltas')">
-                <i class="fas fa-check-circle"></i> Resueltas
-                <span class="badge resuelta">{{ incidenciasResueltas }}</span>
-            </button>
-        </div>
-
-        <!-- Lista de incidencias -->
-        <div class="incidencias-list">
-            <div *ngIf="incidenciasFiltradas.length === 0" class="sin-incidencias">
-                <div class="empty-icon">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
-                <p class="empty-title">No hay incidencias registradas</p>
-                <p class="empty-subtitle" *ngIf="filtroActual === 'pendientes'">
-                    ¡Excelente! Todas las incidencias han sido resueltas
-                </p>
-                <p class="empty-subtitle" *ngIf="filtroActual === 'resueltas'">
-                    No hay incidencias resueltas aún
-                </p>
-                <p class="empty-subtitle" *ngIf="filtroActual === 'todas'">
-                    Registra la primera incidencia usando el botón superior
-                </p>
-            </div>
-
-            <div class="incidencia-card" *ngFor="let incidencia of incidenciasFiltradas"
-                [class.resuelta]="incidencia.resuelta">
-                <div class="incidencia-icono" [class.resuelta-icon]="incidencia.resuelta">
-                    <i [class]="getTipoIcono(incidencia.tipo)"></i>
-                </div>
-
-                <div class="incidencia-contenido">
-                    <div class="incidencia-header">
-                        <div class="incidencia-titulo">
-                            <h4>{{ getTipoLabel(incidencia.tipo) }}</h4>
-                            <span class="incidencia-id" *ngIf="incidencia.id">#{{ incidencia.id }}</span>
-                        </div>
-                        <span class="fecha">
-                            <i class="fas fa-calendar-alt"></i>
-                            {{ incidencia.fecha | date:'dd/MM/yyyy HH:mm' }}
-                        </span>
-                    </div>
-
-                    <div class="datos-paciente-mini" *ngIf="incidencia.datosPaciente">
-                        <i class="fas fa-user"></i>
-                        <strong>{{ incidencia.datosPaciente.nombre }}</strong>
-                        <span class="separator">|</span>
-                        <i class="fas fa-phone"></i>
-                        {{ incidencia.datosPaciente.telefono || 'Sin teléfono' }}
-                        <span class="separator">|</span>
-                        <i class="fas fa-map-marker-alt"></i>
-                        {{ incidencia.datosPaciente.colonia || 'Sin colonia' }}
-                    </div>
-
-                    <div class="direccion">
-                        <i class="fas fa-location-dot"></i>
-                        {{ incidencia.direccion }}
-                    </div>
-
-                    <div class="descripcion">
-                        {{ incidencia.descripcion }}
-                    </div>
-
-                    <div class="fotos-evidencia" *ngIf="incidencia.fotos && incidencia.fotos.length > 0">
-                        <div class="foto-miniatura" *ngFor="let foto of incidencia.fotos">
-                            <img [src]="foto" alt="Evidencia" (click)="openModal(foto)">
-                        </div>
-                    </div>
-
-                    <div class="incidencia-footer">
-                        <span class="estado" [class.resuelta]="incidencia.resuelta">
-                            <i class="fas" [class.fa-clock]="!incidencia.resuelta"
-                                [class.fa-check-circle]="incidencia.resuelta"></i>
-                            {{ incidencia.resuelta ? 'Resuelta' : 'Pendiente' }}
-                        </span>
-                        <button *ngIf="!incidencia.resuelta" class="btn-resolver"
-                            (click)="marcarResuelta(incidencia.id!)">
-                            <i class="fas fa-check"></i> Marcar como resuelta
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <button class="btn-nueva-incidencia-header" (click)="toggleFormulario()" [disabled]="loading">
+          <i class="fas" [class.fa-plus-circle]="!mostrarFormulario" [class.fa-times-circle]="mostrarFormulario"></i>
+          <span>{{ mostrarFormulario ? 'Cerrar Formulario' : 'Registrar Incidencia' }}</span>
+        </button>
+      </div>
     </div>
+  </header>
+
+  <!-- ⭐ CONTENIDO PRINCIPAL -->
+  <main class="content-wrapper">
+
+    <!-- ============================================ -->
+    <!-- ⭐ FORMULARIO DE REGISTRO ELEVADO            -->
+    <!-- ============================================ -->
+    <div class="formulario-card" *ngIf="mostrarFormulario">
+      <div class="formulario-header">
+        <div class="form-header-title">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Nuevo Reporte de Incidencia Operativa</span>
+        </div>
+        <button class="btn-close-form" (click)="toggleFormulario()" title="Cerrar formulario">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- PACIENTE SELECCIONADO -->
+      <div class="datos-paciente-card" *ngIf="datosPaciente">
+        <div class="datos-paciente-header">
+          <div class="patient-title-wrap">
+            <i class="fas fa-user-circle"></i>
+            <strong>Paciente Vinculado</strong>
+          </div>
+          <span class="badge-seleccionado">
+            <i class="fas fa-check-circle"></i> Seleccionado
+          </span>
+        </div>
+        <div class="datos-paciente-contenido">
+          <div class="dato-row">
+            <i class="fas fa-user"></i>
+            <span><strong>Paciente:</strong> {{ datosPaciente.nombre }}</span>
+          </div>
+          <div class="dato-row">
+            <i class="fas fa-map-marker-alt"></i>
+            <span><strong>Dirección:</strong> {{ datosPaciente.direccion }}</span>
+          </div>
+          <div class="dato-row">
+            <i class="fas fa-phone"></i>
+            <span><strong>Teléfono:</strong> {{ datosPaciente.telefono || 'Sin teléfono' }}</span>
+          </div>
+          <div class="dato-row">
+            <i class="fas fa-building"></i>
+            <span><strong>Colonia:</strong> {{ datosPaciente.colonia }}</span>
+          </div>
+          <div class="dato-row">
+            <i class="fas fa-hashtag"></i>
+            <span><strong>Sección:</strong> {{ datosPaciente.seccion || 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTA SI NO HAY PACIENTE SELECCIONADO -->
+      <div class="alert-no-paciente" *ngIf="!datosPaciente">
+        <div class="alert-icon-wrap">
+          <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">Paciente no preseleccionado</div>
+          <p class="alert-desc">
+            Para una mejor trazabilidad, puedes seleccionar primero al paciente en el mapa y presionar "Reportar Incidencia".
+          </p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo de Incidencia <span class="required">*</span></label>
+          <select [(ngModel)]="nuevaIncidencia.tipo" class="form-control-custom" (change)="onTipoIncidenciaChange()">
+            <option *ngFor="let tipo of tiposIncidencias" [value]="tipo.valor">
+              {{ tipo.label }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ubicación / Dirección <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <i class="fas fa-location-dot"></i>
+            <input type="text" [value]="direccionCompleta || 'Dirección no asignada'" disabled class="form-control-custom disabled-input">
+          </div>
+        </div>
+
+        <div class="form-group full-span">
+          <label>Descripción y Observaciones en Campo <span class="required">*</span></label>
+          <textarea rows="3" [(ngModel)]="nuevaIncidencia.descripcion"
+            [placeholder]="nuevaIncidencia.tipo === 'otro' ? 'Describe la situación encontrada con el mayor detalle posible...' : getDescripcionPorDefecto()"
+            class="form-control-custom textarea-custom">
+          </textarea>
+          <span class="hint-text" *ngIf="nuevaIncidencia.tipo !== 'otro'">
+            <i class="fas fa-circle-info"></i> Puedes ajustar el texto sugerido según lo observado.
+          </span>
+        </div>
+
+        <!-- Evidencia Fotográfica -->
+        <div class="form-group full-span">
+          <label>Evidencia Fotográfica en Campo</label>
+          <div class="foto-upload-area">
+            <button type="button" class="btn-subir-foto" (click)="abrirSelector($event)" [disabled]="procesando">
+              <i class="fas fa-camera"></i>
+              <span>{{ procesando ? 'Procesando imágenes...' : 'Subir o Capturar Fotos' }}</span>
+            </button>
+
+            <input type="file" #fileInput accept="image/*" multiple style="display: none"
+              (change)="procesarFotos($event)">
+
+            <span class="foto-hint">
+              <i class="fas fa-circle-info"></i> Formatos JPG, PNG. Puedes anexar fachada, portón o aviso.
+            </span>
+          </div>
+
+          <div class="foto-contador" *ngIf="fotosPreview.length > 0">
+            <i class="fas fa-images"></i> {{ fotosPreview.length }} foto(s) anexada(s)
+          </div>
+
+          <div class="fotos-preview-grid" *ngIf="fotosPreview.length > 0">
+            <div class="foto-item" *ngFor="let foto of fotosPreview; let i = index">
+              <img [src]="foto" alt="Vista previa">
+              <button type="button" class="btn-eliminar-foto" (click)="eliminarFoto(i)" title="Quitar foto">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions-bar">
+        <button class="btn-guardar-incidencia" (click)="registrarIncidencia()"
+          [disabled]="loading || !nuevaIncidencia.descripcion || !datosPaciente">
+          <i class="fas" [class.fa-save]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
+          <span>{{ loading ? 'Registrando...' : 'Guardar Incidencia' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ BARRA DE CONTROLES & FILTROS              -->
+    <!-- ============================================ -->
+    <div class="controls-card">
+      <div class="tabs-segmented">
+        <button class="tab-item" [class.active]="filtroActual === 'todas'" (click)="cambiarFiltro('todas')">
+          <i class="fas fa-layer-group"></i>
+          <span>Todas</span>
+          <span class="tab-count">{{ incidencias.length }}</span>
+        </button>
+
+        <button class="tab-item" [class.active]="filtroActual === 'pendientes'" (click)="cambiarFiltro('pendientes')">
+          <i class="fas fa-clock"></i>
+          <span>Pendientes</span>
+          <span class="tab-count warning" *ngIf="incidenciasPendientes > 0">{{ incidenciasPendientes }}</span>
+        </button>
+
+        <button class="tab-item" [class.active]="filtroActual === 'resueltas'" (click)="cambiarFiltro('resueltas')">
+          <i class="fas fa-circle-check"></i>
+          <span>Resueltas</span>
+          <span class="tab-count success" *ngIf="incidenciasResueltas > 0">{{ incidenciasResueltas }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ LISTA / FEED DE INCIDENCIAS               -->
+    <!-- ============================================ -->
+    <div class="incidencias-feed">
+
+      <!-- Estado vacío -->
+      <div *ngIf="incidenciasFiltradas.length === 0" class="empty-state-card">
+        <div class="empty-icon-circle">
+          <i class="fas fa-clipboard-check"></i>
+        </div>
+        <h3>No hay incidencias en esta categoría</h3>
+        <p *ngIf="filtroActual === 'pendientes'">
+          ¡Excelente! Todas las incidencias registradas han sido resueltas oportunamente.
+        </p>
+        <p *ngIf="filtroActual === 'resueltas'">
+          Aún no se han marcado incidencias como resueltas.
+        </p>
+        <p *ngIf="filtroActual === 'todas'">
+          No se registran incidencias actualmente en la zona operativa.
+        </p>
+      </div>
+
+      <!-- Tarjetas de incidencia -->
+      <div class="incident-card" *ngFor="let incidencia of incidenciasFiltradas"
+        [class.is-resolved]="incidencia.resuelta">
+
+        <div class="incident-card-top">
+          <div class="incident-type-header">
+            <div class="incident-icon-box" [class.is-resolved]="incidencia.resuelta">
+              <i [class]="getTipoIcono(incidencia.tipo)"></i>
+            </div>
+            <div>
+              <div class="incident-title-row">
+                <h4>{{ getTipoLabel(incidencia.tipo) }}</h4>
+                <span class="incident-id-badge" *ngIf="incidencia.id">#{{ incidencia.id }}</span>
+              </div>
+              <span class="incident-date">
+                <i class="fas fa-calendar-day"></i>
+                {{ incidencia.fecha | date:'dd/MM/yyyy HH:mm' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="incident-status-pill" [class.resolved]="incidencia.resuelta">
+            <i class="fas" [class.fa-clock]="!incidencia.resuelta" [class.fa-circle-check]="incidencia.resuelta"></i>
+            <span>{{ incidencia.resuelta ? 'Resuelta' : 'Pendiente' }}</span>
+          </div>
+        </div>
+
+        <!-- Mini resumen del paciente vinculado -->
+        <div class="patient-strip-mini" *ngIf="incidencia.datosPaciente">
+          <div class="patient-strip-item">
+            <i class="fas fa-user"></i>
+            <strong>{{ incidencia.datosPaciente.nombre }}</strong>
+          </div>
+          <div class="patient-strip-item" *ngIf="incidencia.datosPaciente.telefono">
+            <i class="fas fa-phone"></i>
+            <span>{{ incidencia.datosPaciente.telefono }}</span>
+          </div>
+          <div class="patient-strip-item" *ngIf="incidencia.datosPaciente.colonia">
+            <i class="fas fa-building"></i>
+            <span>{{ incidencia.datosPaciente.colonia }}</span>
+          </div>
+        </div>
+
+        <!-- Dirección -->
+        <div class="incident-address-row">
+          <i class="fas fa-location-dot"></i>
+          <span>{{ incidencia.direccion || 'Dirección no especificada' }}</span>
+        </div>
+
+        <!-- Descripción -->
+        <div class="incident-desc-box">
+          {{ incidencia.descripcion }}
+        </div>
+
+        <!-- Fotos de evidencia -->
+        <div class="incident-photos-strip" *ngIf="incidencia.fotos && incidencia.fotos.length > 0">
+          <span class="photos-label"><i class="fas fa-camera"></i> Evidencias fotográficas ({{ incidencia.fotos.length }}):</span>
+          <div class="photos-thumbnails">
+            <div class="thumb-wrap" *ngFor="let foto of incidencia.fotos">
+              <img [src]="foto" alt="Evidencia en campo" (click)="openModal(foto)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer de la tarjeta -->
+        <div class="incident-card-footer">
+          <span class="resolved-note" *ngIf="incidencia.resuelta">
+            <i class="fas fa-shield-check"></i> Registro completado y archivado
+          </span>
+
+          <button *ngIf="!incidencia.resuelta" class="btn-resolve-incident"
+            (click)="marcarResuelta(incidencia.id!)">
+            <i class="fas fa-check"></i>
+            <span>Marcar como Resuelta</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
 </div>
 
-<!-- Modal para fotos -->
-<div class="modal-foto" *ngIf="fotoModal" (click)="closeModal()">
-    <div class="modal-contenido" (click)="$event.stopPropagation()">
-        <img [src]="fotoModal" alt="Foto ampliada">
-        <button class="cerrar-modal" (click)="closeModal()">✕</button>
-    </div>
+<!-- ⭐ MODAL PARA FOTO AMPLIADA -->
+<div class="modal-foto-backdrop" *ngIf="fotoModal" (click)="closeModal()">
+  <div class="modal-foto-dialog" (click)="$event.stopPropagation()">
+    <img [src]="fotoModal" alt="Foto ampliada de evidencia">
+    <button class="btn-close-modal-foto" (click)="closeModal()" title="Cerrar vista">&times;</button>
+  </div>
 </div>

@@ -1,3 +1,5 @@
+// src/app/components/header/header.ts
+
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -29,6 +31,9 @@ export class HeaderComponent {
     switch (section) {
       case 'dashboard':
         this.router.navigate(['/dashboard']);
+        break;
+      case 'dashboard-salud':
+        this.router.navigate(['/dashboard-salud']);
         break;
       case 'notificaciones':
         this.router.navigate(['/notificaciones']);

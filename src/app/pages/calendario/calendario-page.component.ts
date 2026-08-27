@@ -34,6 +34,7 @@ interface PacienteSeleccionado {
     hora: string;
     prioridad: 'alta' | 'media' | 'baja';
     notas: string;
+    comentarios?: string;
     tieneConflicto: boolean;
     mensajeConflicto: string;
     estaFinado: boolean;
@@ -754,7 +755,7 @@ export class CalendarioPageComponent implements OnInit {
                 fecha: fechaCorrecta,
                 hora: p.hora || '09:00',
                 prioridad: p.prioridad || 'media',
-                notas: p.notas || '',
+                notas: p.notas || p.comentarios || '',
                 estado: 'pendiente'
             };
         });

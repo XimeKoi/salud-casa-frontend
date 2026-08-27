@@ -57,7 +57,7 @@ export const logout = createAction('[Auth] Logout');
 // ⭐ ACCIONES PARA FILTROS
 export const setFiltrosPerfiles = createAction(
   '[Filtros] Set Perfiles',
-  props<{ perfiles: { adulto: boolean; discapacitado: boolean; referido: boolean } }>()
+  props<{ perfiles: { adulto: boolean; discapacitado: boolean; referido: boolean; finado?: boolean } }>()
 );
 
 export const setFiltrosRiesgos = createAction(

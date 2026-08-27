@@ -1,80 +1,195 @@
-<!-- src/app/pages/login/login.html -->
-<div class="bg-doctor"></div>
-<div class="overlay-bordo"></div>
-<div class="gold-bottom"></div>
+<!-- src/app/components/login/login.html -->
+<div class="cuidalia-login-wrapper">
+  <!-- Efectos de luz sutiles de fondo -->
+  <div class="ambient-glow ambient-glow--1"></div>
+  <div class="ambient-glow ambient-glow--2"></div>
 
-<div class="main-container">
-
-  <div class="logo-top-left">
-    <div class="logo-bienestar">
-      <img class="escudo-icon" src="https://i.postimg.cc/HWc50YYT/logo1-removebg-preview.png" alt="Logo Bienestar">
-      <div class="bienestar-text">
-        <div class="bienestar-title">BIENESTAR</div>
-        <div class="secretaria">Secretaría de Bienestar</div>
+  <!-- HEADER INSTITUCIONAL (Tablet / Desktop) -->
+  <header class="cl-header">
+    <div class="cl-header__inner">
+      <div class="cl-brand">
+        <img src="cuidalia-logo.png" alt="Cuidalia" class="cl-brand__logo" />
+        <div class="cl-brand__text">
+          <img src="cuidalia-wordmark.png" alt="Cuidalia" class="cl-brand__wordmark" />
+          <span class="cl-brand__slogan">Cercanía que cuida</span>
+        </div>
+      </div>
+      <div class="cl-header__badge">
+        <i class="fas fa-shield-halved"></i>
+        <span>Portal Seguro de Brigadistas</span>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="hero-left">
-    <svg class="heartbeat-line" viewBox="0 0 800 60" preserveAspectRatio="none" fill="none"
-      xmlns="http://www.w3.org/2000/svg">
-      <polyline
-        points="10,30 180,30 210,30 240,8 270,55 300,8 330,55 360,30 490,30 530,30 560,5 590,58 620,5 650,58 680,30 790,30"
-        stroke="#F5D98F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-    </svg>
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="cl-main">
+    <!-- SHOWCASE LATERAL (Desktop >= 1024px) -->
+    <section class="cl-showcase">
+      <div class="cl-showcase__content">
+        <div class="cl-pill">
+          <i class="fas fa-heart-pulse"></i>
+          <span>Atención Domiciliaria en Campo</span>
+        </div>
 
-    <div class="programa-block">
-      <div class="salud-line">
-        Salud
-        <svg class="corazon-pulse" viewBox="0 0 68 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            d="M34 48C34 48 7 32 7 17.5C7 7.5 14 2.5 22 2.5C28 2.5 32 6.5 34 11C36 6.5 40 2.5 46 2.5C54 2.5 61 7.5 61 17.5C61 32 34 48 34 48Z"
-            fill="white" />
-          <polyline points="20,24 25,24 28,16 32,35 36,21 41,24 48,24" fill="none" stroke="#9B2E4E" stroke-width="2.8"
-            stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <h1 class="cl-showcase__title">
+          Cuidado integral y <br>
+          <span class="text-gradient-guinda">cercanía en cada</span> <br>
+          <span class="text-gradient-gold">hogar visitado</span>
+        </h1>
+
+        <p class="cl-showcase__desc">
+          Plataforma clínica para brigadas de salud: seguimiento de visitas domiciliarias, geolocalización de pacientes
+          y expedientes en tiempo real.
+        </p>
+
+        <!-- Tarjetas de Métricas -->
+        <div class="cl-stats">
+          <div class="cl-stat-card">
+            <div class="cl-stat-card__icon">
+              <i class="fas fa-user-group"></i>
+            </div>
+            <div class="cl-stat-card__data">
+              <span class="cl-stat-card__val">12K+</span>
+              <span class="cl-stat-card__lbl">Pacientes</span>
+            </div>
+          </div>
+
+          <div class="cl-stat-card">
+            <div class="cl-stat-card__icon">
+              <i class="fas fa-map-location-dot"></i>
+            </div>
+            <div class="cl-stat-card__data">
+              <span class="cl-stat-card__val">70</span>
+              <span class="cl-stat-card__lbl">Colonias</span>
+            </div>
+          </div>
+
+          <div class="cl-stat-card">
+            <div class="cl-stat-card__icon">
+              <i class="fas fa-truck-medical"></i>
+            </div>
+            <div class="cl-stat-card__data">
+              <span class="cl-stat-card__val">24/7</span>
+              <span class="cl-stat-card__lbl">Atención</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badge de Aplicación Progresiva (PWA) -->
+        <div class="cl-field-badge">
+          <i class="fas fa-mobile-screen-button"></i>
+          <span>PWA instalable · Cuidalia para campo y tabletas</span>
+        </div>
       </div>
-      <div class="casa-por-casa">Casa por Casa</div>
-    </div>
+    </section>
 
-    <div class="tagline">
-      Llevando salud a cada hogar mexicano<br>con dedicación y calidez.
-    </div>
-  </div>
+    <!-- FORMULARIO DE ACCESO (Mobile-First & Responsive) -->
+    <section class="cl-form-section">
+      <div class="cl-card">
+        <!-- Encabezado de Marca (Destacado en Móvil y consistente) -->
+        <div class="cl-card__brand">
+          <div class="cl-card__logo-wrap">
+            <img src="cuidalia-logo.png" alt="Cuidalia" class="cl-card__logo" />
+          </div>
+          <div class="cl-card__wordmark-wrap">
+            <img src="cuidalia-wordmark.png" alt="Cuidalia" class="cl-card__wordmark" />
+            <span class="cl-card__tagline">Cercanía que cuida</span>
+          </div>
+        </div>
 
-  <div class="login-right">
-    <div class="card-login">
-      <img class="card-seal" src="https://i.postimg.cc/5tB0Dpmn/logo4.png" alt="Logo Bienestar">
+        <div class="cl-card__title-wrap">
+          <h2 class="cl-card__title">Iniciar Sesión</h2>
+          <p class="cl-card__subtitle">Ingresa tus credenciales de brigadista</p>
+        </div>
 
-      <h1 class="card-title">Iniciar Sesión</h1>
-      <p class="card-sub">Accede a tu cuenta de personal de salud.</p>
+        <!-- Formulario -->
+        <form (ngSubmit)="login()" class="cl-form" autocomplete="on">
+          <!-- Campo CURP -->
+          <div class="cl-field">
+            <label for="curp" class="cl-field__label">
+              <i class="fas fa-id-card"></i>
+              <span>CURP DEL BRIGADISTA</span>
+            </label>
+            <div class="cl-input-wrap">
+              <span class="cl-input-icon">
+                <i class="fas fa-user"></i>
+              </span>
+              <input id="curp" name="username" type="text" class="cl-input" placeholder="XXXX000000XXXXXX00"
+                [(ngModel)]="username" autocomplete="username" autocapitalize="characters" spellcheck="false"
+                required />
+              <button type="button" class="cl-input-clear" *ngIf="username" (click)="username = ''"
+                aria-label="Borrar CURP">
+                <i class="fas fa-circle-xmark"></i>
+              </button>
+            </div>
+          </div>
 
-      <div class="input-field">
-        <label for="username" style="display:none">Usuario</label>
-        <input type="text" id="username" placeholder="Clave de Usuario" [(ngModel)]="username" autocomplete="off">
+          <!-- Campo Contraseña -->
+          <div class="cl-field">
+            <div class="cl-field__header">
+              <label for="password" class="cl-field__label">
+                <i class="fas fa-lock"></i>
+                <span>CONTRASEÑA</span>
+              </label>
+              <a href="#" (click)="olvidasteContrasena($event)" class="cl-forgot-link">
+                ¿La olvidaste?
+              </a>
+            </div>
+            <div class="cl-input-wrap">
+              <span class="cl-input-icon">
+                <i class="fas fa-key"></i>
+              </span>
+              <input id="password" name="password" [type]="showPassword ? 'text' : 'password'" class="cl-input"
+                placeholder="••••••••" [(ngModel)]="password" (keyup.enter)="login()" autocomplete="current-password"
+                required />
+              <button type="button" class="cl-visibility-btn" (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Ver contraseña'">
+                <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mantener Sesión -->
+          <div class="cl-options">
+            <label class="cl-checkbox-label">
+              <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" class="cl-checkbox" />
+              <span class="cl-custom-check"></span>
+              <span class="cl-checkbox-text">Mantener sesión iniciada</span>
+            </label>
+          </div>
+
+          <!-- Mensaje de Error -->
+          <div class="cl-alert" *ngIf="errorMsg">
+            <i class="fas fa-circle-exclamation"></i>
+            <span>{{ errorMsg }}</span>
+          </div>
+
+          <!-- Botón de Envío -->
+          <button class="cl-submit-btn" type="submit" [disabled]="loading">
+            <span *ngIf="!loading" class="cl-submit-btn__inner">
+              <span>Ingresar al Sistema</span>
+              <i class="fas fa-arrow-right"></i>
+            </span>
+            <span *ngIf="loading" class="cl-spinner">
+              <i class="fas fa-circle-notch fa-spin"></i>
+              <span>Autenticando...</span>
+            </span>
+          </button>
+        </form>
+
+        <!-- Pie de la Tarjeta -->
+        <div class="cl-card__footer">
+          <div class="cl-security-badge">
+            <i class="fas fa-shield-halved"></i>
+            <span>Acceso seguro cifrado · Cuidalia</span>
+          </div>
+          <div class="cl-legal-links">
+            <a href="#" (click)="avisoPrivacidad($event)">Aviso de Privacidad</a>
+            <span class="cl-dot">·</span>
+            <span>App Progresiva (PWA)</span>
+          </div>
+        </div>
       </div>
-
-      <div class="input-field">
-        <label for="password" style="display:none">Contraseña</label>
-        <input type="password" id="password" placeholder="Contraseña" [(ngModel)]="password" (keyup.enter)="login()"
-          autocomplete="off">
-      </div>
-
-      <div class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</div>
-
-      <div class="row-links">
-        <a href="#" (click)="olvidasteContrasena($event)">¿Olvidaste tu contraseña?</a>
-      </div>
-
-      <button class="btn-ingresar" (click)="login()" [disabled]="loading">
-        {{ loading ? 'Cargando...' : 'Entrar al sistema' }}
-      </button>
-
-      <div class="notice-small">
-        Plataforma de uso exclusivo para personal autorizado.
-      </div>
-
-      <a class="privacy-link" href="#" (click)="avisoPrivacidad($event)">Aviso de Privacidad</a>
-    </div>
-  </div>
+    </section>
+  </main>
 </div>

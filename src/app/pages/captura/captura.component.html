@@ -1,244 +1,318 @@
 <!-- src/app/pages/captura/captura.component.html -->
 
-<div class="container">
-    <!-- ⭐ HEADER -->
-    <header class="header">
-        <h1>Captura</h1>
-    </header>
+<div class="captura-page">
+  <!-- ⭐ HEADER INSTITUCIONAL -->
+  <header class="page-header">
+    <div class="header-main-row">
+      <div class="header-title-box">
+        <div class="header-icon-wrapper">
+          <i class="fas fa-file-signature"></i>
+        </div>
+        <div>
+          <h1>Captura de Visita Médica</h1>
+          <p class="header-subtitle">
+            Registro clínico de atención domiciliaria, valoración de condiciones y seguimiento
+          </p>
+        </div>
+      </div>
 
-    <div class="form-wrapper">
-        <form class="form-body" (ngSubmit)="guardarFormulario()">
-            <h2 class="section-title">1. Datos Generales y Estatus de la Visita</h2>
+      <!-- Badges de estado en cabecera -->
+      <div class="header-badges-and-actions">
+        <div class="header-quick-badges">
+          <span class="header-pill pill-patient-status" *ngIf="pacienteId">
+            <i class="fas fa-user-check"></i>
+            <span>Paciente: <strong>{{ pacienteNombre | slice:0:22 }}{{ pacienteNombre.length > 22 ? '...' : ''
+                }}</strong></span>
+          </span>
 
-            <!-- Barra de búsqueda principal -->
-            <div class="form-group" style="margin-bottom: 20px; position: relative;">
-                <label for="buscadorBeneficiario">Buscar Beneficiario (Escribe Nombre, ID o CURP)</label>
-                <div class="search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscadorBeneficiario" class="form-control search-control"
-                        placeholder="Ej: Juan Pérez, 001, PEGJ800101HDF" [(ngModel)]="busquedaBeneficiario"
-                        name="busquedaBeneficiario" (input)="onBusquedaChange()" autocomplete="off">
-                </div>
+          <span class="header-pill pill-patient-status" *ngIf="!pacienteId">
+            <i class="fas fa-user-clock"></i>
+            <span>Sin paciente seleccionado</span>
+          </span>
 
-                <!-- Sugerencias -->
-                <div class="suggestions-container"
-                    *ngIf="sugerencias.length > 0 && busquedaBeneficiario.length > 0 && mostrarSugerencias">
-                    <div class="suggestion-item" *ngFor="let s of sugerencias" (click)="seleccionarSugerencia(s)">
-                        <i class="fas fa-user-circle"></i>
-                        <div class="suggestion-info">
-                            <strong>{{ s.nombreCompleto || s.nombre }}</strong>
-                            <small>
-                                ID: {{ s.id }} | Número: {{ s.numero }}
-                                <span *ngIf="s.curp"> | CURP: <strong style="color: #701f2f;">{{ s.curp
-                                        }}</strong></span>
-                                <span *ngIf="!s.curp" style="color: #999;"> | Sin CURP</span>
-                            </small>
-                            <small style="display: block; font-size: 10px; color: #888; margin-top: 2px;">
-                                <i class="fas fa-map-marker-alt"></i> {{ s.direccion || 'Sin dirección' }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
+          <span class="header-pill pill-visit-count" *ngIf="pacienteId && !pacienteFinado">
+            <i class="fas fa-calendar-check"></i>
+            <span>Visita N.º <strong>{{ numVisita }}</strong></span>
+          </span>
 
-                <div *ngIf="loading" style="margin-top: 8px; font-size: 12px; color: #999;">
-                    <i class="fas fa-spinner fa-pulse"></i> Cargando pacientes...
-                </div>
-            </div>
+          <span class="header-pill pill-finado" *ngIf="pacienteFinado">
+            <i class="fas fa-skull"></i>
+            <span>FINADO</span>
+          </span>
+        </div>
 
-            <!-- Alerta advertencia -->
-            <div class="alert-warning-seleccion" *ngIf="mostrarAdvertenciaSeleccion">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div class="alert-content">
-                    <strong>Seleccione un beneficiario</strong>
-                    <p>Debe seleccionar un beneficiario válido antes de marcarlo como FINADO</p>
-                </div>
-            </div>
-
-            <div class="grid-2">
-                <div>
-                    <div class="form-group">
-                        <label for="pacienteId">Clave / ID del Paciente</label>
-                        <input type="text" id="pacienteId" class="form-control" readonly required
-                            [(ngModel)]="pacienteId" name="pacienteId" [class.finado-input]="pacienteFinado">
-                    </div>
-                    <div class="form-group">
-                        <label for="pacienteNombre">Nombre Completo del Paciente</label>
-                        <input type="text" id="pacienteNombre" class="form-control" readonly required
-                            [(ngModel)]="pacienteNombre" name="pacienteNombre" [class.finado-input]="pacienteFinado"
-                            [placeholder]="!pacienteId ? 'Seleccione un paciente' : ''">
-                    </div>
-                    <div class="form-group">
-                        <label for="pacienteCurp">CURP</label>
-                        <input type="text" id="pacienteCurp" class="form-control" readonly [(ngModel)]="pacienteCurp"
-                            name="pacienteCurp" [class.finado-input]="pacienteFinado"
-                            [placeholder]="!pacienteId ? 'Seleccione un paciente' : 'Sin CURP registrado'">
-                    </div>
-                    <div class="form-group">
-                        <label for="pacienteDireccion">Dirección</label>
-                        <input type="text" id="pacienteDireccion" class="form-control" readonly
-                            [(ngModel)]="pacienteDireccion" name="pacienteDireccion"
-                            [class.finado-input]="pacienteFinado"
-                            [placeholder]="!pacienteId ? 'Seleccione un paciente' : 'Sin dirección registrada'">
-                    </div>
-                </div>
-                <div>
-                    <div class="form-group">
-                        <label for="numVisita">Número de Visita</label>
-                        <input type="number" id="numVisita" class="form-control" min="1"
-                            style="font-weight: bold; background-color: #FDF8E7; border-color: #D4AF37;" readonly
-                            required [(ngModel)]="numVisita" name="numVisita" [class.finado-input]="pacienteFinado">
-                        <small style="font-size: 10px; color: #888; display: block; margin-top: 4px;">
-                            <i class="fas fa-info-circle"></i> El número de visita se calcula automáticamente
-                        </small>
-                    </div>
-                    <div class="form-group">
-                        <label>Condición Actual del Paciente</label>
-                        <div class="status-toggle-container">
-                            <div class="status-option">
-                                <input type="radio" id="status-vivo" name="estatus_vital" value="vivo"
-                                    [(ngModel)]="estatusVital" (change)="onEstatusVivo()"
-                                    [disabled]="pacienteFinado || !pacienteId">
-                                <label for="status-vivo" class="status-label"
-                                    [class.disabled]="pacienteFinado || !pacienteId">VIVO</label>
-                            </div>
-                            <div class="status-option">
-                                <input type="radio" id="status-finado" name="estatus_vital" value="finado"
-                                    [(ngModel)]="estatusVital" (change)="onEstatusFinado()" [disabled]="!pacienteId">
-                                <label for="status-finado" class="status-label"
-                                    [class.disabled]="!pacienteId">FINADO</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alerta finado -->
-            <div class="alert-finado-redesign" *ngIf="pacienteFinado">
-                <div class="alert-finado-icon">
-                    <i class="fas fa-skull-crossbones"></i>
-                </div>
-                <div class="alert-finado-content">
-                    <div class="alert-finado-title">PACIENTE FINADO</div>
-                    <div class="alert-finado-text">{{ pacienteNombre }} - Registro de defunción</div>
-                    <div class="alert-finado-date">Fecha de registro: {{ fechaFinado }}</div>
-                    <div class="alert-finado-message">No se pueden realizar más visitas ni modificar sus datos.</div>
-                </div>
-                <button type="button" class="btn-clear-finado-redesign" (click)="limpiarSeleccion()">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Buscar otro paciente</span>
-                </button>
-            </div>
-
-            <!-- ⭐ INDICADOR DE PROGRAMA ACTUAL -->
-            <div class="programa-indicador" *ngIf="pacienteId">
-                <div class="programa-badge" [class.discapacidad]="programaActual === 'DISCAPACIDAD'"
-                    [class.pam]="programaActual === 'PAM'">
-                    <i class="fas" [class.fa-wheelchair]="programaActual === 'DISCAPACIDAD'"
-                        [class.fa-user]="programaActual === 'PAM'"></i>
-                    {{ programaActual || 'Sin programa' }}
-                </div>
-            </div>
-
-            <h2 class="section-title" [class.finado-title]="pacienteFinado">2. Valoración de discapacidades (Marcar si
-                aplica)</h2>
-            <div class="checklist-container" [class.finado-container]="pacienteFinado">
-                <!-- Discapacidades -->
-                <div class="checklist-item">
-                    <div class="checklist-info">
-                        <h4>1. Discapacidad Motriz</h4>
-                        <p>Dificultades o limitaciones severas de movilidad</p>
-                    </div>
-                    <div class="switch-container">
-                        <span class="switch-label-text">No</span>
-                        <label class="switch">
-                            <input type="checkbox" [(ngModel)]="discapacidades.motriz" name="disc_motriz"
-                                [disabled]="pacienteFinado">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="checklist-item">
-                    <div class="checklist-info">
-                        <h4>2. Discapacidad Visual</h4>
-                        <p>Pérdida de agudeza o campo visual en ambos ojos</p>
-                    </div>
-                    <div class="switch-container">
-                        <span class="switch-label-text">No</span>
-                        <label class="switch">
-                            <input type="checkbox" [(ngModel)]="discapacidades.visual" name="disc_visual"
-                                [disabled]="pacienteFinado">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="checklist-item">
-                    <div class="checklist-info">
-                        <h4>3. Discapacidad Auditiva</h4>
-                        <p>Pérdida o limitación severa para escuchar</p>
-                    </div>
-                    <div class="switch-container">
-                        <span class="switch-label-text">No</span>
-                        <label class="switch">
-                            <input type="checkbox" [(ngModel)]="discapacidades.auditiva" name="disc_auditiva"
-                                [disabled]="pacienteFinado">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="checklist-item">
-                    <div class="checklist-info">
-                        <h4>4. Discapacidad Intelectual</h4>
-                        <p>Limitaciones en comprensión y razonamiento</p>
-                    </div>
-                    <div class="switch-container">
-                        <span class="switch-label-text">No</span>
-                        <label class="switch">
-                            <input type="checkbox" [(ngModel)]="discapacidades.intelectual" name="disc_intelectual"
-                                [disabled]="pacienteFinado">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div class="checklist-item">
-                    <div class="checklist-info">
-                        <h4>5. Discapacidad Psicosocial</h4>
-                        <p>Alteraciones de la salud mental</p>
-                    </div>
-                    <div class="switch-container">
-                        <span class="switch-label-text">No</span>
-                        <label class="switch">
-                            <input type="checkbox" [(ngModel)]="discapacidades.psicosocial" name="disc_psicosocial"
-                                [disabled]="pacienteFinado">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div id="seccion-proxima-visita" *ngIf="!pacienteFinado && pacienteId">
-                <h2 class="section-title">3. Agenda de Próxima Visita (Opcional)</h2>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="fechaVisita">Programar Fecha</label>
-                        <input type="date" id="fechaVisita" class="form-control" [(ngModel)]="fechaVisita"
-                            name="fechaVisita">
-                    </div>
-                    <div class="form-group">
-                        <label for="comentarios">Notas Médicas</label>
-                        <input type="text" id="comentarios" class="form-control"
-                            placeholder="Ej. Control de presión arterial..." [(ngModel)]="comentarios"
-                            name="comentarios">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botón Guardar -->
-            <div class="actions-panel">
-                <button type="submit" class="btn-submit-redesign" [disabled]="pacienteFinado || !pacienteId">
-                    <i class="fas fa-save"></i>
-                    <span>Guardar Visita</span>
-                </button>
-            </div>
-        </form>
+        <button type="button" class="btn-header-clear" *ngIf="pacienteId" (click)="limpiarSeleccion()"
+          title="Limpiar selección actual y buscar otro paciente">
+          <i class="fas fa-user-xmark"></i>
+          <span>Cambiar Paciente</span>
+        </button>
+      </div>
     </div>
+  </header>
+
+  <!-- ⭐ CONTENEDOR PRINCIPAL -->
+  <main class="content-wrapper">
+    <form class="captura-form" (ngSubmit)="guardarFormulario()">
+
+      <!-- ⭐ PASO 1: TARJETA DE BÚSQUEDA DEL BENEFICIARIO -->
+      <div class="captura-card search-card">
+        <div class="card-section-header">
+          <div class="step-badge">1</div>
+          <div>
+            <h3>Buscar y Seleccionar Beneficiario</h3>
+            <p>Localiza al paciente por Nombre completo, CURP o ID del padrón para cargar sus datos</p>
+          </div>
+        </div>
+
+        <div class="search-input-field-wrap">
+          <i class="fas fa-magnifying-glass search-leading-icon"></i>
+          <input type="text" id="buscadorBeneficiario" class="search-main-input"
+            placeholder="Escribe el nombre, CURP (ej. PEGJ800101) o ID del paciente..."
+            [(ngModel)]="busquedaBeneficiario" name="busquedaBeneficiario" (input)="onBusquedaChange()"
+            autocomplete="off" />
+          <button type="button" class="btn-clear-search-box" *ngIf="busquedaBeneficiario"
+            (click)="busquedaBeneficiario = ''; sugerencias = []; mostrarSugerencias = false" title="Limpiar campo">
+            <i class="fas fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Indicador de carga -->
+        <div class="search-loading-hint" *ngIf="loading">
+          <i class="fas fa-circle-notch fa-spin"></i>
+          <span>Consultando base de datos de pacientes...</span>
+        </div>
+
+        <!-- Flyout de Sugerencias -->
+        <div class="suggestions-dropdown"
+          *ngIf="sugerencias.length > 0 && busquedaBeneficiario.length > 0 && mostrarSugerencias">
+          <div class="suggestion-card" *ngFor="let s of sugerencias" (click)="seleccionarSugerencia(s)">
+            <div class="suggestion-user-avatar">
+              <i class="fas fa-circle-user"></i>
+            </div>
+            <div class="suggestion-user-info">
+              <div class="user-fullname">{{ s.nombreCompleto || s.nombre }}</div>
+              <div class="user-metadata-row">
+                <span class="meta-tag"><i class="fas fa-id-badge"></i> ID: {{ s.id }}</span>
+                <span class="meta-tag font-curp" *ngIf="s.curp"><i class="fas fa-id-card"></i> {{ s.curp }}</span>
+                <span class="meta-tag" *ngIf="!s.curp"><i class="fas fa-id-card"></i> Sin CURP</span>
+                <span class="meta-tag"><i class="fas fa-location-dot"></i> {{ s.direccion || 'Sin dirección' }}</span>
+              </div>
+            </div>
+            <div class="suggestion-select-arrow">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerta de advertencia -->
+        <div class="alert-banner-warning" *ngIf="mostrarAdvertenciaSeleccion">
+          <i class="fas fa-triangle-exclamation"></i>
+          <div class="alert-text-group">
+            <strong>Selección requerida</strong>
+            <span>Debe seleccionar un beneficiario válido de la lista para completar la visita.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⭐ PASO 2: DATOS DEL BENEFICIARIO Y CONDICIÓN (SIEMPRE VISIBLE) -->
+      <div class="captura-card">
+        <div class="card-section-header">
+          <div class="step-badge">2</div>
+          <div>
+            <h3>Datos de la Visita y Condición del Paciente</h3>
+            <p>Información del paciente y verificación del estatus vital en campo</p>
+          </div>
+        </div>
+
+        <!-- Alerta Finado si aplica -->
+        <div class="finado-banner-modern" *ngIf="pacienteFinado">
+          <div class="finado-banner-icon">
+            <i class="fas fa-skull-crossbones"></i>
+          </div>
+          <div class="finado-banner-text">
+            <h4>REGISTRO DE PACIENTE FINADO</h4>
+            <p>{{ pacienteNombre }} — Acta o reporte de defunción registrado con fecha {{ fechaFinado || 'reciente' }}.
+            </p>
+            <small>No se permiten capturas de visitas adicionales para este beneficiario.</small>
+          </div>
+          <button type="button" class="btn-change-from-finado" (click)="limpiarSeleccion()">
+            <i class="fas fa-rotate-left"></i> Buscar otro paciente
+          </button>
+        </div>
+
+        <!-- Grid de Datos (Completo y accesible) -->
+        <div class="patient-details-grid" [class.is-finado-dimmed]="pacienteFinado">
+          <div class="field-item">
+            <label><i class="fas fa-id-badge"></i> Clave / ID del Paciente</label>
+            <input type="text" class="input-display" readonly [value]="pacienteId ? pacienteId : '— No seleccionado —'"
+              placeholder="Pendiente de selección..." />
+          </div>
+
+          <div class="field-item">
+            <label><i class="fas fa-user"></i> Nombre Completo</label>
+            <input type="text" class="input-display" readonly
+              [value]="pacienteNombre ? pacienteNombre : '— Seleccione un beneficiario arriba —'"
+              placeholder="Pendiente de selección..." />
+          </div>
+
+          <div class="field-item">
+            <label><i class="fas fa-id-card"></i> CURP</label>
+            <input type="text" class="input-display font-mono" readonly [value]="pacienteCurp ? pacienteCurp : '—'"
+              placeholder="Sin CURP registrado" />
+          </div>
+
+          <div class="field-item">
+            <label><i class="fas fa-location-dot"></i> Dirección Registrada</label>
+            <input type="text" class="input-display" readonly [value]="pacienteDireccion ? pacienteDireccion : '—'"
+              placeholder="Sin dirección registrada" />
+          </div>
+
+          <div class="field-item">
+            <label><i class="fas fa-layer-group"></i> Programa Social</label>
+            <div class="programa-pill-display" [class.pam]="programaActual === 'PAM'"
+              [class.discapacidad]="programaActual === 'DISCAPACIDAD'">
+              <i class="fas" [class.fa-wheelchair]="programaActual === 'DISCAPACIDAD'"
+                [class.fa-user]="programaActual === 'PAM' || !programaActual"></i>
+              <span>{{ programaActual || 'Sin programa asignado' }}</span>
+            </div>
+          </div>
+
+          <div class="field-item">
+            <label><i class="fas fa-list-ol"></i> Número de Visita</label>
+            <div class="visit-number-badge">
+              <span>Visita Consecutiva N.º</span>
+              <strong>{{ numVisita }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Condición Vital -->
+        <div class="vital-condition-box">
+          <label class="vital-label"><i class="fas fa-heart-pulse"></i> Condición Actual del Paciente</label>
+          <div class="condition-toggles">
+            <button type="button" class="btn-condition-toggle"
+              [class.active]="estatusVital === 'vivo' && !pacienteFinado" (click)="onEstatusVivo()"
+              [disabled]="pacienteFinado">
+              <i class="fas fa-heart"></i>
+              <span>VIVO (Atención regular)</span>
+            </button>
+
+            <button type="button" class="btn-condition-toggle btn-finado-toggle"
+              [class.active]="estatusVital === 'finado' || pacienteFinado" (click)="onEstatusFinado()">
+              <i class="fas fa-skull"></i>
+              <span>FINADO (Registro de defunción)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⭐ PASO 3: VALORACIÓN DE DISCAPACIDADES (SIEMPRE VISIBLE) -->
+      <div class="captura-card">
+        <div class="card-section-header">
+          <div class="step-badge">3</div>
+          <div>
+            <h3>Valoración de Discapacidades</h3>
+            <p>Marque las condiciones que apliquen al paciente durante la valoración en campo</p>
+          </div>
+        </div>
+
+        <div class="disabilities-grid" [class.is-finado-dimmed]="pacienteFinado">
+          <!-- Motriz -->
+          <div class="disability-switch-card" [class.checked]="discapacidades.motriz">
+            <div class="disability-info">
+              <div class="disability-icon"><i class="fas fa-wheelchair"></i></div>
+              <div>
+                <h4>1. Discapacidad Motriz</h4>
+                <p>Limitaciones severas de movilidad o desplazamiento</p>
+              </div>
+            </div>
+            <label class="modern-switch">
+              <input type="checkbox" [(ngModel)]="discapacidades.motriz" name="disc_motriz"
+                [disabled]="pacienteFinado" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Visual -->
+          <div class="disability-switch-card" [class.checked]="discapacidades.visual">
+            <div class="disability-info">
+              <div class="disability-icon"><i class="fas fa-eye-low-vision"></i></div>
+              <div>
+                <h4>2. Discapacidad Visual</h4>
+                <p>Pérdida de agudeza o campo visual en ambos ojos</p>
+              </div>
+            </div>
+            <label class="modern-switch">
+              <input type="checkbox" [(ngModel)]="discapacidades.visual" name="disc_visual"
+                [disabled]="pacienteFinado" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Auditiva -->
+          <div class="disability-switch-card" [class.checked]="discapacidades.auditiva">
+            <div class="disability-info">
+              <div class="disability-icon"><i class="fas fa-ear-deaf"></i></div>
+              <div>
+                <h4>3. Discapacidad Auditiva</h4>
+                <p>Pérdida o limitación severa para percibir sonidos</p>
+              </div>
+            </div>
+            <label class="modern-switch">
+              <input type="checkbox" [(ngModel)]="discapacidades.auditiva" name="disc_auditiva"
+                [disabled]="pacienteFinado" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Intelectual -->
+          <div class="disability-switch-card" [class.checked]="discapacidades.intelectual">
+            <div class="disability-info">
+              <div class="disability-icon"><i class="fas fa-brain"></i></div>
+              <div>
+                <h4>4. Discapacidad Intelectual</h4>
+                <p>Limitaciones en razonamiento, comprensión y aprendizaje</p>
+              </div>
+            </div>
+            <label class="modern-switch">
+              <input type="checkbox" [(ngModel)]="discapacidades.intelectual" name="disc_intelectual"
+                [disabled]="pacienteFinado" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Psicosocial -->
+          <div class="disability-switch-card" [class.checked]="discapacidades.psicosocial">
+            <div class="disability-info">
+              <div class="disability-icon"><i class="fas fa-head-side-virus"></i></div>
+              <div>
+                <h4>5. Discapacidad Psicosocial</h4>
+                <p>Alteraciones de la salud mental o trastornos afectivos</p>
+              </div>
+            </div>
+            <label class="modern-switch">
+              <input type="checkbox" [(ngModel)]="discapacidades.psicosocial" name="disc_psicosocial"
+                [disabled]="pacienteFinado" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- ⭐ BARRA DE ACCIÓN INFERIOR (SIEMPRE VISIBLE) -->
+      <div class="form-bottom-actions">
+        <button type="button" class="btn-cancel-form" (click)="limpiarSeleccion()" [disabled]="!pacienteId">
+          <i class="fas fa-xmark"></i> Limpiar Formulario
+        </button>
+
+        <button type="submit" class="btn-submit-form" [disabled]="pacienteFinado">
+          <i class="fas fa-floppy-disk"></i>
+          <span>Guardar Visita Médica</span>
+        </button>
+      </div>
+
+    </form>
+  </main>
 </div>

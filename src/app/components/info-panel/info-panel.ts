@@ -102,6 +102,16 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     this.cargarPacientesYCalcular();
   }
 
+  togglePerfil(perfil: 'adulto' | 'discapacitado' | 'finado') {
+    this.perfiles[perfil] = !this.perfiles[perfil];
+    this.aplicarFiltros();
+  }
+
+  toggleRiesgo(riesgo: 'g1' | 'g2' | 'g3' | 'g4') {
+    this.riesgosSeleccionados[riesgo] = !this.riesgosSeleccionados[riesgo];
+    this.aplicarFiltros();
+  }
+
   // src/app/components/info-panel/info-panel.ts
   // ⭐ SOLO LAS PARTES MODIFICADAS
 
@@ -211,15 +221,14 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
       perfiles: {
         adulto: this.perfiles.adulto,
         discapacitado: this.perfiles.discapacitado,
-        referido: false
+        referido: false,
+        finado: this.perfiles.finado
       }
     }));
 
     this.store.dispatch(AppActions.setFiltrosRiesgos({
       riesgos: { ...this.riesgosSeleccionados }
     }));
-
-    this.actualizarMapaConFiltros();
   }
 
   private calcularDatosGenerales() {
@@ -627,32 +636,10 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     return total > 0 ? Math.round((valor / total) * 100) : 0;
   }
 
-  togglePerfil(perfil: string) {
-    if (perfil === 'adulto') {
-      this.perfiles.adulto = !this.perfiles.adulto;
-    } else if (perfil === 'discapacitado') {
-      this.perfiles.discapacitado = !this.perfiles.discapacitado;
-    } else if (perfil === 'finado') {
-      this.perfiles.finado = !this.perfiles.finado;
-    }
-    this.aplicarFiltros();
-  }
 
-  toggleRiesgo(riesgo: string) {
-    if (riesgo === 'g1') {
-      this.riesgosSeleccionados.g1 = !this.riesgosSeleccionados.g1;
-    } else if (riesgo === 'g2') {
-      this.riesgosSeleccionados.g2 = !this.riesgosSeleccionados.g2;
-    } else if (riesgo === 'g3') {
-      this.riesgosSeleccionados.g3 = !this.riesgosSeleccionados.g3;
-    } else if (riesgo === 'g4') {
-      this.riesgosSeleccionados.g4 = !this.riesgosSeleccionados.g4;
-    }
-    this.aplicarFiltros();
-  }
 
   toggleRiesgoChip(riesgo: string) {
-    this.toggleRiesgo(riesgo);
+    this.toggleRiesgo(riesgo as any);
   }
 
   get totalAsignados(): number {
@@ -681,6 +668,10 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
       this.riesgosSeleccionados.g3 || this.riesgosSeleccionados.g4 ||
       this.zonaSeleccionada !== '';
     return hayFiltros ? this.filteredData.p.a : this.currentData.p.a;
+  }
+
+  get perfilAdultoMayor(): number {
+    return this.perfilAdulto;
   }
 
   get perfilDiscapacitado(): number {

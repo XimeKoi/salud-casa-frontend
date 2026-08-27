@@ -1,202 +1,413 @@
 <!-- src/app/pages/pacientes/pacientes.component.html -->
 
-<div class="container">
-    <header class="header">
-        <h1><i class="fas fa-users"></i> Pacientes</h1>
-    </header>
+<div class="pacientes-page">
 
-    <div class="content-wrapper">
-        <!-- Filtros -->
-        <div class="filtros-bar">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" [(ngModel)]="filtroBusqueda" (input)="aplicarFiltros()"
-                    placeholder="Buscar por nombre, dirección, colonia..." />
+    <!-- ============================================ -->
+    <!-- ⭐ HEADER & BARRA DE KPIS                    -->
+    <!-- ============================================ -->
+    <header class="page-header">
+        <div class="header-main-row">
+            <div class="header-title-box">
+                <div class="header-icon-wrapper">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <h1>Control de Pacientes</h1>
+                    <p class="header-subtitle">
+                        Seguimiento de visitas domiciliarias, categorización de riesgo y registro de evidencias
+                    </p>
+                </div>
             </div>
 
-            <select [(ngModel)]="filtroEstado" (change)="aplicarFiltros()" class="filter-select">
-                <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendientes</option>
-                <option value="completada">Completadas</option>
-                <option value="incidencia">Incidencias</option>
-            </select>
+            <div class="header-actions">
+                <button class="btn-header-refresh" (click)="cargarPacientes()" [disabled]="loading"
+                    title="Recargar datos">
+                    <i class="fas fa-rotate" [class.fa-spin]="loading"></i>
+                    <span>{{ loading ? 'Actualizando...' : 'Actualizar' }}</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- ⭐ CONTENEDOR PRINCIPAL                      -->
+    <!-- ============================================ -->
+    <main class="content-wrapper">
+
+        <!-- ⭐ TABS Y BARRA DE FILTROS -->
+        <div class="controls-card">
+            <!-- Tabs segmentados -->
+            <div class="tabs-segmented">
+                <button class="tab-item" [class.active]="tabActivo === 'todos'" (click)="cambiarTab('todos')">
+                    <i class="fas fa-list"></i>
+                    <span>Todos</span>
+                    <span class="tab-count">{{ pacientes.length }}</span>
+                </button>
+
+                <button class="tab-item" [class.active]="tabActivo === 'pendientes'" (click)="cambiarTab('pendientes')">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>En Espera</span>
+                    <span class="tab-count warning" *ngIf="pacientesPendientesCount > 0">{{ pacientesPendientesCount
+                        }}</span>
+                </button>
+
+                <button class="tab-item" [class.active]="tabActivo === 'vencidos'" (click)="cambiarTab('vencidos')">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <span>Listos para Visita (20+ d)</span>
+                    <span class="tab-count danger" *ngIf="pacientesVencidosCount > 0">{{ pacientesVencidosCount
+                        }}</span>
+                </button>
+
+                <button class="tab-item" [class.active]="tabActivo === 'completadas'"
+                    (click)="cambiarTab('completadas')">
+                    <i class="fas fa-circle-check"></i>
+                    <span>Completadas</span>
+                    <span class="tab-count success" *ngIf="pacientesCompletadasCount > 0">{{ pacientesCompletadasCount
+                        }}</span>
+                </button>
+
+                <button class="tab-item" [class.active]="tabActivo === 'incidencias'"
+                    (click)="cambiarTab('incidencias')">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>Incidencias</span>
+                    <span class="tab-count danger" *ngIf="pacientesIncidenciasCount > 0">{{ pacientesIncidenciasCount
+                        }}</span>
+                </button>
+            </div>
+
+            <!-- Barra de Filtros y Búsqueda -->
+            <div class="filter-toolbar">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-magnifying-glass search-icon"></i>
+                    <input type="text" [(ngModel)]="filtroBusqueda" (input)="aplicarFiltros()"
+                        placeholder="Buscar por nombre, CURP, dirección, colonia o sección..." class="search-input" />
+                    <button *ngIf="filtroBusqueda" class="btn-clear-search"
+                        (click)="filtroBusqueda = ''; aplicarFiltros()" title="Limpiar búsqueda">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="filters-group">
+                    <!-- Filtro de Estado -->
+                    <div class="select-wrapper">
+                        <i class="fas fa-filter select-icon"></i>
+                        <select [(ngModel)]="filtroEstado" (change)="aplicarFiltros()" class="custom-select">
+                            <option value="todos">Todos los estados</option>
+                            <option value="pendiente">Pendientes</option>
+                            <option value="completada">Completadas</option>
+                            <option value="incidencia">Incidencias</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro de Nivel de Riesgo -->
+                    <div class="select-wrapper">
+                        <i class="fas fa-heart-pulse select-icon"></i>
+                        <select [(ngModel)]="filtroRiesgo" (change)="aplicarFiltros()" class="custom-select">
+                            <option value="todos">Todos los riesgos</option>
+                            <option value="g1">Grupo 1 - Bajo</option>
+                            <option value="g2">Grupo 2 - Medio</option>
+                            <option value="g3">Grupo 3 - Alto</option>
+                            <option value="g4">Grupo 4 - Crítico</option>
+                            <option value="sin-asignar">Sin asignar</option>
+                        </select>
+                    </div>
+
+                    <!-- Botón Limpiar Filtros -->
+                    <button
+                        *ngIf="filtroBusqueda || filtroEstado !== 'todos' || filtroRiesgo !== 'todos' || tabActivo !== 'todos'"
+                        class="btn-reset-filters" (click)="limpiarFiltros()" title="Restablecer filtros">
+                        <i class="fas fa-rotate-left"></i> Limpiar
+                    </button>
+
+                    <!-- Toggle Vista Tabla / Tarjetas -->
+                    <div class="view-mode-toggle">
+                        <button type="button" class="btn-view" [class.active]="vistaModo === 'tabla'"
+                            (click)="cambiarModoVista('tabla')" title="Vista en tabla">
+                            <i class="fas fa-table-list"></i>
+                        </button>
+                        <button type="button" class="btn-view" [class.active]="vistaModo === 'tarjetas'"
+                            (click)="cambiarModoVista('tarjetas')" title="Vista en tarjetas">
+                            <i class="fas fa-table-cells-large"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de resultados filtrados -->
+            <div class="filter-results-info">
+                <span>
+                    Mostrando <strong>{{ pacientesFiltrados.length }}</strong> de <strong>{{ pacientes.length
+                        }}</strong> pacientes
+                </span>
+                <span *ngIf="tabActivo !== 'todos'" class="active-tab-indicator">
+                    • Filtro activo: <em>{{ tabActivo | uppercase }}</em>
+                </span>
+            </div>
         </div>
 
-        <!-- Tabla -->
-        <div class="tabla-container">
+        <!-- ============================================ -->
+        <!-- ⭐ VISTA 1: TABLA DE PACIENTES              -->
+        <!-- ============================================ -->
+        <div class="data-surface table-view-container" *ngIf="vistaModo === 'tabla'">
             <div class="tabla-scroll-wrapper">
                 <table class="pacientes-tabla">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-user"></i> Paciente</th>
-                            <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
-                            <th><i class="fas fa-phone"></i> Teléfono</th>
-                            <th><i class="fas fa-circle"></i> Estado</th>
-                            <th><i class="fas fa-chart-line"></i> Riesgo</th>
-                            <th><i class="fas fa-cogs"></i> Acciones</th>
+                            <th class="th-paciente"><i class="fas fa-user-circle"></i> Paciente</th>
+                            <th class="th-direccion"><i class="fas fa-location-dot"></i> Dirección y Colonia</th>
+                            <th class="th-contacto"><i class="fas fa-phone"></i> Contacto</th>
+                            <th class="th-estado"><i class="fas fa-signal"></i> Estado</th>
+                            <th class="th-dias"><i class="fas fa-calendar-check"></i> Ciclo de 20 Días</th>
+                            <th class="th-riesgo"><i class="fas fa-heart-pulse"></i> Nivel de Riesgo</th>
+                            <th class="th-acciones"><i class="fas fa-sliders"></i> Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let paciente of pacientesPaginados">
-                            <!-- Nombre -->
+                        <tr *ngFor="let paciente of pacientesPaginados"
+                            [class.row-vencido]="(paciente.diasPendiente ?? 0) >= 20 && paciente.estadoVisita === 'pendiente'">
+
+                            <!-- Paciente (Avatar + Nombre + Tags) -->
                             <td class="nombre-cell">
-                                <div class="nombre-completo">
-                                    <strong>{{ paciente.nombre }}</strong>
-                                    <span class="badge-seccion">{{ paciente.seccion }}</span>
-                                </div>
-                                <div class="nombre-detalle" *ngIf="paciente.curp || paciente.programa">
-                                    <small *ngIf="paciente.curp" class="curp-badge"><i class="fas fa-id-card"></i> {{
-                                        paciente.curp }}</small>
-                                    <small *ngIf="paciente.programa" class="programa-badge"><i class="fas fa-tag"></i>
-                                        {{ paciente.programa }}</small>
+                                <div class="paciente-row-item">
+                                    <div class="paciente-avatar"
+                                        [style.borderColor]="getColorNivelRiesgo(paciente.nivelRiesgo)">
+                                        <span>{{ getIniciales(paciente.nombre) }}</span>
+                                        <span class="avatar-status-dot"
+                                            [class]="getEstadoClass(paciente.estadoVisita)"></span>
+                                    </div>
+                                    <div class="paciente-main-info">
+                                        <div class="nombre-row">
+                                            <strong class="nombre-texto" [title]="paciente.nombre">{{ paciente.nombre
+                                                }}</strong>
+                                            <span class="badge-seccion" *ngIf="paciente.seccion">Sec. {{
+                                                paciente.seccion }}</span>
+                                        </div>
+
+                                        <div class="meta-tags-row">
+                                            <span *ngIf="paciente.curp" class="curp-badge"
+                                                (click)="copiarTexto(paciente.curp, 'CURP')"
+                                                title="Clic para copiar CURP">
+                                                <i class="fas fa-id-card"></i> {{ paciente.curp }}
+                                            </span>
+                                            <span *ngIf="paciente.programa" class="programa-badge">
+                                                <i class="fas fa-tag"></i> {{ paciente.programa }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Badge de alerta rápida para días -->
+                                        <div class="dias-badge-row" *ngIf="paciente.estadoVisita === 'pendiente'">
+                                            <span class="badge-vencido" *ngIf="(paciente.diasPendiente ?? 0) >= 20">
+                                                <i class="fas fa-circle-check"></i> ¡Listo para visita! ({{
+                                                paciente.diasPendiente }} días)
+                                            </span>
+                                            <span class="badge-proximo"
+                                                *ngIf="(paciente.diasPendiente ?? 0) >= 15 && (paciente.diasPendiente ?? 0) < 20">
+                                                <i class="fas fa-hourglass-half"></i> Próximo a vencer ({{
+                                                paciente.diasPendiente }} días)
+                                            </span>
+                                            <span class="badge-en-espera" *ngIf="(paciente.diasPendiente ?? 0) < 15">
+                                                <i class="fas fa-clock"></i> {{ paciente.diasPendiente ?? 0 }}/20 días
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
 
                             <!-- Dirección -->
                             <td class="direccion-cell">
-                                <div class="direccion-completa">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span class="direccion-texto">{{ limpiarDireccion(paciente.direccion) }}</span>
-                                </div>
-                                <div class="colonia-info" *ngIf="paciente.colonia">
-                                    <small><i class="fas fa-building"></i> {{ paciente.colonia }}</small>
+                                <div class="direccion-box">
+                                    <div class="direccion-texto">
+                                        <i class="fas fa-location-dot pin-icon"></i>
+                                        <span>{{ limpiarDireccion(paciente.direccion) }}</span>
+                                    </div>
+                                    <div class="colonia-pill" *ngIf="paciente.colonia">
+                                        <i class="fas fa-city"></i>
+                                        <span>{{ paciente.colonia }}</span>
+                                    </div>
                                 </div>
                             </td>
 
-                            <!-- Teléfono -->
+                            <!-- Contacto -->
                             <td class="telefono-cell">
-                                <div class="telefono-info">
-                                    <i class="fas fa-phone"></i>
-                                    <span>{{ paciente.telefono || "—" }}</span>
+                                <div class="telefono-box" *ngIf="paciente.telefono; else sinTelefono">
+                                    <a [href]="'tel:' + paciente.telefono" class="telefono-link"
+                                        title="Llamar al paciente">
+                                        <i class="fas fa-phone-volume"></i>
+                                        <span>{{ paciente.telefono }}</span>
+                                    </a>
                                 </div>
+                                <ng-template #sinTelefono>
+                                    <span class="sin-dato"><i class="fas fa-minus"></i> Sin teléfono</span>
+                                </ng-template>
                             </td>
 
                             <!-- Estado -->
-                            <td>
-                                <span class="estado-badge" [class]="getEstadoClass(paciente.estadoVisita)">
-                                    <i [class]="getEstadoIcono(paciente.estadoVisita)"></i>
-                                    {{ getEstadoTexto(paciente.estadoVisita) }}
-                                </span>
+                            <td class="estado-cell">
+                                <div class="estado-container">
+                                    <span class="estado-badge" [class]="getEstadoClass(paciente.estadoVisita)">
+                                        <i [class]="getEstadoIcono(paciente.estadoVisita)"></i>
+                                        {{ getEstadoTexto(paciente.estadoVisita) }}
+                                    </span>
+                                    <!-- Bloqueo o aviso -->
+                                    <span class="bloqueo-tag"
+                                        *ngIf="paciente.estadoVisita === 'pendiente' && (paciente.diasPendiente ?? 0) < 20">
+                                        <i class="fas fa-lock"></i> Faltan {{ 20 - (paciente.diasPendiente ?? 0) }}d
+                                    </span>
+                                    <span class="desbloqueado-tag"
+                                        *ngIf="paciente.estadoVisita === 'pendiente' && (paciente.diasPendiente ?? 0) >= 20">
+                                        <i class="fas fa-lock-open"></i> Habilitado
+                                    </span>
+                                </div>
                             </td>
 
-                            <!-- Nivel de Riesgo -->
+                            <!-- Días Pendiente / Ciclo 20 Días -->
+                            <td class="dias-cell">
+                                <div class="ciclo-progreso-box"
+                                    *ngIf="paciente.estadoVisita === 'pendiente' && paciente.diasPendiente !== null; else cicloNoAplica">
+                                    <div class="dias-progress-header">
+                                        <span class="progreso-dias-cuenta">
+                                            <strong>{{ paciente.diasPendiente }}</strong> / 20 días
+                                        </span>
+                                        <span class="progreso-porcentaje">
+                                            {{ Math.min(Math.round(((paciente.diasPendiente ?? 0) / 20) * 100), 100) }}%
+                                        </span>
+                                    </div>
+                                    <div class="dias-progreso-track">
+                                        <div class="dias-bar-fill"
+                                            [style.width]="Math.min(((paciente.diasPendiente ?? 0) / 20) * 100, 100) + '%'"
+                                            [class.vencido]="(paciente.diasPendiente ?? 0) >= 20"
+                                            [class.proximo]="(paciente.diasPendiente ?? 0) >= 15 && (paciente.diasPendiente ?? 0) < 20">
+                                        </div>
+                                    </div>
+                                    <div class="dias-status-footer">
+                                        <span class="dias-restantes" *ngIf="(paciente.diasPendiente ?? 0) < 20">
+                                            <i class="fas fa-hourglass-start"></i> Faltan {{ 20 -
+                                            (paciente.diasPendiente ?? 0) }} días
+                                        </span>
+                                        <span class="dias-listo" *ngIf="(paciente.diasPendiente ?? 0) >= 20">
+                                            <i class="fas fa-circle-check"></i> Visita disponible
+                                        </span>
+                                    </div>
+                                </div>
+                                <ng-template #cicloNoAplica>
+                                    <div class="ciclo-inactivo">
+                                        <span class="sin-dato">—</span>
+                                    </div>
+                                </ng-template>
+                            </td>
+
+                            <!-- Nivel de Riesgo Dropdown -->
                             <td class="riesgo-cell">
                                 <div class="riesgo-wrapper">
                                     <div class="riesgo-select-custom" [class.open]="riesgoAbierto === paciente.id">
                                         <button class="riesgo-trigger"
                                             [style.borderColor]="getColorNivelRiesgo(paciente.nivelRiesgo)"
-                                            (click)="toggleRiesgoDropdown(paciente.id)" type="button">
+                                            (click)="toggleRiesgoDropdown(paciente.id)" type="button"
+                                            title="Cambiar nivel de riesgo">
                                             <span class="riesgo-dot"
-                                                [style.background]="getColorNivelRiesgo(paciente.nivelRiesgo)">
-                                            </span>
-                                            <span class="riesgo-text">
-                                                {{ getLabelNivelRiesgoCorto(paciente.nivelRiesgo) }}
-                                            </span>
-                                            <span class="riesgo-arrow">
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                                    <path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.5"
-                                                        stroke-linecap="round" stroke-linejoin="round" />
-                                                </svg>
-                                            </span>
+                                                [style.background]="getColorNivelRiesgo(paciente.nivelRiesgo)"></span>
+                                            <span class="riesgo-text">{{ getLabelNivelRiesgoCorto(paciente.nivelRiesgo)
+                                                }}</span>
+                                            <i class="fas fa-chevron-down riesgo-arrow"></i>
                                         </button>
 
+                                        <!-- Menú desplegable -->
                                         <div class="riesgo-dropdown-menu" *ngIf="riesgoAbierto === paciente.id">
+                                            <div class="dropdown-title">Clasificación de Riesgo</div>
                                             <div class="riesgo-dropdown-item"
                                                 [class.active]="paciente.nivelRiesgo === null"
                                                 (click)="seleccionarNivelRiesgo(paciente, null)">
                                                 <span class="dot sin-asignar"></span>
                                                 <span class="item-label">Sin asignar</span>
-                                                <span class="item-check" *ngIf="paciente.nivelRiesgo === null">
-                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-                                                            stroke="#701f2f" stroke-width="2" stroke-linecap="round"
-                                                            stroke-linejoin="round" />
-                                                    </svg>
-                                                </span>
+                                                <i class="fas fa-check item-check"
+                                                    *ngIf="paciente.nivelRiesgo === null"></i>
                                             </div>
                                             <div class="riesgo-dropdown-item"
                                                 [class.active]="paciente.nivelRiesgo === 'g1'"
                                                 (click)="seleccionarNivelRiesgo(paciente, 'g1')">
                                                 <span class="dot g1"></span>
                                                 <span class="item-label">Grupo 1 - Bajo</span>
-                                                <span class="item-check" *ngIf="paciente.nivelRiesgo === 'g1'">
-                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-                                                            stroke="#701f2f" stroke-width="2" stroke-linecap="round"
-                                                            stroke-linejoin="round" />
-                                                    </svg>
-                                                </span>
+                                                <i class="fas fa-check item-check"
+                                                    *ngIf="paciente.nivelRiesgo === 'g1'"></i>
                                             </div>
                                             <div class="riesgo-dropdown-item"
                                                 [class.active]="paciente.nivelRiesgo === 'g2'"
                                                 (click)="seleccionarNivelRiesgo(paciente, 'g2')">
                                                 <span class="dot g2"></span>
                                                 <span class="item-label">Grupo 2 - Medio</span>
-                                                <span class="item-check" *ngIf="paciente.nivelRiesgo === 'g2'">
-                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-                                                            stroke="#701f2f" stroke-width="2" stroke-linecap="round"
-                                                            stroke-linejoin="round" />
-                                                    </svg>
-                                                </span>
+                                                <i class="fas fa-check item-check"
+                                                    *ngIf="paciente.nivelRiesgo === 'g2'"></i>
                                             </div>
                                             <div class="riesgo-dropdown-item"
                                                 [class.active]="paciente.nivelRiesgo === 'g3'"
                                                 (click)="seleccionarNivelRiesgo(paciente, 'g3')">
                                                 <span class="dot g3"></span>
                                                 <span class="item-label">Grupo 3 - Alto</span>
-                                                <span class="item-check" *ngIf="paciente.nivelRiesgo === 'g3'">
-                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-                                                            stroke="#701f2f" stroke-width="2" stroke-linecap="round"
-                                                            stroke-linejoin="round" />
-                                                    </svg>
-                                                </span>
+                                                <i class="fas fa-check item-check"
+                                                    *ngIf="paciente.nivelRiesgo === 'g3'"></i>
                                             </div>
                                             <div class="riesgo-dropdown-item"
                                                 [class.active]="paciente.nivelRiesgo === 'g4'"
                                                 (click)="seleccionarNivelRiesgo(paciente, 'g4')">
                                                 <span class="dot g4"></span>
                                                 <span class="item-label">Grupo 4 - Crítico</span>
-                                                <span class="item-check" *ngIf="paciente.nivelRiesgo === 'g4'">
-                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                                        <path d="M11.6666 3.5L5.24992 9.91667L2.33325 7"
-                                                            stroke="#701f2f" stroke-width="2" stroke-linecap="round"
-                                                            stroke-linejoin="round" />
-                                                    </svg>
-                                                </span>
+                                                <i class="fas fa-check item-check"
+                                                    *ngIf="paciente.nivelRiesgo === 'g4'"></i>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </td>
 
-                            <!-- ⭐ ACCIONES -->
+                            <!-- Acciones Rápidas -->
                             <td class="acciones-cell">
-                                <div class="acciones-wrapper">
-                                    <button class="btn-completar" (click)="abrirModalCompletada(paciente)"
-                                        title="Completar visita">
+                                <div class="acciones-toolbar">
+                                    <!-- Botón Completar Visita -->
+                                    <button class="btn-action btn-completar" (click)="abrirModalCompletada(paciente)"
+                                        [disabled]="paciente.estadoVisita === 'pendiente' && (paciente.diasPendiente ?? 0) < 20"
+                                        [attr.aria-label]="'Completar visita'"
+                                        [title]="paciente.estadoVisita === 'pendiente' && (paciente.diasPendiente ?? 0) < 20 ? 'Bloqueada: Requiere 20 días de espera' : 'Completar visita con foto'">
                                         <i class="fas fa-check"></i>
                                     </button>
-                                    <button class="btn-pendiente" (click)="marcarPendiente(paciente)"
-                                        title="Marcar como pendiente">
+
+                                    <!-- Botón Marcar Pendiente -->
+                                    <button class="btn-action btn-pendiente" (click)="marcarPendiente(paciente)"
+                                        [class.disabled-style]="paciente.estadoVisita === 'pendiente'"
+                                        [title]="paciente.estadoVisita === 'pendiente' ? 'Ya se encuentra pendiente' : 'Marcar como pendiente'">
                                         <i class="fas fa-clock"></i>
                                     </button>
-                                    <button class="btn-incidencia" (click)="abrirIncidencia(paciente)"
-                                        title="Reportar incidencia">
-                                        <i class="fas fa-exclamation-triangle"></i>
+
+                                    <!-- Botón Reportar Incidencia -->
+                                    <button class="btn-action btn-incidencia" (click)="abrirIncidencia(paciente)"
+                                        title="Reportar incidencia de visita">
+                                        <i class="fas fa-triangle-exclamation"></i>
                                     </button>
-                                    <button class="btn-historial" (click)="verHistorial(paciente)" title="Ver historial"
+
+                                    <!-- Botón Ver Historial -->
+                                    <button class="btn-action btn-historial" (click)="verHistorial(paciente)"
+                                        title="Ver historial de visitas"
                                         *ngIf="paciente.historialVisitas && paciente.historialVisitas.length > 0">
-                                        <i class="fas fa-history"></i>
+                                        <i class="fas fa-clock-rotate-left"></i>
                                     </button>
                                 </div>
                             </td>
+
                         </tr>
+
+                        <!-- Estado Vacío -->
                         <tr *ngIf="pacientesFiltrados.length === 0">
-                            <td colspan="6" class="no-results">
-                                <i class="fas fa-inbox"></i>
-                                <p>No hay pacientes que coincidan con los filtros</p>
+                            <td colspan="7" class="no-results-cell">
+                                <div class="empty-state-card">
+                                    <div class="empty-icon-circle">
+                                        <i class="fas fa-user-slash"></i>
+                                    </div>
+                                    <h3>No se encontraron pacientes</h3>
+                                    <p>No hay registros que coincidan con los filtros o el término de búsqueda actual.
+                                    </p>
+                                    <button class="btn-reset-empty" (click)="limpiarFiltros()">
+                                        <i class="fas fa-rotate-left"></i> Limpiar filtros
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -204,222 +415,397 @@
             </div>
         </div>
 
-        <!-- PAGINACIÓN -->
-        <div class="pagination-wrapper" *ngIf="pacientesFiltrados.length > 0">
-            <div class="pagination-container" *ngIf="totalPaginas > 1">
-                <div class="pagination-info">
-                    Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} -
-                    {{ Math.min(paginaActual * itemsPorPagina, pacientesFiltrados.length) }}
-                    de {{ pacientesFiltrados.length }} pacientes
-                </div>
-                <div class="pagination-controls">
-                    <button class="pagination-btn" (click)="cambiarPagina(paginaActual - 1)"
-                        [disabled]="paginaActual === 1">
-                        <i class="fas fa-chevron-left"></i> Anterior
-                    </button>
-                    <div class="pagination-numbers">
-                        <button *ngFor="let p of paginas" class="pagination-number" [class.active]="p === paginaActual"
-                            (click)="cambiarPagina(p)">
-                            {{ p }}
-                        </button>
+        <!-- ============================================ -->
+        <!-- ⭐ VISTA 2: TARJETAS (CARDS GRID)            -->
+        <!-- ============================================ -->
+        <div class="cards-grid-view" *ngIf="vistaModo === 'tarjetas'">
+            <div class="patient-card" *ngFor="let paciente of pacientesPaginados"
+                [class.card-vencido]="(paciente.diasPendiente ?? 0) >= 20 && paciente.estadoVisita === 'pendiente'"
+                [class.has-open-dropdown]="riesgoAbierto === paciente.id">
+                <!-- Header de la tarjeta -->
+                <div class="patient-card-header">
+                    <div class="patient-avatar-box">
+                        <div class="avatar-circle" [style.borderColor]="getColorNivelRiesgo(paciente.nivelRiesgo)">
+                            {{ getIniciales(paciente.nombre) }}
+                        </div>
+                        <div class="patient-name-box">
+                            <h4 class="card-patient-name" [title]="paciente.nombre">{{ paciente.nombre }}</h4>
+                            <span class="card-section-pill" *ngIf="paciente.seccion">Sección {{ paciente.seccion
+                                }}</span>
+                        </div>
                     </div>
-                    <button class="pagination-btn" (click)="cambiarPagina(paginaActual + 1)"
-                        [disabled]="paginaActual === totalPaginas">
-                        Siguiente <i class="fas fa-chevron-right"></i>
+
+                    <div class="patient-card-status">
+                        <span class="estado-badge" [class]="getEstadoClass(paciente.estadoVisita)">
+                            <i [class]="getEstadoIcono(paciente.estadoVisita)"></i>
+                            {{ getEstadoTexto(paciente.estadoVisita) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Cuerpo de la tarjeta -->
+                <div class="patient-card-body">
+                    <div class="card-info-item">
+                        <i class="fas fa-location-dot icon-dim"></i>
+                        <span class="card-address-text">{{ limpiarDireccion(paciente.direccion) }}</span>
+                    </div>
+
+                    <div class="card-info-item" *ngIf="paciente.colonia">
+                        <i class="fas fa-city icon-dim"></i>
+                        <span class="card-colonia-text">{{ paciente.colonia }}</span>
+                    </div>
+
+                    <div class="card-info-item" *ngIf="paciente.telefono">
+                        <i class="fas fa-phone-volume icon-dim"></i>
+                        <a [href]="'tel:' + paciente.telefono" class="card-phone-link">{{ paciente.telefono }}</a>
+                    </div>
+
+                    <div class="card-meta-chips">
+                        <span *ngIf="paciente.curp" class="curp-badge" (click)="copiarTexto(paciente.curp, 'CURP')"
+                            title="Copiar CURP">
+                            <i class="fas fa-id-card"></i> {{ paciente.curp }}
+                        </span>
+                        <span *ngIf="paciente.programa" class="programa-badge">
+                            <i class="fas fa-tag"></i> {{ paciente.programa }}
+                        </span>
+                    </div>
+
+                    <!-- Ciclo de 20 días en Tarjeta -->
+                    <div class="card-cycle-box" *ngIf="paciente.estadoVisita === 'pendiente'">
+                        <div class="card-cycle-header">
+                            <span><i class="fas fa-calendar-day"></i> Ciclo de Espera</span>
+                            <strong>{{ paciente.diasPendiente ?? 0 }}/20 días</strong>
+                        </div>
+                        <div class="dias-progreso-track">
+                            <div class="dias-bar-fill"
+                                [style.width]="Math.min(((paciente.diasPendiente ?? 0) / 20) * 100, 100) + '%'"
+                                [class.vencido]="(paciente.diasPendiente ?? 0) >= 20"
+                                [class.proximo]="(paciente.diasPendiente ?? 0) >= 15 && (paciente.diasPendiente ?? 0) < 20">
+                            </div>
+                        </div>
+                        <div class="card-cycle-status">
+                            <span *ngIf="(paciente.diasPendiente ?? 0) >= 20" class="badge-vencido">
+                                <i class="fas fa-circle-check"></i> ¡Listo para visita!
+                            </span>
+                            <span *ngIf="(paciente.diasPendiente ?? 0) < 20" class="dias-restantes">
+                                <i class="fas fa-lock"></i> Faltan {{ 20 - (paciente.diasPendiente ?? 0) }} días
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Nivel de Riesgo Selector -->
+                    <div class="card-risk-section">
+                        <span class="risk-label"><i class="fas fa-heart-pulse"></i> Riesgo:</span>
+                        <div class="select-riesgo-card-wrapper"
+                            [style.borderColor]="getColorNivelRiesgo(paciente.nivelRiesgo)">
+                            <span class="riesgo-dot"
+                                [style.background]="getColorNivelRiesgo(paciente.nivelRiesgo)"></span>
+                            <select class="card-riesgo-select" [ngModel]="paciente.nivelRiesgo || ''"
+                                (ngModelChange)="seleccionarNivelRiesgo(paciente, $event)"
+                                [title]="'Nivel actual: ' + getLabelNivelRiesgoCorto(paciente.nivelRiesgo)">
+                                <option value="">Sin asignar</option>
+                                <option value="g1">G1 - Bajo</option>
+                                <option value="g2">G2 - Medio</option>
+                                <option value="g3">G3 - Alto</option>
+                                <option value="g4">G4 - Crítico</option>
+                            </select>
+                            <i class="fas fa-chevron-down select-chevron"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer con Acciones -->
+                <div class="patient-card-footer">
+                    <button class="btn-card-action btn-completar" (click)="abrirModalCompletada(paciente)"
+                        [disabled]="paciente.estadoVisita === 'pendiente' && (paciente.diasPendiente ?? 0) < 20">
+                        <i class="fas fa-check"></i> Completar
+                    </button>
+
+                    <button class="btn-card-action btn-pendiente" (click)="marcarPendiente(paciente)"
+                        [class.disabled-style]="paciente.estadoVisita === 'pendiente'">
+                        <i class="fas fa-clock"></i> Pendiente
+                    </button>
+
+                    <button class="btn-card-action btn-incidencia" (click)="abrirIncidencia(paciente)"
+                        title="Incidencia">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </button>
+
+                    <button class="btn-card-action btn-historial" (click)="verHistorial(paciente)" title="Historial"
+                        *ngIf="paciente.historialVisitas && paciente.historialVisitas.length > 0">
+                        <i class="fas fa-clock-rotate-left"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="items-per-page">
-                <span>Mostrar</span>
-                <select [(ngModel)]="itemsPorPagina" (change)="onItemsPorPaginaChange()">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                <span>pacientes por página</span>
+            <!-- Estado vacío en tarjetas -->
+            <div class="cards-empty-state" *ngIf="pacientesFiltrados.length === 0">
+                <div class="empty-icon-circle">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <h3>No se encontraron pacientes</h3>
+                <p>No hay pacientes que coincidan con la búsqueda o filtro seleccionado.</p>
+                <button class="btn-reset-empty" (click)="limpiarFiltros()">
+                    <i class="fas fa-rotate-left"></i> Limpiar filtros
+                </button>
             </div>
         </div>
 
-        <!-- ⭐ MODAL COMPLETADA - MEJORADO CON UBICACIÓN PRECISA -->
-        <!-- ⭐ MODAL COMPLETADA - SIMPLIFICADO -->
-        <div class="modal-overlay" [class.active]="mostrarModalCompletada" (click)="cerrarModalCompletada()">
-            <div class="modal-container completada-modal" (click)="$event.stopPropagation()">
-                <div class="modal-header">
-                    <h3><i class="fas fa-check-circle"></i> Completar Visita</h3>
-                    <button class="modal-close" (click)="cerrarModalCompletada()">&times;</button>
+        <!-- ============================================ -->
+        <!-- ⭐ BARRA DE PAGINACIÓN MODERNA               -->
+        <!-- ============================================ -->
+        <div class="pagination-modern-bar" *ngIf="pacientesFiltrados.length > 0">
+            <div class="pagination-info-badge">
+                <i class="fas fa-users"></i>
+                <span>Mostrando <strong>{{ (paginaActual - 1) * itemsPorPagina + 1 }} - {{ Math.min(paginaActual *
+                        itemsPorPagina, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length
+                        }}</strong> pacientes</span>
+            </div>
+
+            <div class="pagination-nav-center" *ngIf="totalPaginas > 1">
+                <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1"
+                    title="Página anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <div class="pagination-pills-list">
+                    <button *ngFor="let p of paginas" class="page-num-pill" [class.active]="p === paginaActual"
+                        (click)="cambiarPagina(p)">
+                        {{ p }}
+                    </button>
                 </div>
-                <div class="modal-body">
-                    <!-- Información del paciente -->
-                    <div class="paciente-info-completada" *ngIf="selectedPaciente">
-                        <div class="info-header">
-                            <i class="fas fa-user-circle"></i>
-                            <strong>{{ selectedPaciente.nombre }}</strong>
-                        </div>
-                        <div class="info-details">
-                            <div class="info-row">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span>{{ limpiarDireccion(selectedPaciente.direccion) }}</span>
-                            </div>
-                            <div class="info-row">
-                                <i class="fas fa-phone"></i>
-                                <span>{{ selectedPaciente.telefono }}</span>
-                            </div>
-                            <div class="info-row">
-                                <i class="fas fa-hashtag"></i>
-                                <span>Sección: {{ selectedPaciente.seccion }}</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- ⭐ UBICACIÓN GPS - SIMPLIFICADO -->
-                    <div class="form-group">
-                        <label><i class="fas fa-map-pin"></i> Ubicación actual (GPS)</label>
-                        <div class="ubicacion-box">
-                            <!-- Cuando NO está obteniendo ubicación -->
-                            <div class="ubicacion-info" *ngIf="!obteniendoUbicacion">
-                                <i class="fas fa-location-dot" style="color: #701f2f; font-size: 18px;"></i>
-                                <div class="ubicacion-detalle">
-                                    <span class="ubicacion-coordenadas"
-                                        style="font-weight: 600; font-size: 14px; color: #1a1a1a;">
-                                        {{ ubicacionCoordenadas || "Obteniendo ubicación..." }}
-                                    </span>
-                                    <span class="ubicacion-direccion-real" *ngIf="ubicacionDireccionReal"
-                                        style="font-size: 12px; color: #1976d2; display: block; margin-top: 2px;">
-                                        <i class="fas fa-map-pin"></i> {{ ubicacionDireccionReal }}
-                                    </span>
-                                    <span class="ubicacion-direccion-real"
-                                        *ngIf="!ubicacionDireccionReal && ubicacionCoordenadas"
-                                        style="font-size: 12px; color: #999; display: block; margin-top: 2px;">
-                                        <i class="fas fa-info-circle"></i> Dirección no disponible
-                                    </span>
-                                </div>
-                            </div>
+                <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual + 1)"
+                    [disabled]="paginaActual === totalPaginas" title="Página siguiente">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
 
-                            <!-- Cuando ESTÁ obteniendo ubicación -->
-                            <div class="ubicacion-info" *ngIf="obteniendoUbicacion">
-                                <i class="fas fa-spinner fa-pulse" style="color: #701f2f; font-size: 20px;"></i>
-                                <span style="color: #666; font-size: 14px; margin-left: 8px;">Obteniendo
-                                    ubicación...</span>
-                            </div>
-
-                            <!-- Botón actualizar -->
-                            <button class="btn-refresh" (click)="actualizarUbicacion()" title="Actualizar ubicación"
-                                style="background: #701f2f; color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; flex-shrink: 0;"
-                                onmouseover="this.style.background='#8b2e4a'; this.style.transform='rotate(180deg)'"
-                                onmouseout="this.style.background='#701f2f'; this.style.transform='rotate(0deg)'">
-                                <i class="fas fa-sync-alt" style="font-size: 14px;"></i>
-                            </button>
-                        </div>
-
-                        <!-- Mensaje de error si no hay ubicación -->
-                        <div *ngIf="!obteniendoUbicacion && !ubicacionCoordenadas"
-                            style="margin-top: 8px; padding: 8px 14px; background: #fff3e0; border-radius: 8px; border: 1px solid #ffe0b2; font-size: 12px; color: #e67e22;">
-                            <i class="fas fa-exclamation-triangle"></i> No se pudo obtener la ubicación. Haz clic en el
-                            botón de actualizar para intentar de nuevo.
-                        </div>
-                    </div>
-
-                    <!-- Fotos -->
-                    <div class="form-group">
-                        <label><i class="fas fa-camera"></i> Evidencia fotográfica</label>
-                        <div class="foto-upload">
-                            <button type="button" class="btn-subir-foto" (click)="abrirCamara()">
-                                <i class="fas fa-camera"></i> Tomar foto (máx. 3)
-                            </button>
-                        </div>
-
-                        <div class="fotos-preview" *ngIf="fotosPreview.length > 0">
-                            <div class="foto-item" *ngFor="let foto of fotosPreview; let i = index">
-                                <img [src]="foto" alt="Vista previa" />
-                                <button class="btn-eliminar-foto" (click)="eliminarFoto(i)">&times;</button>
-                            </div>
-                        </div>
-                        <div class="foto-hint" *ngIf="fotosPreview.length === 0">
-                            <i class="fas fa-info-circle"></i> Toma una foto como evidencia de la visita
-                        </div>
-                        <div class="foto-hint" *ngIf="fotosPreview.length > 0 && fotosPreview.length < 3">
-                            <i class="fas fa-info-circle"></i> Puedes tomar hasta 3 fotos ({{ fotosPreview.length }}/3)
-                        </div>
-                        <div class="foto-hint warning" *ngIf="fotosPreview.length >= 3">
-                            <i class="fas fa-exclamation-circle"></i> Límite de 3 fotos alcanzado
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn-guardar" (click)="guardarCompletada()"
-                            [disabled]="fotosPreview.length === 0">
-                            <i class="fas fa-save"></i> Guardar visita
-                        </button>
-                        <button class="btn-cancelar" (click)="cerrarModalCompletada()">Cancelar</button>
-                    </div>
+            <div class="pagination-rows-selector">
+                <span class="rows-label">Filas por página:</span>
+                <div class="select-rows-wrap">
+                    <select [(ngModel)]="itemsPorPagina" (change)="onItemsPorPaginaChange()"
+                        class="select-rows-dropdown">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
                 </div>
             </div>
         </div>
 
-        <!-- Modal Historial -->
-        <div class="modal-overlay" [class.active]="mostrarModalHistorial" (click)="cerrarModalHistorial()">
-            <div class="modal-container historial-modal" (click)="$event.stopPropagation()">
-                <div class="modal-header">
-                    <h3><i class="fas fa-history"></i> Historial de Visitas</h3>
-                    <button class="modal-close" (click)="cerrarModalHistorial()">&times;</button>
+    </main>
+
+    <!-- ============================================ -->
+    <!-- ⭐ MODAL: COMPLETAR VISITA                   -->
+    <!-- ============================================ -->
+    <div class="modal-backdrop-glass" [class.active]="mostrarModalCompletada" (click)="cerrarModalCompletada()">
+        <div class="modal-dialog-modern completada-modal" (click)="$event.stopPropagation()">
+
+            <div class="dialog-header header-completada">
+                <div class="dialog-title-group">
+                    <div class="dialog-icon-badge">
+                        <i class="fas fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <h3>Completar Visita Médica</h3>
+                        <p class="dialog-subtitle">Registro de evidencia fotográfica y confirmación de atención</p>
+                    </div>
                 </div>
-                <div class="modal-body historial-body">
-                    <div class="paciente-historial-info" *ngIf="pacienteHistorial">
-                        <div class="historial-paciente-header">
-                            <i class="fas fa-user-circle"></i>
-                            <div>
-                                <strong>{{ pacienteHistorial.nombre }}</strong>
-                                <p>{{ limpiarDireccion(pacienteHistorial.direccion) }}</p>
-                            </div>
+                <button class="dialog-close-btn" (click)="cerrarModalCompletada()" title="Cerrar modal">&times;</button>
+            </div>
+
+            <div class="dialog-body">
+                <!-- Tarjeta del Paciente Seleccionado -->
+                <div class="patient-summary-banner" *ngIf="selectedPaciente">
+                    <div class="summary-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="summary-details">
+                        <div class="summary-name">{{ selectedPaciente.nombre }}</div>
+                        <div class="summary-row">
+                            <i class="fas fa-location-dot"></i>
+                            <span>{{ limpiarDireccion(selectedPaciente.direccion) }}</span>
+                        </div>
+                        <div class="summary-row" *ngIf="selectedPaciente.telefono">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ selectedPaciente.telefono }}</span>
+                        </div>
+                        <div class="summary-row" *ngIf="selectedPaciente.seccion">
+                            <i class="fas fa-hashtag"></i>
+                            <span>Sección: {{ selectedPaciente.seccion }}</span>
+                        </div>
+
+                        <!-- Alerta de bloqueo si no han pasado 20 días -->
+                        <div class="lockout-warning"
+                            *ngIf="selectedPaciente.estadoVisita === 'pendiente' && (selectedPaciente.diasPendiente ?? 0) < 20">
+                            <i class="fas fa-lock"></i>
+                            <span>Visita no disponible. Faltan <strong>{{ 20 - (selectedPaciente.diasPendiente ?? 0) }}
+                                    días</strong> para completar el ciclo de 20 días.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evidencia Fotográfica -->
+                <div class="dialog-section-box">
+                    <div class="section-box-header">
+                        <i class="fas fa-camera"></i>
+                        <span>Evidencia Fotográfica</span>
+                        <span class="label-optional">(Opcional hasta 3 fotos)</span>
+                    </div>
+
+                    <div class="photo-capture-actions">
+                        <button type="button" class="btn-camera-trigger" (click)="abrirCamara()"
+                            [disabled]="selectedPaciente?.estadoVisita === 'pendiente' && (selectedPaciente?.diasPendiente ?? 0) < 20">
+                            <i class="fas fa-camera"></i>
+                            <span>Tomar / Subir Foto</span>
+                            <span class="badge-photo-count">{{ fotosPreview.length }}/3</span>
+                        </button>
+
+                        <button type="button" class="btn-skip-photo" (click)="saltarFoto()"
+                            [disabled]="selectedPaciente?.estadoVisita === 'pendiente' && (selectedPaciente?.diasPendiente ?? 0) < 20">
+                            <i class="fas fa-ban"></i>
+                            <span>Sin evidencia fotográfica</span>
+                        </button>
+                    </div>
+
+                    <!-- Previsualización de Fotos -->
+                    <div class="photos-preview-gallery" *ngIf="fotosPreview.length > 0">
+                        <div class="photo-thumbnail-card" *ngFor="let foto of fotosPreview; let i = index">
+                            <img [src]="foto" alt="Vista previa de evidencia" />
+                            <button class="btn-remove-photo" (click)="eliminarFoto(i)"
+                                title="Eliminar foto">&times;</button>
                         </div>
                     </div>
 
-                    <div class="historial-lista" *ngIf="historialVisitas.length > 0; else sinHistorial">
-                        <div class="historial-item" *ngFor="let visita of historialVisitas">
-                            <div class="historial-fecha">
-                                <i class="fas fa-calendar-day"></i>
-                                {{ visita.fecha | date : "dd/MM/yyyy HH:mm" }}
+                    <!-- Indicadores de estado de fotos -->
+                    <div class="photo-status-alert info" *ngIf="fotosPreview.length === 0 && !saltarFotoActivo">
+                        <i class="fas fa-circle-info"></i>
+                        <span>Puedes tomar hasta 3 fotos de evidencia o completar la visita directamente.</span>
+                    </div>
+
+                    <div class="photo-status-alert success" *ngIf="fotosPreview.length > 0 && fotosPreview.length < 3">
+                        <i class="fas fa-circle-check"></i>
+                        <span>{{ fotosPreview.length }} foto(s) capturada(s). Puedes añadir {{ 3 - fotosPreview.length
+                            }} más.</span>
+                    </div>
+
+                    <div class="photo-status-alert warning" *ngIf="fotosPreview.length >= 3">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span>Límite máximo de 3 fotografías alcanzado.</span>
+                    </div>
+
+                    <div class="photo-status-alert saltar-activo" *ngIf="saltarFotoActivo">
+                        <i class="fas fa-circle-check"></i>
+                        <span>Opción <strong>Sin evidencia</strong> seleccionada. La visita se guardará sin
+                            fotos.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer del Modal -->
+            <div class="dialog-footer">
+                <button class="btn-dialog-cancel" (click)="cerrarModalCompletada()">
+                    <i class="fas fa-xmark"></i> Cancelar
+                </button>
+                <button class="btn-dialog-save" (click)="guardarCompletada()"
+                    [disabled]="selectedPaciente?.estadoVisita === 'pendiente' && (selectedPaciente?.diasPendiente ?? 0) < 20">
+                    <i class="fas fa-floppy-disk"></i> Guardar Visita
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ MODAL: HISTORIAL DE VISITAS               -->
+    <!-- ============================================ -->
+    <div class="modal-backdrop-glass" [class.active]="mostrarModalHistorial" (click)="cerrarModalHistorial()">
+        <div class="modal-dialog-modern historial-modal" (click)="$event.stopPropagation()">
+
+            <div class="dialog-header header-historial">
+                <div class="dialog-title-group">
+                    <div class="dialog-icon-badge">
+                        <i class="fas fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <h3>Historial Clínico de Visitas</h3>
+                        <p class="dialog-subtitle">Registro de atenciones domiciliarias anteriores</p>
+                    </div>
+                </div>
+                <button class="dialog-close-btn" (click)="cerrarModalHistorial()" title="Cerrar modal">&times;</button>
+            </div>
+
+            <div class="dialog-body historial-dialog-body">
+                <div class="historial-patient-card" *ngIf="pacienteHistorial">
+                    <div class="historial-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="historial-patient-info">
+                        <strong>{{ pacienteHistorial.nombre }}</strong>
+                        <p><i class="fas fa-location-dot"></i> {{ limpiarDireccion(pacienteHistorial.direccion) }}</p>
+                    </div>
+                </div>
+
+                <!-- Línea de tiempo de visitas -->
+                <div class="timeline-container" *ngIf="historialVisitas.length > 0; else sinHistorial">
+                    <div class="timeline-item" *ngFor="let visita of historialVisitas; let i = index">
+                        <div class="timeline-dot">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="timeline-card">
+                            <div class="timeline-header">
+                                <span class="timeline-date">
+                                    <i class="fas fa-calendar-day"></i> {{ visita.fecha | date: 'dd/MM/yyyy HH:mm' }}
+                                </span>
+                                <span class="timeline-badge-visit">Visita #{{ historialVisitas.length - i }}</span>
                             </div>
-                            <div class="historial-ubicacion">
+
+                            <div class="timeline-location"
+                                *ngIf="visita.ubicacionDireccion || visita.ubicacionCoordenadas">
                                 <i class="fas fa-map-pin"></i>
-                                <div>
-                                    <strong>Ubicación:</strong>
-                                    <span>{{ visita.ubicacionDireccion || visita.ubicacionCoordenadas }}</span>
-                                </div>
+                                <span>{{ visita.ubicacionDireccion || visita.ubicacionCoordenadas }}</span>
                             </div>
-                            <div class="historial-fotos" *ngIf="visita.fotos && visita.fotos.length > 0">
-                                <label><i class="fas fa-camera"></i> Evidencia ({{ visita.fotos.length }}
-                                    foto(s))</label>
-                                <div class="historial-fotos-grid">
-                                    <div class="historial-foto" *ngFor="let foto of visita.fotos">
-                                        <img [src]="foto" alt="Evidencia" (click)="openFotoModal(foto)" />
+
+                            <!-- Galería de fotos en historial -->
+                            <div class="timeline-gallery" *ngIf="visita.fotos && visita.fotos.length > 0">
+                                <div class="gallery-title">
+                                    <i class="fas fa-camera"></i> Evidencia ({{ visita.fotos.length }} foto(s))
+                                </div>
+                                <div class="gallery-grid">
+                                    <div class="gallery-thumb" *ngFor="let foto of visita.fotos">
+                                        <img [src]="foto" alt="Evidencia de visita" (click)="openFotoModal(foto)" />
+                                        <div class="gallery-zoom-overlay" (click)="openFotoModal(foto)">
+                                            <i class="fas fa-magnifying-glass-plus"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="historial-coordenadas" *ngIf="visita.coordenadas">
-                                <i class="fas fa-location-arrow"></i>
-                                <span>{{ visita.coordenadas }}</span>
-                            </div>
                         </div>
                     </div>
-                    <ng-template #sinHistorial>
-                        <div class="sin-historial">
-                            <i class="fas fa-calendar-times"></i>
-                            <p>No hay visitas completadas registradas</p>
-                        </div>
-                    </ng-template>
                 </div>
-            </div>
-        </div>
 
-        <!-- Modal Foto Ampliada -->
-        <div class="modal-foto" *ngIf="fotoModalVisible" (click)="cerrarFotoModal()">
-            <div class="modal-foto-contenido" (click)="$event.stopPropagation()">
-                <img [src]="fotoModalSrc" alt="Foto ampliada" />
-                <button class="cerrar-foto-modal" (click)="cerrarFotoModal()">&times;</button>
+                <ng-template #sinHistorial>
+                    <div class="empty-timeline-state">
+                        <i class="fas fa-calendar-xmark empty-timeline-icon"></i>
+                        <h4>Sin historial registrado</h4>
+                        <p>Aún no hay visitas completadas para este paciente.</p>
+                    </div>
+                </ng-template>
             </div>
+
         </div>
     </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ MODAL: VISOR DE FOTO (LIGHTBOX)          -->
+    <!-- ============================================ -->
+    <div class="lightbox-backdrop" *ngIf="fotoModalVisible" (click)="cerrarFotoModal()">
+        <div class="lightbox-content-box" (click)="$event.stopPropagation()">
+            <img [src]="fotoModalSrc" alt="Evidencia médica ampliada" class="lightbox-img" />
+            <button class="btn-lightbox-close" (click)="cerrarFotoModal()" title="Cerrar visor">&times;</button>
+        </div>
+    </div>
+
 </div>

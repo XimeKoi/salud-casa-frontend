@@ -11,12 +11,20 @@ import * as AppActions from '../../store/app.actions';
 import {
   selectAnioActivo,
   selectManzanaSeleccionada,
-  selectManzanasDisponibles,
   selectColoresManzanas
 } from '../../store/app.selectors';
 import { HeaderComponent } from '../header/header';
 import { AdminModalComponent } from '../admin-modal/admin-modal';
 import { FormsModule } from '@angular/forms';
+import { PacientesMapService, PacienteMap } from '../../services/pacientes-map.service';
+
+export interface ColoniaInfo {
+  id: string;
+  nombre: string;
+  totalPacientes: number;
+  pacientes: PacienteMap[];
+  color: string;
+}
 
 @Component({
   selector: 'app-layout',
@@ -27,87 +35,55 @@ import { FormsModule } from '@angular/forms';
 })
 export class LayoutComponent implements OnInit, OnDestroy {
   anioActivo$: Observable<string>;
-  manzanaSeleccionada: string = '';
-  manzanasDisponibles: string[] = [];
+  coloniaSeleccionada: string = '';
   coloresManzanas: { [key: string]: string } = {};
-  busquedaQuery: string = '';
 
   mostrarSidebar: boolean = true;
-
-  get ObjectKeys() {
-    return Object.keys;
-  }
+  busquedaColonia: string = '';
+  colonias: ColoniaInfo[] = [];
 
   private coloresCache: { [key: string]: string } = {};
-  private coloresAsignadosIniciales: boolean = false;
   private subscriptions: Subscription[] = [];
 
-  // ⭐ MAPA DE NOMBRES CORTO PARA ZONAS
-  private nombresZonas: { [key: string]: string } = {
-    'JARDINES DE LOS NARANJOS': 'Jardines Naranjos',
-    'SANTA ROSA DE LIMA': 'Santa Rosa',
-    'SANTA ROSA DE LIMA IVEG': 'Santa Rosa IVEG',
-    'LOS NARANJOS': 'Los Naranjos',
-    'RINCON DE LOS NARANJOS': 'Rincón Naranjos',
-    'REAL DE SAN JOSE': 'Real San José',
-    'MISION DE SAN JOSE': 'Misión San José',
-    'RESIDENCIAL VICTORIA': 'Victoria',
-    'SAN JOSE DEL CONSUELO': 'San José C.',
-    'EL MANANTIAL': 'El Manantial',
-    'VALLE DE SAN JOSE': 'Valle San José',
-    'RESIDENCIAL RENTERIA': 'Rentería',
-    'RESIDENCIAL PLATINO': 'Platino',
-    'CUMBRES DE LAS HILAMAS': 'Cumbres',
-    'VILLA SUR LEON': 'Villa Sur',
-    'LA SELVA': 'La Selva',
-    'LEON II': 'León II',
-    'LA MODERNA': 'La Moderna',
-    'SAN PEDRO PLUS': 'San Pedro +',
-    'SIN COLONIA': 'Sin Colonia'
-  };
-
   private coloresDisponibles = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#FF8A5C', '#A29BFE', '#FD79A8', '#00B894',
-    '#E17055', '#6C5CE7', '#FDCB6E', '#00CEC9', '#E84393',
-    '#0984E3', '#F8A5C2', '#74B9FF', '#55EFC4', '#FDCB6E'
+    '#9F2241', '#235B4E', '#2563eb', '#16a34a', '#d97706',
+    '#7c3aed', '#db2777', '#0891b2', '#ea580c', '#4f46e5',
+    '#059669', '#ca8a04', '#9333ea', '#e11d48', '#0284c7'
+  ];
+
+  private coloniasConocidas = [
+    'SANTA ROSA DE LIMA', 'JARDINES DE LOS NARANJOS', 'LOS NARANJOS',
+    'RINCON DE LOS NARANJOS', 'MISION DE SAN JOSE', 'REAL DE SAN JOSE',
+    'RESIDENCIAL VICTORIA', 'SAN JOSE DEL CONSUELO', 'EL MANANTIAL',
+    'VALLE DE SAN JOSE', 'RESIDENCIAL RENTERIA', 'RESIDENCIAL PLATINO',
+    'CUMBRES DE LAS HILAMAS', 'VILLA SUR LEON', 'LA SELVA', 'LEON II',
+    'LA MODERNA', 'SAN PEDRO PLUS', 'SANTA ROSA DE LIMA IVEG',
+    'SAN MARTIN', 'SAN LAZARO', 'QUINTA SAN LORENZO', 'PASEO DE LA CASTELLANA',
+    'PASEO DEL MOLINO', 'PEÑITAS', 'OBREGON', 'JARDINES DEL SOL',
+    'LA AZTECA', 'ZONA CENTRO'
   ];
 
   constructor(
     private store: Store<{ app: AppState }>,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private pacientesMapService: PacientesMapService
   ) {
     this.anioActivo$ = this.store.select(selectAnioActivo);
   }
 
   ngOnInit() {
-    console.log('🔄 [Layout] Inicializando...');
+    console.log('🔄 [Layout] Inicializando componente y cargando colonias...');
 
-    // ⭐ SUSCRIBIRSE A MANZANAS DISPONIBLES DESDE EL STORE
+    // 1. Escuchar selección de colonia desde el Store
     this.subscriptions.push(
-      this.store.select(selectManzanasDisponibles).subscribe(manzanas => {
-        if (manzanas && manzanas.length > 0) {
-          // ⭐ ELIMINAR DUPLICADOS USANDO SET
-          const uniqueZonas = Array.from(new Set(manzanas));
-          const sortedZonas = this.ordenarZonas(uniqueZonas);
-
-          // ⭐ SOLO ACTUALIZAR SI HAY CAMBIOS
-          if (JSON.stringify(sortedZonas) !== JSON.stringify(this.manzanasDisponibles)) {
-            this.manzanasDisponibles = sortedZonas;
-            console.log(`✅ [Layout] ${this.manzanasDisponibles.length} zonas únicas cargadas`);
-
-            // ⭐ ASIGNAR COLORES SI NO EXISTEN
-            if (Object.keys(this.coloresManzanas).length === 0) {
-              this.asignarColoresIniciales();
-            }
-            this.cdr.detectChanges();
-          }
-        }
+      this.store.select(selectManzanaSeleccionada).subscribe(coloniaId => {
+        this.coloniaSeleccionada = coloniaId || '';
+        this.cdr.detectChanges();
       })
     );
 
-    // ⭐ SUSCRIBIRSE A COLORES
+    // 2. Escuchar colores
     this.subscriptions.push(
       this.store.select(selectColoresManzanas).subscribe(colores => {
         if (colores && Object.keys(colores).length > 0) {
@@ -118,15 +94,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
       })
     );
 
-    // ⭐ SUSCRIBIRSE A SELECCIÓN DE ZONA
-    this.subscriptions.push(
-      this.store.select(selectManzanaSeleccionada).subscribe(manzana => {
-        this.manzanaSeleccionada = manzana || '';
-        this.cdr.detectChanges();
-      })
-    );
-
-    // ⭐ NAVEGACIÓN
+    // 3. Control de visibilidad del sidebar en rutas
     this.subscriptions.push(
       this.router.events.pipe(
         filter(event => event instanceof NavigationEnd)
@@ -136,114 +104,162 @@ export class LayoutComponent implements OnInit, OnDestroy {
       })
     );
 
-    setTimeout(() => {
-      this.actualizarVisibilidadSidebar();
-      this.cdr.detectChanges();
-    }, 100);
+    this.actualizarVisibilidadSidebar();
+
+    // 4. Cargar y agrupar personas por colonias
+    this.cargarYAgruparColonias();
   }
 
-  private ordenarZonas(zonas: string[]): string[] {
-    if (!zonas || zonas.length === 0) return [];
-    const copia = [...zonas];
-    return copia.sort((a, b) => {
-      const nombreA = this.getNombreZona(a).toLowerCase();
-      const nombreB = this.getNombreZona(b).toLowerCase();
-      return nombreA.localeCompare(nombreB);
-    });
+  private cargarYAgruparColonias() {
+    this.subscriptions.push(
+      this.pacientesMapService.getPacientes().subscribe({
+        next: (pacientes: PacienteMap[]) => {
+          if (pacientes && pacientes.length > 0) {
+            this.agruparPacientesPorColonia(pacientes);
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error al obtener pacientes en Layout:', err);
+        }
+      })
+    );
   }
 
-  private asignarColoresIniciales() {
-    if (this.coloresAsignadosIniciales) return;
-    if (this.manzanasDisponibles.length === 0) return;
+  private agruparPacientesPorColonia(pacientes: PacienteMap[]) {
+    const mapa = new Map<string, PacienteMap[]>();
 
-    const nuevosColores: { [key: string]: string } = {};
-
-    this.manzanasDisponibles.forEach((zona, index) => {
-      const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
-      nuevosColores[zona] = color;
+    pacientes.forEach(p => {
+      const nombreColonia = this.extraerColonia(p);
+      if (!mapa.has(nombreColonia)) {
+        mapa.set(nombreColonia, []);
+      }
+      mapa.get(nombreColonia)!.push(p);
     });
 
-    this.coloresCache = { ...nuevosColores };
-    this.coloresManzanas = { ...nuevosColores };
-    this.coloresAsignadosIniciales = true;
+    const listaColonias: ColoniaInfo[] = [];
+    let colorIdx = 0;
+    const coloresStore: { [key: string]: string } = {};
 
-    this.store.dispatch(AppActions.setColoresManzanas({
-      colores: { ...nuevosColores }
+    mapa.forEach((pacs, nombre) => {
+      const color = this.coloresDisponibles[colorIdx % this.coloresDisponibles.length];
+      colorIdx++;
+
+      listaColonias.push({
+        id: nombre,
+        nombre: nombre,
+        totalPacientes: pacs.length,
+        pacientes: pacs,
+        color: color
+      });
+
+      coloresStore[nombre] = color;
+    });
+
+    // Ordenar de mayor a menor cantidad de pacientes para máxima visibilidad y usabilidad
+    listaColonias.sort((a, b) => b.totalPacientes - a.totalPacientes);
+
+    this.colonias = listaColonias;
+    this.coloresCache = { ...coloresStore };
+    this.coloresManzanas = { ...coloresStore };
+
+    this.store.dispatch(AppActions.setColoresManzanas({ colores: coloresStore }));
+    this.store.dispatch(AppActions.setManzanasDisponibles({
+      manzanas: this.colonias.map(c => c.id)
     }));
 
-    console.log(`🎨 [Layout] ${Object.keys(nuevosColores).length} colores asignados`);
-  }
-
-  private actualizarVisibilidadSidebar() {
-    const url = this.router.url;
-    this.mostrarSidebar = url === '/' || url === '/dashboard' || url.startsWith('/dashboard');
-  }
-
-  getNombreZona(zonaId: string): string {
-    if (!zonaId) return 'Sin nombre';
-
-    // ⭐ BÚSQUEDA EXACTA
-    if (this.nombresZonas[zonaId]) {
-      return this.nombresZonas[zonaId];
-    }
-
-    // ⭐ BÚSQUEDA POR CONTENIDO
-    const zonaUpper = zonaId.toUpperCase();
-    for (const [key, value] of Object.entries(this.nombresZonas)) {
-      if (zonaUpper.includes(key.toUpperCase()) || key.toUpperCase().includes(zonaUpper)) {
-        return value;
-      }
-    }
-
-    // ⭐ ABREVIAR SI ES MUY LARGO
-    if (zonaId.length > 25) {
-      return zonaId.substring(0, 22) + '…';
-    }
-
-    return zonaId;
-  }
-
-  getColorZona(zonaId: string): string {
-    if (!zonaId) return '#cccccc';
-
-    if (this.coloresCache[zonaId]) {
-      return this.coloresCache[zonaId];
-    }
-
-    if (this.coloresManzanas[zonaId]) {
-      this.coloresCache[zonaId] = this.coloresManzanas[zonaId];
-      return this.coloresCache[zonaId];
-    }
-
-    const index = this.manzanasDisponibles.indexOf(zonaId);
-    if (index !== -1) {
-      const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
-      this.coloresCache[zonaId] = color;
-      this.coloresManzanas[zonaId] = color;
-      return color;
-    }
-
-    return '#cccccc';
-  }
-
-  isZonaSeleccionada(zonaId: string): boolean {
-    return this.manzanaSeleccionada === zonaId;
-  }
-
-  onAnioChange(event: any) {
-    this.store.dispatch(AppActions.setAnioActivo({ anio: event.target.value }));
-  }
-
-  onManzanaChange(event: any) {
-    const manzana = event.target.value;
-    console.log('📍 [Layout] Cambiando zona a:', manzana);
-    this.store.dispatch(AppActions.setManzanaSeleccionada({ manzana: manzana || '' }));
-    this.manzanaSeleccionada = manzana || '';
     this.cdr.detectChanges();
   }
 
-  btnAplicarFiltros() {
-    console.log('🔍 Aplicando filtros...');
+  private extraerColonia(p: PacienteMap): string {
+    const colUpper = (p.colonia || '').toUpperCase().trim();
+    if (colUpper && colUpper.length > 2 && !colUpper.includes('DISPONIBLE') && !colUpper.includes('SIN COLONIA')) {
+      for (const conocida of this.coloniasConocidas) {
+        if (colUpper.includes(conocida) || conocida.includes(colUpper)) {
+          return this.formatearNombreColonia(conocida);
+        }
+      }
+      return this.formatearNombreColonia(p.colonia.trim());
+    }
+
+    const dirUpper = (p.direccion || '').toUpperCase();
+    for (const conocida of this.coloniasConocidas) {
+      if (dirUpper.includes(conocida)) {
+        return this.formatearNombreColonia(conocida);
+      }
+    }
+
+    return 'Santa Rosa de Lima';
+  }
+
+  private formatearNombreColonia(texto: string): string {
+    if (!texto) return '';
+    return texto
+      .toLowerCase()
+      .split(' ')
+      .map(palabra => {
+        if (['de', 'del', 'los', 'la', 'las', 'el', 'y', 'en'].includes(palabra)) {
+          return palabra;
+        }
+        return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+      })
+      .join(' ');
+  }
+
+  get coloniasFiltradas(): ColoniaInfo[] {
+    if (!this.busquedaColonia || this.busquedaColonia.trim() === '') {
+      return this.colonias;
+    }
+    const q = this.busquedaColonia.toLowerCase().trim();
+    return this.colonias.filter(c =>
+      c.nombre.toLowerCase().includes(q)
+    );
+  }
+
+  get totalPacientes(): number {
+    return this.colonias.reduce((acc, curr) => acc + curr.totalPacientes, 0);
+  }
+
+  getColorColonia(id: string): string {
+    if (!id) return '#9F2241';
+    if (this.coloresCache[id]) return this.coloresCache[id];
+    const col = this.colonias.find(c => c.id === id);
+    return col ? col.color : '#9F2241';
+  }
+
+  isColoniaSeleccionada(id: string): boolean {
+    return this.coloniaSeleccionada === id;
+  }
+
+  seleccionarColonia(id: string) {
+    if (this.coloniaSeleccionada === id || id === '') {
+      // Deseleccionar o mostrar todas
+      this.coloniaSeleccionada = '';
+      this.store.dispatch(AppActions.setManzanaSeleccionada({ manzana: '' }));
+      window.dispatchEvent(new CustomEvent('limpiarManzanaSeleccionada'));
+    } else {
+      // Seleccionar colonia
+      const col = this.colonias.find(c => c.id === id);
+      if (col && col.pacientes.length > 0) {
+        this.coloniaSeleccionada = id;
+        this.store.dispatch(AppActions.setManzanaSeleccionada({ manzana: id }));
+
+        window.dispatchEvent(new CustomEvent('seleccionarManzana', {
+          detail: {
+            manzanaId: id,
+            nombre: col.nombre,
+            colonia: col.nombre,
+            pacientes: col.pacientes,
+            color: col.color
+          }
+        }));
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  private actualizarVisibilidadSidebar() {
+    const url = this.router.url.split('?')[0];
+    this.mostrarSidebar = url === '/' || url === '' || url === '/dashboard';
   }
 
   ngOnDestroy() {

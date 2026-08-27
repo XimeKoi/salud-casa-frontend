@@ -1,40 +1,321 @@
 <!-- src/app/components/map/map.html -->
 
-<!-- src/app/components/map/map.html -->
-
 <div class="map-container">
+
+  <!-- ⭐ SEARCH CONTAINER -->
   <div class="search-container">
+
+    <!-- ⭐ BÚSQUEDA PRINCIPAL -->
     <div class="search-box">
-      <i class="fas fa-search"></i>
-      <input type="text" [(ngModel)]="searchQuery" placeholder="Buscar calle o dirección..."
-        (keyup.enter)="buscarDireccion()" [disabled]="isSearching" />
+      <div class="search-icon-wrapper">
+        <i class="fas fa-search"></i>
+      </div>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Buscar paciente, calle o colonia..."
+        (keyup.enter)="buscarDireccion()" [disabled]="isSearching" class="search-input" autocomplete="off" />
       <button class="btn-search" (click)="buscarDireccion()" [disabled]="isSearching">
-        <i class="fas" [class.fa-search]="!isSearching" [class.fa-spinner]="isSearching"></i>
-        {{ isSearching ? 'Buscando...' : 'Buscar' }}
+        <i class="fas" [class.fa-search]="!isSearching" [class.fa-spinner]="isSearching"
+          [class.fa-spin]="isSearching"></i>
+        <span>{{ isSearching ? 'Buscando' : 'Buscar' }}</span>
       </button>
     </div>
-    <button class="btn-advanced-search" (click)="buscarDireccionConEntrecalles()" [disabled]="isSearching"
-      title="Búsqueda avanzada con entrecalles">
-      <i class="fas fa-route"></i>
-    </button>
-    <button class="btn-refresh-pacientes" (click)="recargarPacientes()" [disabled]="loadingPacientes"
-      title="Recargar pacientes en el mapa">
-      <i class="fas" [class.fa-sync]="!loadingPacientes" [class.fa-spinner]="loadingPacientes"
-        [class.fa-spin]="loadingPacientes"></i>
-    </button>
+
+    <!-- ⭐ BOTONES DE ACCIÓN RÁPIDA -->
+    <div class="action-buttons">
+      <button class="btn-action btn-location" (click)="buscarDireccionConEntrecalles()" [disabled]="isSearching"
+        title="Mi ubicación">
+        <i class="fas fa-location-dot"></i>
+        <span class="btn-tooltip">Mi ubicación</span>
+      </button>
+
+      <button class="btn-action btn-refresh" (click)="recargarPacientes()" [disabled]="loadingPacientes"
+        title="Recargar pacientes">
+        <i class="fas" [class.fa-sync]="!loadingPacientes" [class.fa-spinner]="loadingPacientes"
+          [class.fa-spin]="loadingPacientes"></i>
+        <span class="btn-tooltip">Recargar</span>
+      </button>
+
+      <button class="btn-action btn-clear" *ngIf="searchQuery || isSearching" (click)="limpiarBusqueda()"
+        title="Limpiar búsqueda">
+        <i class="fas fa-times"></i>
+        <span class="btn-tooltip">Limpiar</span>
+      </button>
+    </div>
+
   </div>
 
+  <!-- ⭐ CONTENEDOR DEL MAPA -->
   <div id="leafletMap" class="map"></div>
 
-  <!-- INFO DEL MAPA - SOLO COORDENADAS Y ZOOM -->
+  <!-- ⭐ COORDENADAS -->
   <div class="map-info-coords" *ngIf="centerLat && centerLng">
     <span>
       <i class="fas fa-map-pin"></i>
-      Lat: {{ centerLat.toFixed(6) }}, Lng: {{ centerLng.toFixed(6) }}
+      <span class="coord-value">{{ centerLat.toFixed(6) }}, {{ centerLng.toFixed(6) }}</span>
     </span>
+    <span class="coord-divider">|</span>
     <span>
       <i class="fas fa-search-location"></i>
-      Zoom: {{ currentZoom }}
+      <span class="coord-value">Zoom: {{ currentZoom }}</span>
     </span>
+    <span class="coord-divider">|</span>
+    <span *ngIf="pacientes.length > 0">
+      <i class="fas fa-users"></i>
+      <span class="coord-value">{{ pacientes.length }} pacientes</span>
+    </span>
+  </div>
+
+  <!-- ⭐ MODAL PARA REGISTRAR PACIENTE - DISEÑO PREMIUM SIN PROGRESS -->
+  <div class="modal-overlay" *ngIf="mostrarModalPaciente" (click)="cerrarModalPaciente()">
+    <div class="modal-container paciente-modal" (click)="$event.stopPropagation()">
+
+      <!-- ⭐ HEADER PREMIUM -->
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-header-icon">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <div>
+            <h3>Registrar Paciente</h3>
+            <p class="modal-subtitle">Complete los datos del nuevo paciente</p>
+          </div>
+        </div>
+        <button class="modal-close" type="button" (click)="cerrarModalPaciente()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- ⭐ BODY -->
+      <div class="modal-body">
+
+        <!-- ⭐ CAMPOS PERSONALES -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-user-circle"></i>
+            <span>Datos Personales</span>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Apellido Paterno <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.apellidoPaterno"
+                  (input)="nuevoPaciente.apellidoPaterno = nuevoPaciente.apellidoPaterno.toUpperCase()"
+                  placeholder="EJ: PEREZ" required>
+                <span class="input-status" [class.filled]="nuevoPaciente.apellidoPaterno">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.apellidoPaterno"
+                    [class.fa-circle]="!nuevoPaciente.apellidoPaterno"></i>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Apellido Materno</label>
+              <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.apellidoMaterno"
+                  (input)="nuevoPaciente.apellidoMaterno = nuevoPaciente.apellidoMaterno.toUpperCase()"
+                  placeholder="EJ: GARCIA">
+                <span class="input-status" [class.filled]="nuevoPaciente.apellidoMaterno">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.apellidoMaterno"
+                    [class.fa-circle]="!nuevoPaciente.apellidoMaterno"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre(s) <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-user-tag input-icon"></i>
+              <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.nombre"
+                (input)="nuevoPaciente.nombre = nuevoPaciente.nombre.toUpperCase()" placeholder="EJ: JUAN CARLOS"
+                required>
+              <span class="input-status" [class.filled]="nuevoPaciente.nombre">
+                <i class="fas" [class.fa-check-circle]="nuevoPaciente.nombre"
+                  [class.fa-circle]="!nuevoPaciente.nombre"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>CURP <span style="font-weight: 400; color: #999; font-size: 11px;">(Opcional)</span></label>
+            <div class="input-wrapper">
+              <i class="fas fa-id-card input-icon"></i>
+              <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.curp"
+                (input)="nuevoPaciente.curp = nuevoPaciente.curp.toUpperCase()" placeholder="EJ: PECO820101HDFRRL09"
+                maxlength="18">
+              <span class="input-status" [class.filled]="nuevoPaciente.curp">
+                <i class="fas" [class.fa-check-circle]="nuevoPaciente.curp" [class.fa-circle]="!nuevoPaciente.curp"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Teléfono Fijo <span
+                  style="font-weight: 400; color: #999; font-size: 11px;">(Opcional)</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-phone input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.telefonoFijo"
+                  placeholder="EJ: 4771234567">
+                <span class="input-status" [class.filled]="nuevoPaciente.telefonoFijo">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.telefonoFijo"
+                    [class.fa-circle]="!nuevoPaciente.telefonoFijo"></i>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Teléfono Celular <span
+                  style="font-weight: 400; color: #999; font-size: 11px;">(Opcional)</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-mobile-alt input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.telefonoCelular"
+                  placeholder="EJ: 4779876543">
+                <span class="input-status" [class.filled]="nuevoPaciente.telefonoCelular">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.telefonoCelular"
+                    [class.fa-circle]="!nuevoPaciente.telefonoCelular"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Estatus <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-flag input-icon"></i>
+                <select class="form-control" [(ngModel)]="nuevoPaciente.estatus" required>
+                  <option value="PENDIENTE">PENDIENTE</option>
+                  <option value="VISITADO">VISITADO</option>
+                  <option value="RECHAZO">RECHAZO</option>
+                  <option value="INCIDENCIA">INCIDENCIA</option>
+                  <option value="FINADO">FINADO</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Programa <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-clipboard-list input-icon"></i>
+                <select class="form-control" [(ngModel)]="nuevoPaciente.programa" required>
+                  <option value="PAM">PAM</option>
+                  <option value="DISCAPACIDAD">DISCAPACIDAD</option>
+                  <option value="REFERIDO">REFERIDO</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⭐ DIRECCIÓN -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-map-pin"></i>
+            <span>Dirección</span>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Calle <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-road input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.calle"
+                  (input)="nuevoPaciente.calle = nuevoPaciente.calle.toUpperCase(); actualizarDireccionCompleta()"
+                  placeholder="EJ: CHOPIN" required>
+                <span class="input-status" [class.filled]="nuevoPaciente.calle">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.calle"
+                    [class.fa-circle]="!nuevoPaciente.calle"></i>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Número <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-hashtag input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.numero"
+                  (input)="actualizarDireccionCompleta()" placeholder="EJ: 413" required>
+                <span class="input-status" [class.filled]="nuevoPaciente.numero">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.numero"
+                    [class.fa-circle]="!nuevoPaciente.numero"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Colonia <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <i class="fas fa-building input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.colonia"
+                  (input)="nuevoPaciente.colonia = nuevoPaciente.colonia.toUpperCase(); actualizarDireccionCompleta()"
+                  placeholder="EJ: MIGUEL HIDALGO" required>
+                <span class="input-status" [class.filled]="nuevoPaciente.colonia">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.colonia"
+                    [class.fa-circle]="!nuevoPaciente.colonia"></i>
+                </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Código Postal</label>
+              <div class="input-wrapper">
+                <i class="fas fa-mail-bulk input-icon"></i>
+                <input type="text" class="form-control" [(ngModel)]="nuevoPaciente.cp"
+                  (input)="actualizarDireccionCompleta()" placeholder="CP">
+                <span class="input-status" [class.filled]="nuevoPaciente.cp">
+                  <i class="fas" [class.fa-check-circle]="nuevoPaciente.cp" [class.fa-circle]="!nuevoPaciente.cp"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ⭐ DIRECCIÓN COMPLETA - DISEÑO PREMIUM -->
+          <div class="direccion-completa-box" *ngIf="nuevoPaciente.direccion">
+            <div class="direccion-completa-header">
+              <div class="direccion-completa-label">
+                <i class="fas fa-location-dot"></i>
+                <span>Dirección completa</span>
+              </div>
+              <div class="direccion-completa-badge">
+                <i class="fas fa-check-circle"></i> Detectada
+              </div>
+            </div>
+            <div class="direccion-completa-texto">
+              {{ nuevoPaciente.direccion }}
+            </div>
+            <div class="direccion-acciones">
+              <button type="button" class="btn-google-maps"
+                (click)="abrirEnGoogleMaps(nuevoPaciente.lat, nuevoPaciente.lng, nuevoPaciente.direccion)"
+                *ngIf="nuevoPaciente.lat && nuevoPaciente.lng" title="Ver ubicación en Google Maps">
+                <i class="fas fa-map-marked-alt"></i> Google Maps
+              </button>
+              <button type="button" class="btn-copiar" (click)="copiarDireccion(nuevoPaciente.direccion)"
+                *ngIf="nuevoPaciente.direccion" title="Copiar dirección al portapapeles">
+                <i class="fas fa-copy"></i> Copiar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⭐ CAMPOS OBLIGATORIOS INDICADOR -->
+        <div class="required-indicator">
+          <span class="required">*</span> Campos obligatorios
+        </div>
+
+        <!-- ⭐ BOTONES -->
+        <div class="form-actions">
+          <button type="button" class="btn-cancelar" (click)="cerrarModalPaciente()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="button" class="btn-guardar" (click)="guardarPacienteDesdeModal()"
+            [disabled]="pacienteGuardando">
+            <i class="fas" [class.fa-save]="!pacienteGuardando" [class.fa-spinner]="pacienteGuardando"
+              [class.fa-spin]="pacienteGuardando"></i>
+            {{ pacienteGuardando ? 'Guardando...' : 'Guardar Paciente' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
   </div>
 </div>

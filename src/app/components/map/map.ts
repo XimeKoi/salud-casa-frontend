@@ -55,8 +55,31 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   seccionesPermitidas: string[] = ['277'];
   private mapInicializado: boolean = false;
 
-  filtrosPerfiles = { adulto: false, discapacitado: false, referido: false };
+  filtrosPerfiles = { adulto: false, discapacitado: false, referido: false, finado: false };
   filtrosRiesgos = { g1: false, g2: false, g3: false, g4: false };
+
+  mostrarModalPaciente: boolean = false;
+  pacienteGuardando: boolean = false;
+  capaManzanaSeleccionada: L.Circle | null = null;
+  ultimaManzanaSeleccionada: any = null;
+  coordsPacientesFiltrados: L.LatLng[] = [];
+  nuevoPaciente: any = {
+    apellidoPaterno: '',
+    apellidoMaterno: '',
+    nombre: '',
+    curp: '',
+    telefonoFijo: '',
+    telefonoCelular: '',
+    estatus: 'PENDIENTE',
+    programa: 'PAM',
+    direccion: '',
+    colonia: '',
+    calle: '',
+    numero: '',
+    cp: '',
+    lat: null,
+    lng: null
+  };
 
   public coloresManzanas: { [key: string]: string } = {};
   private coloresDisponibles = [
@@ -201,6 +224,31 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('🔄 Recargando mapa desde evento...');
       this.cargarPacientesDirectamente(true);
     });
+
+    window.addEventListener('seleccionarManzana', (event: any) => {
+      if (event.detail) {
+        this.activarColoniaEnMapa(event.detail);
+      }
+    });
+
+    window.addEventListener('limpiarManzanaSeleccionada', () => {
+      this.limpiarCapaManzana();
+    });
+
+    this.subscriptions.push(
+      this.store.select(state => state.app.filtrosPerfiles).subscribe(filtros => {
+        if (filtros) {
+          this.filtrosPerfiles = { ...this.filtrosPerfiles, ...filtros };
+          this.aplicarFiltrosYEnfocar();
+        }
+      }),
+      this.store.select(state => state.app.filtrosRiesgos).subscribe(filtros => {
+        if (filtros) {
+          this.filtrosRiesgos = { ...this.filtrosRiesgos, ...filtros };
+          this.aplicarFiltrosYEnfocar();
+        }
+      })
+    );
   }
 
   ngAfterViewInit() {
@@ -410,6 +458,350 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cargarPacientesDirectamente(true);
   }
 
+  // ⭐ ACTIVAR COLONIA Y DIBUJAR CÍRCULO
+  activarColoniaEnMapa(detail: any) {
+    if (!this.map || !this.mapInicializado) {
+      console.warn('⚠️ Mapa no disponible para activar colonia');
+      return;
+    }
+
+    const pacientes = detail.pacientes || [];
+    const color = detail.color || '#9F2241';
+    const nombre = detail.nombre || detail.colonia || 'Colonia';
+
+    const pacientesConCoords = pacientes.filter((p: any) =>
+      p.lat && p.lng && p.lat !== 0 && p.lng !== 0
+    );
+
+    if (pacientesConCoords.length === 0) {
+      console.warn(`⚠️ La colonia "${nombre}" no tiene coordenadas válidas`);
+      return;
+    }
+
+    if (this.capaManzanaSeleccionada) {
+      try {
+        this.map?.removeLayer(this.capaManzanaSeleccionada);
+      } catch (e) { }
+      this.capaManzanaSeleccionada = null;
+    }
+
+    this.ultimaManzanaSeleccionada = detail;
+    this.pacientes = pacientesConCoords;
+    this.agregarMarcadoresPacientes(false);
+
+    const latLngs = pacientesConCoords.map((p: any) => L.latLng(p.lat, p.lng));
+    const bounds = L.latLngBounds(latLngs);
+    const center = bounds.getCenter();
+
+    let maxDist = 0;
+    latLngs.forEach((latLng: L.LatLng) => {
+      const dist = center.distanceTo(latLng);
+      if (dist > maxDist) maxDist = dist;
+    });
+
+    const radius = Math.max(80, maxDist + 45);
+
+    this.capaManzanaSeleccionada = L.circle(center, {
+      radius: radius,
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.14,
+      weight: 3,
+      dashArray: '6, 6'
+    });
+
+    this.capaManzanaSeleccionada.bindTooltip(`<b>${nombre}</b><br>${pacientesConCoords.length} pacientes`, {
+      permanent: false,
+      direction: 'top',
+      className: 'manzana-popup'
+    });
+
+    this.capaManzanaSeleccionada.addTo(this.map);
+
+    if (typeof (this.capaManzanaSeleccionada as any).bringToBack === 'function') {
+      (this.capaManzanaSeleccionada as any).bringToBack();
+    }
+
+    if (this.hayFiltrosActivos() && this.coordsPacientesFiltrados.length > 0) {
+      if (this.coordsPacientesFiltrados.length === 1) {
+        this.map.setView(this.coordsPacientesFiltrados[0], 17, { animate: true });
+      } else {
+        const b = L.latLngBounds(this.coordsPacientesFiltrados);
+        if (b.isValid()) {
+          this.map.fitBounds(b, { padding: [60, 60], maxZoom: 18, animate: true });
+        }
+      }
+    } else {
+      const circleBounds = this.capaManzanaSeleccionada.getBounds();
+      if (circleBounds && circleBounds.isValid()) {
+        this.map.fitBounds(circleBounds, { padding: [45, 45], maxZoom: 16, animate: true });
+      }
+    }
+  }
+
+  limpiarCapaManzana() {
+    if (this.capaManzanaSeleccionada) {
+      try {
+        this.map?.removeLayer(this.capaManzanaSeleccionada);
+      } catch (e) { }
+      this.capaManzanaSeleccionada = null;
+    }
+    this.ultimaManzanaSeleccionada = null;
+  }
+
+  aplicarFiltrosYEnfocar() {
+    if (!this.map || !this.mapInicializado) return;
+
+    if (this.ultimaManzanaSeleccionada && this.ultimaManzanaSeleccionada.pacientes) {
+      this.pacientes = this.ultimaManzanaSeleccionada.pacientes.filter((p: any) =>
+        p.lat && p.lng && p.lat !== 0 && p.lng !== 0
+      );
+    } else {
+      this.pacientes = this.pacientesOriginal.filter((p: any) =>
+        p.lat && p.lng && p.lat !== 0 && p.lng !== 0
+      );
+    }
+
+    this.agregarMarcadoresPacientes(false);
+
+    if (this.hayFiltrosActivos()) {
+      if (this.coordsPacientesFiltrados.length === 1) {
+        this.map.setView(this.coordsPacientesFiltrados[0], 17, { animate: true });
+        setTimeout(() => {
+          const markerMatch = this.marcadoresPacientes.find(m =>
+            m.getLatLng().lat === this.coordsPacientesFiltrados[0].lat &&
+            m.getLatLng().lng === this.coordsPacientesFiltrados[0].lng
+          );
+          if (markerMatch) markerMatch.openPopup();
+        }, 350);
+      } else if (this.coordsPacientesFiltrados.length > 1) {
+        const bounds = L.latLngBounds(this.coordsPacientesFiltrados);
+        if (bounds.isValid()) {
+          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: true });
+        }
+      } else {
+        if (this.capaManzanaSeleccionada) {
+          const circleBounds = this.capaManzanaSeleccionada.getBounds();
+          if (circleBounds && circleBounds.isValid()) {
+            this.map.fitBounds(circleBounds, { padding: [45, 45], maxZoom: 16, animate: true });
+          }
+        }
+      }
+    } else {
+      // Sin filtros activos
+      if (this.capaManzanaSeleccionada) {
+        const circleBounds = this.capaManzanaSeleccionada.getBounds();
+        if (circleBounds && circleBounds.isValid()) {
+          this.map.fitBounds(circleBounds, { padding: [45, 45], maxZoom: 16, animate: true });
+        }
+      } else {
+        if (this.distritoActual) {
+          this.map.setView([this.distritoActual.lat, this.distritoActual.lng], this.distritoActual.zoom, { animate: true });
+        } else {
+          const coords = this.marcadoresPacientes.map(m => m.getLatLng());
+          if (coords.length > 0) {
+            const bounds = L.latLngBounds(coords);
+            if (bounds.isValid()) {
+              this.map.fitBounds(bounds, { padding: [60, 60], animate: true });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // ⭐ BÚSQUEDA CON GEOLOCALIZACIÓN Y MODAL DE REGISTRO
+  buscarDireccionConEntrecalles() {
+    this.obtenerUbicacionActual();
+  }
+
+  private obtenerUbicacionActual() {
+    if (!navigator.geolocation) {
+      this.mostrarToast('Error', 'Tu navegador no soporta geolocalización', 'error', 3000);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        if (this.map) {
+          this.map.setView([lat, lng], 17);
+        }
+
+        this.mostrarMarcadorUbicacionActual(lat, lng, accuracy);
+
+        const direccionData = await this.obtenerDireccionDesdeCoordenadas(lat, lng);
+
+        if (direccionData) {
+          this.abrirModalGuardarPaciente(lat, lng, {
+            calle: direccionData.calle || '',
+            numero: direccionData.numero || '',
+            colonia: direccionData.colonia || '',
+            direccion: direccionData.direccionCompleta || ''
+          });
+        } else {
+          this.abrirModalGuardarPaciente(lat, lng, null);
+        }
+      },
+      (error) => {
+        console.error('❌ Error de geolocalización:', error);
+        this.mostrarToast('Error de ubicación', 'No se pudo obtener tu ubicación.', 'error', 4000);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  private mostrarMarcadorUbicacionActual(lat: number, lng: number, accuracy: number) {
+    if (this.searchMarker) {
+      try { this.map?.removeLayer(this.searchMarker); } catch (e) { }
+    }
+    const myIcon = L.divIcon({
+      html: `<div style="background: #1976d2; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(25,118,210,0.6);"></div>`,
+      className: 'current-pos-icon',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+    this.searchMarker = L.marker([lat, lng], { icon: myIcon });
+    if (this.map) {
+      this.searchMarker.addTo(this.map);
+    }
+  }
+
+  private async obtenerDireccionDesdeCoordenadas(lat: number, lng: number): Promise<any> {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18&accept-language=es`;
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'SaludCasaApp/1.0', 'Accept-Language': 'es' }
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const calle = addr.road || addr.street || addr.pedestrian || addr.footway || '';
+        const numero = addr.house_number || '';
+        const colonia = addr.suburb || addr.neighbourhood || addr.district || addr.quarter || '';
+        const cp = addr.postcode || '';
+        const ciudad = addr.city || addr.town || addr.village || addr.municipality || 'León';
+        const estado = addr.state || addr.region || 'Guanajuato';
+        const direccionCompleta = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        return { calle, numero, colonia, cp, ciudad, estado, direccionCompleta, displayName: data.display_name };
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  abrirModalGuardarPaciente(lat: number, lng: number, direccionData: any | null) {
+    this.nuevoPaciente = {
+      apellidoPaterno: '',
+      apellidoMaterno: '',
+      nombre: '',
+      curp: '',
+      telefonoFijo: '',
+      telefonoCelular: '',
+      estatus: 'PENDIENTE',
+      programa: 'PAM',
+      direccion: direccionData?.direccion || '',
+      colonia: direccionData?.colonia || '',
+      calle: direccionData?.calle || '',
+      numero: direccionData?.numero || '',
+      cp: direccionData?.cp || '',
+      lat: lat,
+      lng: lng
+    };
+    this.mostrarModalPaciente = true;
+    this.cdr.detectChanges();
+  }
+
+  actualizarDireccionCompleta() {
+    let dir = '';
+    if (this.nuevoPaciente.calle && this.nuevoPaciente.numero) {
+      dir = `${this.nuevoPaciente.calle} #${this.nuevoPaciente.numero}`;
+    } else if (this.nuevoPaciente.calle) {
+      dir = this.nuevoPaciente.calle;
+    }
+    if (this.nuevoPaciente.colonia) {
+      dir += dir ? `, ${this.nuevoPaciente.colonia}` : this.nuevoPaciente.colonia;
+    }
+    if (this.nuevoPaciente.cp) {
+      dir += `, CP ${this.nuevoPaciente.cp}`;
+    }
+    if (dir) {
+      dir += `, LEON, GUANAJUATO`;
+    }
+    this.nuevoPaciente.direccion = dir || `${this.nuevoPaciente.lat?.toFixed(6) || '0'}, ${this.nuevoPaciente.lng?.toFixed(6) || '0'}`;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalPaciente() {
+    this.mostrarModalPaciente = false;
+    this.pacienteGuardando = false;
+  }
+
+  guardarPacienteDesdeModal() {
+    if (!this.nuevoPaciente.nombre || !this.nuevoPaciente.apellidoPaterno) {
+      this.mostrarToast('Campo requerido', 'Nombre y apellido paterno son obligatorios', 'warning', 3000);
+      return;
+    }
+    this.pacienteGuardando = true;
+    const pacienteData = {
+      ...this.nuevoPaciente,
+      idEnfermera: this.idEnfermera
+    };
+
+    this.http.post(`${this.apiUrl}/pacientes`, pacienteData).subscribe({
+      next: (response: any) => {
+        this.pacienteGuardando = false;
+        this.mostrarToast('Paciente guardado', `${pacienteData.nombre} registrado correctamente`, 'success', 3000);
+        this.cerrarModalPaciente();
+        this.cargarPacientesDirectamente(true);
+      },
+      error: (error) => {
+        this.pacienteGuardando = false;
+        this.mostrarToast('Error', 'No se pudo guardar el paciente', 'error', 4000);
+      }
+    });
+  }
+
+  abrirEnGoogleMaps(lat: number, lng: number, direccion: string) {
+    if (lat && lng) {
+      window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+    } else if (direccion) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`, '_blank');
+    }
+  }
+
+  copiarDireccion(texto: string) {
+    if (!texto) return;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(texto).then(() => {
+        this.mostrarToast('Copiado', 'Dirección copiada al portapapeles', 'success', 2000);
+      }).catch(() => this.fallbackCopiarDireccion(texto));
+    } else {
+      this.fallbackCopiarDireccion(texto);
+    }
+  }
+
+  private fallbackCopiarDireccion(texto: string) {
+    const textarea = document.createElement('textarea');
+    textarea.value = texto;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    this.mostrarToast('Copiado', 'Dirección copiada al portapapeles', 'success', 2000);
+  }
+
   private aplicarFiltroZona() {
     if (!this.pacientesOriginal || this.pacientesOriginal.length === 0) return;
 
@@ -553,41 +945,40 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const esReferido = paciente.programa === 'REFERIDO' || paciente.programa?.includes('REF');
 
     let p = {
-      main: '#7E101F',
-      dark: '#4A0A12',
-      soft: '#FDF2F4',
-      border: '#F4D0D5',
-      glow: 'rgba(126,16,31,0.22)'
+      main: '#7A192B',
+      dark: '#54101D',
+      badgeBg: 'rgba(255, 255, 255, 0.2)',
+      badgeBorder: 'rgba(255, 255, 255, 0.3)',
+      iconBg: '#FDF2F4',
+      iconColor: '#7A192B'
     };
 
     if (esDiscapacidad) {
-      p = { main: '#5B21B6', dark: '#3B0764', soft: '#F5F0FF', border: '#E1D2FA', glow: 'rgba(91,33,182,0.22)' };
+      p = { main: '#6B21A8', dark: '#4C1D95', badgeBg: 'rgba(255, 255, 255, 0.2)', badgeBorder: 'rgba(255, 255, 255, 0.3)', iconBg: '#FAF5FF', iconColor: '#6B21A8' };
     } else if (esReferido) {
-      p = { main: '#0369A1', dark: '#0C4A6E', soft: '#EFF8FF', border: '#CFE9FB', glow: 'rgba(3,105,161,0.22)' };
+      p = { main: '#0284C7', dark: '#0369A1', badgeBg: 'rgba(255, 255, 255, 0.2)', badgeBorder: 'rgba(255, 255, 255, 0.3)', iconBg: '#F0F9FF', iconColor: '#0284C7' };
     }
 
     const isFinado = estatusLower === 'finado';
     const isVisitado = estatusLower === 'visitado' || estatusLower === 'completada';
     const isRechazo = estatusLower === 'rechazo' || estatusLower === 'incidencia';
 
-    let st = { bg: '#FFF7E6', color: '#B45309', dot: '#F59E0B', icon: 'fa-clock', text: paciente.estatus || 'Pendiente' };
+    let st = { bg: '#FEF3C7', color: '#92400E', dot: '#F59E0B', icon: 'fa-clock', text: paciente.estatus || 'Pendiente' };
     if (isVisitado) {
-      st = { bg: '#EAFAF0', color: '#15803D', dot: '#22C55E', icon: 'fa-check-circle', text: 'Completado' };
+      st = { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', icon: 'fa-check-circle', text: 'Completado' };
     } else if (isRechazo) {
-      st = { bg: '#FDECEC', color: '#B91C1C', dot: '#EF4444', icon: 'fa-triangle-exclamation', text: 'Incidencia' };
+      st = { bg: '#FEE2E2', color: '#991B1B', dot: '#EF4444', icon: 'fa-triangle-exclamation', text: 'Incidencia' };
     } else if (isFinado) {
-      st = { bg: '#F1F5F9', color: '#475569', dot: '#94A3B8', icon: 'fa-skull', text: 'Finado' };
+      st = { bg: '#F1F5F9', color: '#475569', dot: '#64748B', icon: 'fa-skull', text: 'Finado' };
     }
 
-    const iniciales = nombreCompleto
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(n => n[0])
-      .join('')
-      .toUpperCase() || '👤';
-
-    const telefonoLimpio = (paciente.telefono || '').replace(/[^\d+]/g, '');
+    const partesNombre = nombreCompleto.split(' ').filter(Boolean);
+    let iniciales = 'CU';
+    if (partesNombre.length >= 2) {
+      iniciales = `${partesNombre[0][0]}${partesNombre[1][0]}`.toUpperCase();
+    } else if (partesNombre.length === 1 && partesNombre[0].length >= 2) {
+      iniciales = partesNombre[0].substring(0, 2).toUpperCase();
+    }
 
     const nombreEscapado = nombreCompleto.replace(/'/g, "\\'");
     const telefonoEscapado = (paciente.telefono || '').replace(/'/g, "\\'");
@@ -597,67 +988,69 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const seccionEscapada = (paciente.seccion || '').replace(/'/g, "\\'");
 
     return `
-    <div class="pp-card">
-
-      <div class="pp-header" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);">
-        <div class="pp-header-glow"></div>
-        <div class="pp-header-glow--bottom"></div>
-
-        <div class="pp-header-row">
-          <div class="pp-avatar">${iniciales}</div>
-
-          <div class="pp-header-main">
-            <div class="pp-tags">
-  <span class="pp-tag">${paciente.programa || 'PAM'}</span>
-  ${paciente.seccion ? `<span class="pp-tag pp-tag--ghost"><i class="fas fa-layer-group"></i>Sec. ${paciente.seccion}</span>` : ''}
-  ${this.hayFiltrosActivos() ? `<span class="pp-filter-badge"><i class="fas fa-filter"></i> Filtrado</span>` : ''}
-</div>
-            <div class="pp-name" title="${nombreEscapado}">${nombreCompleto}</div>
+    <div class="cuidalia-pop">
+      <!-- HEADER -->
+      <div class="cp-header" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);">
+        <div class="cp-top-bar">
+          <div class="cp-badges">
+            <span class="cp-badge cp-badge-prog" style="background:${p.badgeBg}; border: 1px solid ${p.badgeBorder};">
+              <i class="fas ${esDiscapacidad ? 'fa-wheelchair' : (esReferido ? 'fa-user-nurse' : 'fa-user-shield')}"></i>
+              ${paciente.programa || 'PAM'}
+            </span>
+            ${paciente.seccion ? `<span class="cp-badge cp-badge-sec">Sec. ${paciente.seccion}</span>` : ''}
+            ${this.hayFiltrosActivos() ? `<span class="cp-badge cp-badge-filtrado"><i class="fas fa-filter"></i> Filtrado</span>` : ''}
           </div>
+          ${paciente.id ? `<span class="cp-id-tag"><i class="fas fa-hashtag"></i>${paciente.id}</span>` : ''}
+        </div>
 
-          ${paciente.id ? `<span class="pp-id-ribbon"><i class="fas fa-hashtag"></i>${paciente.id}</span>` : ''}
+        <div class="cp-profile">
+          <div class="cp-avatar">${iniciales}</div>
+          <div class="cp-profile-info">
+            <h4 class="cp-name" title="${nombreEscapado}">${nombreCompleto}</h4>
+            <div class="cp-status-pill" style="background: ${st.bg}; color: ${st.color};">
+              <span class="cp-dot" style="background: ${st.dot};"></span>
+              <i class="fas ${st.icon}"></i>
+              <span>${st.text}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="pp-status-wrap">
-        <div class="pp-status" style="background:${st.bg}; color:${st.color};">
-          <span class="pp-status-dot" style="background:${st.dot};"></span>
-          <i class="fas ${st.icon}"></i>
-          <span>${st.text}</span>
-        </div>
-      </div>
-
-      <div class="pp-body">
-
-        <div class="pp-row pp-row--wrap pp-row--location" style="--pp-main:${p.main}; --pp-soft:${p.soft}; --pp-border:${p.border};">
-          <div class="pp-icon"><i class="fas fa-location-dot"></i></div>
-          <div class="pp-row-text">
-            <span class="pp-label">Ubicación</span>
-            <span class="pp-value" title="${coloniaEscapada}">${coloniaMostrar}</span>
-            <span class="pp-value pp-value--sub pp-value--wrap" title="${direccionEscapada}">${direccionLimpia}</span>
+      <!-- BODY CARDS -->
+      <div class="cp-body">
+        <!-- Tarjeta Ubicación -->
+        <div class="cp-card">
+          <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
+            <i class="fas fa-location-dot"></i>
+          </div>
+          <div class="cp-card-details">
+            <span class="cp-card-label">UBICACIÓN</span>
+            <span class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</span>
+            <span class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</span>
           </div>
         </div>
 
-        <div class="pp-row" style="--pp-main:${p.main}; --pp-soft:${p.soft}; --pp-border:${p.border};">
-          <div class="pp-icon"><i class="fas fa-phone"></i></div>
-          <div class="pp-row-text">
-            <span class="pp-label">Teléfono</span>
-            <span class="pp-value" title="${telefonoEscapado}">${paciente.telefono || 'Sin número'}</span>
+        <!-- Tarjeta Teléfono -->
+        <div class="cp-card">
+          <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
+            <i class="fas fa-phone"></i>
           </div>
-          ${telefonoLimpio ? `<a href="tel:${telefonoLimpio}" class="pp-call-btn" style="background:${p.main};" onclick="event.stopPropagation();"><i class="fas fa-phone-volume"></i></a>` : ''}
+          <div class="cp-card-details">
+            <span class="cp-card-label">TELÉFONO</span>
+            <span class="cp-telefono">${paciente.telefono ? paciente.telefono : '<em style="color:#94a3b8; font-style:normal;">Sin número registrado</em>'}</span>
+          </div>
         </div>
 
         ${paciente.finado ? `
-        <div class="pp-finado">
+        <div class="cp-finado-banner">
           <i class="fas fa-skull"></i>
           <span>Paciente finado</span>
         </div>` : ''}
       </div>
 
-      <div class="pp-divider" style="--pp-border:${p.border};"></div>
-
-      <div class="pp-actions">
-        <button class="pp-btn pp-btn--primary" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%); box-shadow: 0 6px 18px ${p.glow};"
+      <!-- FOOTER ACTIONS -->
+      <div class="cp-footer">
+        <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
           onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
             pacienteId: ${paciente.id},
             nombre: '${nombreEscapado}',
@@ -667,10 +1060,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             colonia: '${coloniaEscapada}'
           } }))">
           <i class="fas fa-calendar-plus"></i>
-          Agendar
+          <span>Agendar</span>
         </button>
 
-        <button class="pp-btn pp-btn--ghost" style="color:${p.main}; border-color:${p.border};"
+        <button class="cp-btn cp-btn-reporte" style="color: ${p.main}; border-color: ${p.main};"
           onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { detail: {
             pacienteId: ${paciente.id},
             nombre: '${nombreEscapado}',
@@ -681,7 +1074,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             seccion: '${seccionEscapada}'
           } }))">
           <i class="fas fa-flag"></i>
-          Reporte
+          <span>Reporte</span>
         </button>
       </div>
     </div>
@@ -787,7 +1180,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ⭐⭐⭐ AGREGAR MARCADORES DE PACIENTES ⭐⭐⭐
-  agregarMarcadoresPacientes() {
+  agregarMarcadoresPacientes(ajustarZoom: boolean = true) {
     if (!this.map) {
       console.warn('⚠️ Mapa no inicializado');
       return;
@@ -800,7 +1193,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const hayFiltrosPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido;
+    const hayFiltrosPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido || (this.filtrosPerfiles as any).finado;
     const hayFiltrosRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 ||
       this.filtrosRiesgos.g3 || this.filtrosRiesgos.g4;
     const hayFiltros = hayFiltrosPerfil || hayFiltrosRiesgo;
@@ -852,6 +1245,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     let marcadoresAgregados = 0;
     const markers: L.Marker[] = [];
+    this.coordsPacientesFiltrados = [];
 
     this.pacientes.forEach((paciente) => {
       if (!paciente.lat || !paciente.lng || paciente.lat === 0 || paciente.lng === 0) {
@@ -864,14 +1258,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (hayFiltrosPerfil) {
         const programa = (paciente.programa || '').toUpperCase();
+        const estatusUpper = (paciente.estatus || '').toUpperCase();
         const esAdulto = programa === 'PAM' || programa.includes('ADULTO');
         const esDiscapacitado = programa === 'DISCAPACIDAD' || programa.includes('DIS');
         const esReferido = programa === 'REFERIDO' || programa.includes('REF');
+        const esFinado = estatusUpper === 'FINADO' || Boolean(paciente.finado);
 
         const cumplePerfil =
           (this.filtrosPerfiles.adulto && esAdulto) ||
           (this.filtrosPerfiles.discapacitado && esDiscapacitado) ||
-          (this.filtrosPerfiles.referido && esReferido);
+          (this.filtrosPerfiles.referido && esReferido) ||
+          ((this.filtrosPerfiles as any).finado && esFinado);
 
         if (!cumplePerfil) {
           cumpleFiltros = false;
@@ -890,6 +1287,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!cumpleRiesgo) {
           cumpleFiltros = false;
         }
+      }
+
+      if (cumpleFiltros) {
+        this.coordsPacientesFiltrados.push(L.latLng(paciente.lat, paciente.lng));
       }
 
       const size = esBusqueda ? 38 : 28;
@@ -970,15 +1371,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.marcadoresPacientes = markers;
       console.log(`✅ ${marcadoresAgregados} marcadores agregados al mapa`);
 
-      try {
-        if (this.clusterGroup && typeof this.clusterGroup.getBounds === 'function') {
-          const bounds = this.clusterGroup.getBounds();
-          if (bounds && bounds.isValid()) {
-            this.map.fitBounds(bounds, { padding: [80, 80] });
+      if (ajustarZoom) {
+        try {
+          if (this.clusterGroup && typeof this.clusterGroup.getBounds === 'function') {
+            const bounds = this.clusterGroup.getBounds();
+            if (bounds && bounds.isValid()) {
+              this.map.fitBounds(bounds, { padding: [80, 80] });
+            }
           }
+        } catch (e) {
+          console.warn('No se pudo ajustar el mapa a los marcadores');
         }
-      } catch (e) {
-        console.warn('No se pudo ajustar el mapa a los marcadores');
       }
     }
 
@@ -1448,9 +1851,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  buscarDireccionConEntrecalles() {
-    this.buscarDireccion();
-  }
 
   getMap(): L.Map | null {
     return this.map;
@@ -1497,7 +1897,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       this.agregarMarcadoresPacientes();
-      this.mostrarToast('Vista completa', `Mostrando ${this.pacientes.length} pacientes`, 'info', 2000);
     } else {
       this.cargarPacientesDirectamente();
     }
@@ -1505,10 +1904,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  private hayFiltrosActivos(): boolean {
-    const hayPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido;
+  hayFiltrosActivos(): boolean {
+    const hayPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido || (this.filtrosPerfiles as any).finado;
     const hayRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 || this.filtrosRiesgos.g3 || this.filtrosRiesgos.g4;
-    return hayPerfil || hayRiesgo;
+    return Boolean(hayPerfil || hayRiesgo);
   }
 
   mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' | 'warning' = 'info', duracion: number = 1000) {

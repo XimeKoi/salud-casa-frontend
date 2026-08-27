@@ -4,123 +4,142 @@
   <app-header></app-header>
 
   <div class="main-container">
-    <!-- ⭐ SIDEBAR - SOLO SE MUESTRA EN DASHBOARD -->
+    <!-- ⭐ SIDEBAR TERRITORIAL -->
     <div *ngIf="mostrarSidebar" class="new-sidebar">
 
-      <!-- HEADER ROJO -->
+      <!-- CABECERA INSTITUCIONAL ROJA -->
       <div class="header-red">
-        <i class="fas fa-sliders-h"></i>
-        <h2>FILTROS DISTRITALES</h2>
+        <i class="fas fa-layer-group"></i>
+        <h2>FILTROS TERRITORIALES</h2>
       </div>
 
       <!-- ============================================ -->
-      <!-- ⭐ DISTRITO FEDERAL 11 (FIJO)                -->
+      <!-- ⭐ ORGANIZACIÓN COMPACTA DE FILTROS FIJOS    -->
+      <!--    (DISTRITO, MUNICIPIO, ZONA 277)           -->
       <!-- ============================================ -->
-      <div class="filter-group">
-        <label>DISTRITO FEDERAL</label>
-        <select class="precargado" disabled>
-          <option value="11" selected>DISTRITO FEDERAL 03</option>
-        </select>
+      <div class="territorio-compact-card">
+        <div class="territorio-item">
+          <span class="territorio-label">DISTRITO</span>
+          <span class="territorio-val">DF 03</span>
+        </div>
+        <div class="territorio-divider"></div>
+        <div class="territorio-item">
+          <span class="territorio-label">MUNICIPIO</span>
+          <span class="territorio-val">LEÓN (20)</span>
+        </div>
+        <div class="territorio-divider"></div>
+        <div class="territorio-item">
+          <span class="territorio-label">ZONA</span>
+          <span class="territorio-val">277</span>
+        </div>
       </div>
 
       <!-- ============================================ -->
-      <!-- ⭐ MUNICIPIO 20 (FIJO)                       -->
+      <!-- ⭐ SECCIÓN COLONIAS MEJORADA                 -->
       <!-- ============================================ -->
-      <div class="filter-group">
-        <label>MUNICIPIO</label>
-        <select class="precargado" disabled>
-          <option value="20" selected>Municipio 20 (LEON)</option>
-        </select>
-      </div>
+      <div class="colonias-section">
 
-      <!-- ============================================ -->
-      <!-- ⭐ SECCIONES - FIJO 277                      -->
-      <!-- ============================================ -->
-      <div class="filter-group">
-        <label>ZONA DE TRABAJO</label>
-        <select class="precargado" disabled>
-          <option value="277" selected>277</option>
-        </select>
-      </div>
-
-      <!-- ============================================ -->
-      <!-- ⭐ MANZANAS / ZONAS                          -->
-      <!-- ============================================ -->
-      <div class="filter-group zonas-group">
-        <div class="zonas-header">
-          <label>MANZANAS / ZONAS</label>
-          <span class="zonas-badge" *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0">
-            <i class="fas fa-map-pin"></i>
-            {{ manzanasDisponibles.length }}
+        <!-- CABECERA DE COLONIAS -->
+        <div class="colonias-section-header">
+          <label>
+            <i class="fas fa-map-location-dot"></i> COLONIAS
+          </label>
+          <span class="colonias-count-pill" *ngIf="colonias && colonias.length > 0">
+            {{ coloniasFiltradas.length }} colonias
           </span>
         </div>
 
-        <select *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0" (change)="onManzanaChange($event)"
-          [value]="manzanaSeleccionada" class="zonas-select"
-          [style.border-color]="manzanaSeleccionada ? getColorZona(manzanaSeleccionada) : '#e0cfc4'"
-          [style.background]="manzanaSeleccionada ? getColorZona(manzanaSeleccionada) + '10' : '#fefaf7'">
-          <option value="">Todas las zonas</option>
-          <option *ngFor="let zona of manzanasDisponibles" [value]="zona"
-            [style.background]="isZonaSeleccionada(zona) ? getColorZona(zona) + '25' : 'transparent'"
-            [style.color]="isZonaSeleccionada(zona) ? getColorZona(zona) : 'inherit'"
-            [style.font-weight]="isZonaSeleccionada(zona) ? 'bold' : 'normal'">
-            {{ getNombreZona(zona) }}
-          </option>
-        </select>
-
-        <div *ngIf="!manzanasDisponibles || manzanasDisponibles.length === 0" class="loading-zonas">
-          <i class="fas fa-spinner fa-pulse"></i>
-          <span>Cargando zonas...</span>
+        <!-- BUSCADOR RÁPIDO DE COLONIAS -->
+        <div class="colonias-search-wrap">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            [(ngModel)]="busquedaColonia"
+            placeholder="Buscar colonia..."
+            class="colonias-search-input"
+          />
+          <button
+            *ngIf="busquedaColonia"
+            (click)="busquedaColonia = ''"
+            class="btn-clear"
+            title="Limpiar búsqueda"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
 
-        <!-- ⭐ CHIPS DE ZONAS - 2 COLUMNAS -->
-        <div class="zonas-container" *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0">
-          <div *ngFor="let zona of manzanasDisponibles" (click)="onManzanaChange({ target: { value: zona } })"
-            class="zona-chip" [class.seleccionada]="isZonaSeleccionada(zona)"
-            [style.background]="isZonaSeleccionada(zona) ? getColorZona(zona) + '20' : '#f8f4f0'"
-            [style.border]="isZonaSeleccionada(zona) ? '2px solid ' + getColorZona(zona) : '1px solid #e9e0d6'"
-            [style.box-shadow]="isZonaSeleccionada(zona) ? '0 2px 12px ' + getColorZona(zona) + '50' : 'none'"
-            [title]="zona">
-            <span class="color-dot-manzana" [style.background]="getColorZona(zona)"
-              [style.box-shadow]="isZonaSeleccionada(zona) ? '0 0 0 3px ' + getColorZona(zona) + '40' : 'none'">
-            </span>
-            <span class="zona-nombre" [style.color]="isZonaSeleccionada(zona) ? getColorZona(zona) : '#444'">
-              {{ getNombreZona(zona) }}
-            </span>
-            <span *ngIf="isZonaSeleccionada(zona)" class="zona-check" [style.background]="getColorZona(zona)">
-              ✓
-            </span>
-          </div>
+        <!-- SPINNER DE CARGA -->
+        <div *ngIf="!colonias || colonias.length === 0" class="loading-colonias">
+          <i class="fas fa-circle-notch fa-spin"></i>
+          <span>Cargando personas por colonias...</span>
         </div>
 
-        <!-- ⭐ INFORMACIÓN DE SELECCIÓN -->
-        <div class="zonas-info" *ngIf="manzanasDisponibles && manzanasDisponibles.length > 0">
-          <div class="zonas-stats">
-            <span class="zonas-count">
-              <i class="fas fa-layer-group"></i>
-              <strong>{{ manzanasDisponibles.length }}</strong> zonas disponibles
-            </span>
-            <span class="zonas-separator">•</span>
-            <span class="zonas-colores">
-              <i class="fas fa-palette"></i>
-              {{ ObjectKeys(coloresManzanas).length }} colores asignados
+        <!-- LISTA ELEGANTE DE COLONIAS -->
+        <div class="colonias-list-viewport" *ngIf="coloniasFiltradas && coloniasFiltradas.length > 0">
+
+          <!-- Opción: Todas las colonias -->
+          <div
+            (click)="seleccionarColonia('')"
+            class="colonia-card item-all"
+            [class.active]="!coloniaSeleccionada"
+          >
+            <div class="colonia-left">
+              <span class="all-icon">
+                <i class="fas fa-globe-americas"></i>
+              </span>
+              <div class="colonia-meta">
+                <span class="colonia-name">Todas las colonias</span>
+                <span class="colonia-subtext">Padrón total territorial</span>
+              </div>
+            </div>
+            <span class="colonia-badge-pill total-pill">
+              {{ totalPacientes }} pac.
             </span>
           </div>
 
-          <div *ngIf="manzanaSeleccionada" class="zona-seleccionada-info"
-            [style.color]="getColorZona(manzanaSeleccionada)"
-            [style.background]="getColorZona(manzanaSeleccionada) + '10'"
-            [style.border-color]="getColorZona(manzanaSeleccionada)">
-            <i class="fas fa-check-circle"></i>
-            <span><strong>Zona activa:</strong> {{ getNombreZona(manzanaSeleccionada) }}</span>
-            <span class="zona-color-preview" [style.background]="getColorZona(manzanaSeleccionada)"></span>
+          <!-- Tarjetas individuales de colonia -->
+          <div
+            *ngFor="let col of coloniasFiltradas"
+            (click)="seleccionarColonia(col.id)"
+            class="colonia-card"
+            [class.active]="isColoniaSeleccionada(col.id)"
+            [style.border-left-color]="col.color"
+          >
+            <div class="colonia-left">
+              <span
+                class="colonia-pip"
+                [style.background]="col.color"
+                [style.box-shadow]="'0 0 0 3px ' + col.color + '25'"
+              ></span>
+              <div class="colonia-meta">
+                <span class="colonia-name" [title]="col.nombre">
+                  {{ col.nombre }}
+                </span>
+                <span class="colonia-subtext">Colonia de trabajo</span>
+              </div>
+            </div>
+            <span
+              class="colonia-badge-pill"
+              [class.active-pill]="isColoniaSeleccionada(col.id)"
+              [style.background]="isColoniaSeleccionada(col.id) ? col.color : ''"
+            >
+              {{ col.totalPacientes }} pac.
+            </span>
           </div>
+
         </div>
+
+        <!-- Mensaje sin resultados -->
+        <div class="empty-search" *ngIf="coloniasFiltradas.length === 0 && busquedaColonia">
+          <i class="fas fa-search-minus"></i>
+          <span>No hay colonias con "{{ busquedaColonia }}"</span>
+        </div>
+
       </div>
 
     </div>
 
-    <!-- ⭐ Área dinámica con router-outlet -->
+    <!-- ÁREA DINÁMICA CON ROUTER-OUTLET -->
     <div class="content-area" [class.full-width]="!mostrarSidebar">
       <router-outlet></router-outlet>
     </div>

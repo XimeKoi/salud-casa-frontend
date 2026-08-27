@@ -1,698 +1,800 @@
 // src/app/components/login/login.scss
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+// ============================================
+// VARIABLES DE MARCA CUIDALIA
+// ============================================
+$guinda-principal: #7A192B;
+$guinda-hover: #8F1E33;
+$guinda-dark: #5E1220;
+$oro-acento: #C59B27;
+$oro-claro: #E5BE57;
+$bg-gradient-start: #FAF8F5;
+$bg-gradient-mid: #F3EDE7;
+$bg-gradient-end: #EDE5DC;
+$text-main: #1E293B;
+$text-muted: #64748B;
+$border-color: rgba(226, 218, 209, 0.8);
+$border-input: #CBD5E1;
+$card-bg: #FFFFFF;
+$input-bg: #F8FAFC;
+$radius-card: 24px;
+$radius-input: 14px;
 
 :host {
   display: block;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: $text-main;
+  background: linear-gradient(145deg, $bg-gradient-start 0%, $bg-gradient-mid 50%, $bg-gradient-end 100%);
   position: relative;
+  overflow-x: hidden;
 }
 
-.bg-doctor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 78%;
-  height: 100%;
-  background-image: url('https://i.postimg.cc/mrN7K8cQ/bienestar2.png');
-  background-size: cover;
-  background-position: center 30%;
-  background-repeat: no-repeat;
+// ============================================
+// CONTENEDOR PRINCIPAL Y FONDOS AMBIENTALES
+// ============================================
+.cuidalia-login-wrapper {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(120px);
   z-index: 0;
+
+  &--1 {
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle, rgba(122, 25, 43, 0.08) 0%, transparent 70%);
+    top: -100px;
+    left: -100px;
+  }
+
+  &--2 {
+    width: 540px;
+    height: 540px;
+    background: radial-gradient(circle, rgba(197, 155, 39, 0.09) 0%, transparent 70%);
+    bottom: -120px;
+    right: -100px;
+  }
 }
 
-.gold-bottom {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 19px;
-  background: linear-gradient(90deg, #b5892d, #e6c468, #f9e28c, #e6c468, #b5892d);
-  z-index: 20;
-  box-shadow: 0 -1.5px 4.5px rgba(0, 0, 0, 0.3);
-}
-
-.main-container {
+// ============================================
+// HEADER INSTITUCIONAL (Tablet / Desktop)
+// ============================================
+.cl-header {
   position: relative;
   z-index: 10;
-  display: flex;
-  height: 100vh;
   width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: none; // Oculto por defecto en móvil para maximizar espacio
+
+  @media (min-width: 768px) {
+    display: block;
+  }
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cl-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    &__logo {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    &__wordmark {
+      height: 24px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    &__slogan {
+      font-size: 11px;
+      font-weight: 700;
+      color: $oro-acento;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(122, 25, 43, 0.12);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $guinda-principal;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+
+    i {
+      color: $oro-acento;
+      font-size: 13px;
+    }
+  }
 }
 
-.logo-top-left {
-  position: absolute;
-  top: 22.5px;
-  left: 22.5px;
-  z-index: 30;
-}
-
-.logo-top-left .logo-bienestar {
-  display: flex;
-  align-items: center;
-  gap: 7.5px;
-  margin-bottom: 0;
-}
-
-.logo-top-left .escudo-icon {
-  width: 75px;
-  height: 75px;
-  filter: brightness(0) invert(1);
-}
-
-.logo-top-left .bienestar-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.logo-top-left .bienestar-title {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 30.5px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-  color: white;
-  text-shadow: 0 1.5px 6px rgba(0, 0, 0, 0.4);
-  line-height: 1.1;
-}
-
-.logo-top-left .secretaria {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: rgba(255, 255, 240, 0.9);
-  letter-spacing: 0.75px;
-}
-
-.hero-left {
+// // ============================================
+// CONTENIDO PRINCIPAL (LAYOUT FLEX / GRID)
+// ============================================
+.cl-main {
+  position: relative;
+  z-index: 5;
   flex: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 165px 52.5px 45px 60px;
-  position: relative;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 100%);
-}
-
-.heartbeat-line {
-  position: absolute;
-  bottom: 75px;
-  left: 30px;
-  width: 90px;
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.programa-block {
-  margin: 26.25px 0 18.75px 0;
-}
-
-.salud-line,
-.casa-por-casa {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 66px;
-  font-weight: 900;
-  color: #ffffff;
-  line-height: 1.1;
-  text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 11.25px;
-}
-
-.corazon-pulse {
-  width: 60px;
-  height: auto;
-  filter: drop-shadow(0 1.5px 4.5px rgba(0, 0, 0, 0.2));
-}
-
-@keyframes pulso {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.05);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-.corazon-pulse {
-  animation: pulso 2s infinite ease-in-out;
-}
-
-.casa-por-casa {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 66px;
-  font-weight: 900;
-  color: #ffffff;
-  line-height: 1.1;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.4);
-}
-
-.tagline {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 22px;
-  font-weight: 300;
-  color: #ffffff;
-  max-width: 500px;
-  margin-top: 25px;
-  line-height: 1.4;
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
-  opacity: 0.95;
-  font-style: italic;
-}
-
-.login-right {
-  width: 420px;
-  background: rgba(90, 20, 40, 0.92);
-  backdrop-filter: blur(2.25px);
-  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 30px 18.75px;
-  position: relative;
-}
-
-.card-login {
-  background: #ffffff;
-  background-image: radial-gradient(circle at 100% 100%, rgba(245, 245, 245, 0.4) 0%, transparent 50%);
-  border-radius: 24px;
-  padding: 40px 30px;
   width: 100%;
-  max-width: 360px;
+  max-width: 1240px;
   margin: 0 auto;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  position: relative;
-  z-index: 25;
-}
+  padding: 20px 16px;
+  gap: 40px;
 
-.card-seal {
-  display: block;
-  width: 71.25px;
-  height: auto;
-  margin: 0 auto 13.5px auto;
-}
-
-.card-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 26px;
-  font-weight: 800;
-  color: #1a1a1a;
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.card-sub {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  color: #666;
-  text-align: center;
-  margin-bottom: 30px;
-  line-height: 1.5;
-}
-
-.input-field {
-  margin-bottom: 20px;
-}
-
-.input-field input {
-  width: 100%;
-  padding: 15px 20px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  border: 2px solid #d1d1d1;
-  border-radius: 14px;
-  background: #f9f9f9;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.input-field input::placeholder {
-  color: #a0a0a0;
-  opacity: 1;
-}
-
-.input-field input:focus {
-  border-color: #9D2449;
-  background: white;
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(157, 36, 73, 0.15);
-}
-
-.row-links {
-  display: flex;
-  justify-content: flex-end;
-  margin: 4.5px 3px 22.5px 3px;
-}
-
-.row-links a {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 9.75px;
-  font-weight: 600;
-  color: #5a3e2e;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.error-msg {
-  color: #e74c3c;
-  font-size: 9.75px;
-  text-align: center;
-  margin: -11.25px 0 15px 0;
-}
-
-.btn-ingresar {
-  width: 100%;
-  background: linear-gradient(135deg, #176d9c, #1a5f85);
-  border: none;
-  border-radius: 12px;
-  padding: 16px;
-  font-weight: 700;
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.btn-ingresar:hover {
-  box-shadow: 0 8px 16px rgba(23, 109, 156, 0.3);
-  transform: translateY(-2px);
-}
-
-.btn-ingresar:active {
-  transform: scale(0.97);
-}
-
-.notice-small {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 9px;
-  text-align: center;
-  color: #6c6c6c;
-  line-height: 1.5;
-  margin-bottom: 15px;
-}
-
-.privacy-link {
-  display: block;
-  text-align: center;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 9.75px;
-  font-weight: 600;
-  color: #5a3e2e;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-/* ============================================ */
-/* ⭐ RESPONSIVE LOGIN MEJORADO                */
-/* ============================================ */
-
-@media (max-width: 1400px) {
-  .login-right {
-    width: 390px;
-  }
-
-  .card-login {
-    padding: 30px 22.5px;
-  }
-
-  .hero-left {
-    padding-top: 150px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .login-right {
-    width: 360px;
-  }
-
-  .card-login {
-    padding: 26.25px 18.75px;
-  }
-
-  .card-title {
-    font-size: 21px;
-  }
-
-  .hero-left {
-    padding-top: 135px;
-  }
-}
-
-@media (max-width: 1100px) {
-  .hero-left {
-    padding: 120px 30px 30px 30px;
-  }
-
-  .salud-line,
-  .casa-por-casa {
-    font-size: 51px;
-  }
-
-  .corazon-pulse {
-    width: 45px;
-  }
-
-  .login-right {
-    width: 330px;
-    padding: 22.5px 15px;
-  }
-
-  .card-login {
-    padding: 22.5px 18.75px;
-  }
-
-  .logo-top-left {
-    top: 15px;
-    left: 15px;
-  }
-
-  .logo-top-left .bienestar-title {
-    font-size: 36px;
-  }
-
-  .logo-top-left .secretaria {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 992px) {
-  .main-container {
-    flex-direction: column;
-  }
-
-  .bg-doctor {
-    width: 100%;
-    height: 50%;
-    background-position: center 40%;
-  }
-
-  .hero-left {
-    padding: 80px 20px 30px 20px;
-    text-align: center;
-    align-items: center;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 100%);
-  }
-
-  .login-right {
-    width: 100%;
-    backdrop-filter: blur(3px);
-    padding: 30px 20px;
-    background: rgba(90, 20, 40, 0.88);
-  }
-
-  .card-login {
-    max-width: 400px;
+  @media (min-width: 1024px) {
+    gap: 64px;
     padding: 30px 24px;
   }
-
-  .tagline {
-    text-align: center;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .heartbeat-line {
-    width: 85%;
-    left: 10.5%;
-  }
-
-  .salud-line,
-  .casa-por-casa {
-    font-size: 44px;
-  }
-
-  .logo-top-left {
-    top: 12px;
-    left: 12px;
-  }
-
-  .logo-top-left .escudo-icon {
-    width: 55px;
-    height: 55px;
-  }
-
-  .logo-top-left .bienestar-title {
-    font-size: 28px;
-  }
-
-  .logo-top-left .secretaria {
-    font-size: 11px;
-  }
 }
 
-@media (max-width: 768px) {
-  .bg-doctor {
-    height: 40%;
+// ============================================
+// SHOWCASE LATERAL (SOLO DESKTOP >= 1024px)
+// ============================================
+.cl-showcase {
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: flex;
+    flex: 1.15;
+    align-items: center;
   }
 
-  .hero-left {
-    padding: 60px 15px 20px 15px;
+  &__content {
+    max-width: 540px;
   }
 
-  .logo-top-left {
-    top: 8px;
-    left: 8px;
-  }
-
-  .logo-top-left .escudo-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .logo-top-left .bienestar-title {
-    font-size: 20px;
-  }
-
-  .logo-top-left .secretaria {
-    font-size: 8px;
-  }
-
-  .salud-line,
-  .casa-por-casa {
-    font-size: 32px;
-  }
-
-  .corazon-pulse {
-    width: 36px;
-  }
-
-  .tagline {
-    font-size: 14px;
-    max-width: 90%;
-  }
-
-  .card-title {
-    font-size: 20px;
-  }
-
-  .login-right {
-    padding: 20px 16px;
-  }
-
-  .card-login {
-    padding: 24px 18px;
-    max-width: 360px;
-  }
-
-  .card-sub {
+  .cl-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(122, 25, 43, 0.08);
+    border: 1px solid rgba(122, 25, 43, 0.18);
+    color: $guinda-principal;
+    padding: 6px 14px;
+    border-radius: 20px;
     font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     margin-bottom: 20px;
+
+    i {
+      color: $guinda-principal;
+      font-size: 13px;
+    }
   }
 
-  .input-field input {
-    padding: 12px 16px;
-    font-size: 13px;
-    border-radius: 10px;
+  &__title {
+    font-size: 40px;
+    line-height: 1.16;
+    font-weight: 800;
+    color: $text-main;
+    letter-spacing: -0.8px;
+    margin-bottom: 18px;
+
+    .text-gradient-guinda {
+      color: $guinda-principal;
+    }
+
+    .text-gradient-gold {
+      color: $oro-acento;
+    }
   }
 
-  .btn-ingresar {
-    padding: 12px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  .bg-doctor {
-    height: 35%;
+  &__desc {
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: $text-muted;
+    font-weight: 500;
+    margin-bottom: 32px;
   }
 
-  .hero-left {
-    padding: 50px 10px 15px 10px;
+  .cl-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
   }
 
-  .logo-top-left {
-    top: 6px;
-    left: 6px;
-  }
-
-  .logo-top-left .escudo-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .logo-top-left .bienestar-title {
-    font-size: 16px;
-  }
-
-  .logo-top-left .secretaria {
-    font-size: 6px;
-  }
-
-  .salud-line,
-  .casa-por-casa {
-    font-size: 24px;
-  }
-
-  .corazon-pulse {
-    width: 28px;
-  }
-
-  .tagline {
-    font-size: 11px;
-  }
-
-  .login-right {
-    padding: 16px 12px;
-  }
-
-  .card-login {
-    padding: 20px 16px;
-    max-width: 320px;
+  .cl-stat-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 218, 209, 0.9);
     border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(122, 25, 43, 0.08);
+    }
+
+    &__icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(122, 25, 43, 0.08);
+      color: $guinda-principal;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    &__data {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__val {
+      font-size: 18px;
+      font-weight: 800;
+      color: $text-main;
+      line-height: 1.1;
+    }
+
+    &__lbl {
+      font-size: 11px;
+      font-weight: 600;
+      color: $text-muted;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
   }
 
-  .card-title {
-    font-size: 18px;
-  }
+  .cl-field-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+    font-size: 12.5px;
+    font-weight: 600;
 
-  .card-sub {
-    font-size: 11px;
-    margin-bottom: 16px;
-  }
-
-  .card-seal {
-    width: 56px;
-    margin-bottom: 10px;
-  }
-
-  .input-field {
-    margin-bottom: 14px;
-  }
-
-  .input-field input {
-    padding: 10px 14px;
-    font-size: 12px;
-    border-radius: 8px;
-  }
-
-  .row-links {
-    margin: 2px 0 16px 0;
-  }
-
-  .btn-ingresar {
-    padding: 10px;
-    font-size: 12px;
-    border-radius: 8px;
-  }
-
-  .error-msg {
-    font-size: 8px;
-    margin: -8px 0 10px 0;
-  }
-
-  .notice-small {
-    font-size: 8px;
-    margin-bottom: 10px;
-  }
-
-  .privacy-link {
-    font-size: 8px;
+    i {
+      color: $oro-acento;
+      font-size: 14px;
+    }
   }
 }
 
-@media (max-width: 360px) {
+// ============================================
+// SECCIÓN DE FORMULARIO (MÓVIL Y DESKTOP)
+// ============================================
+.cl-form-section {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  justify-content: center;
 
-  .salud-line,
-  .casa-por-casa {
-    font-size: 20px;
+  @media (min-width: 1024px) {
+    flex: 0.95;
+    max-width: 420px;
+  }
+}
+
+.cl-card {
+  width: 100%;
+  background: $card-bg;
+  border-radius: $radius-card;
+  border: 1px solid $border-color;
+  box-shadow: 0 16px 40px -12px rgba(122, 25, 43, 0.1), 0 4px 12px rgba(0, 0, 0, 0.03);
+  padding: 36px 30px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+
+  @media (max-width: 480px) {
+    padding: 28px 20px;
+    border-radius: 20px;
   }
 
-  .corazon-pulse {
-    width: 22px;
+  @media (max-width: 360px) {
+    padding: 22px 16px;
   }
 
-  .tagline {
-    font-size: 10px;
+  // Barra de acento superior tricolor Cuidalia
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $guinda-principal 0%, $oro-acento 50%, $guinda-principal 100%);
   }
 
-  .card-login {
-    padding: 16px 12px;
-    max-width: 280px;
+  // Branding institucional dentro de la tarjeta
+  &__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 22px;
   }
 
-  .card-title {
-    font-size: 16px;
-  }
-
-  .card-sub {
-    font-size: 10px;
-  }
-
-  .input-field input {
-    padding: 8px 12px;
-    font-size: 11px;
-  }
-
-  .btn-ingresar {
+  &__logo-wrap {
+    width: 76px;
+    height: 76px;
+    background: #FFFFFF;
+    border-radius: 18px;
     padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(122, 25, 43, 0.08);
+    border: 1px solid rgba(226, 218, 209, 0.6);
+    margin-bottom: 12px;
+
+    @media (max-width: 480px) {
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      padding: 6px;
+      margin-bottom: 10px;
+    }
+  }
+
+  &__logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  &__wordmark-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  &__wordmark {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+
+    @media (max-width: 480px) {
+      height: 26px;
+    }
+  }
+
+  &__tagline {
+    font-size: 11px;
+    font-weight: 700;
+    color: $oro-acento;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  &__title-wrap {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    font-size: 21px;
+    font-weight: 800;
+    color: $text-main;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+
+    @media (max-width: 480px) {
+      font-size: 19px;
+    }
+  }
+
+  &__subtitle {
+    font-size: 12.5px;
+    color: $text-muted;
+    font-weight: 500;
+    margin: 0;
+  }
+}
+
+// ============================================
+// FORMULARIO Y CAMPOS TOUCH-OPTIMIZED
+// ============================================
+.cl-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+
+    i {
+      color: $guinda-principal;
+      font-size: 12px;
+    }
+  }
+
+  .cl-forgot-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: $guinda-principal;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $guinda-hover;
+      text-decoration: underline;
+    }
+  }
+}
+
+.cl-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.cl-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94A3B8;
+  font-size: 15px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.cl-input {
+  width: 100%;
+  height: 48px;
+  background: $input-bg;
+  border: 1.5px solid $border-input;
+  border-radius: $radius-input;
+  padding: 0 42px 0 42px;
+  font-size: 16px; // Crucial: 16px previene zoom no deseado en iOS Safari
+  font-family: inherit;
+  color: $text-main;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-appearance: none;
+
+  @media (max-width: 480px) {
+    height: 46px;
+  }
+
+  &::placeholder {
+    color: #94A3B8;
+    font-weight: 400;
+    letter-spacing: normal;
+  }
+
+  &:focus {
+    outline: none;
+    background: #FFFFFF;
+    border-color: $guinda-principal;
+    box-shadow: 0 0 0 3.5px rgba(122, 25, 43, 0.12);
+
+    &+.cl-input-icon {
+      color: $guinda-principal;
+    }
+  }
+
+  &#curp {
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+}
+
+.cl-input-clear,
+.cl-visibility-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 15px;
+  transition: color 0.2s ease, background 0.2s ease;
+  touch-action: manipulation;
+
+  &:hover {
+    color: $guinda-principal;
+    background: rgba(122, 25, 43, 0.06);
+  }
+
+  &:active {
+    transform: translateY(-50%) scale(0.92);
+  }
+}
+
+// ============================================
+// CHECKBOX PERSONALIZADO (RECORDAR SESIÓN)
+// ============================================
+.cl-options {
+  display: flex;
+  align-items: center;
+  margin-top: -2px;
+}
+
+.cl-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+  touch-action: manipulation;
+
+  .cl-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+
+    &:checked~.cl-custom-check {
+      background: $guinda-principal;
+      border-color: $guinda-principal;
+
+      &::after {
+        display: block;
+      }
+    }
+  }
+
+  .cl-custom-check {
+    width: 20px;
+    height: 20px;
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 6px;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    &::after {
+      content: '';
+      position: absolute;
+      display: none;
+      left: 6px;
+      top: 2px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+  }
+
+  &:hover .cl-custom-check {
+    border-color: $guinda-principal;
+  }
+}
+
+// ============================================
+// ALERTA DE ERROR
+// ============================================
+.cl-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  animation: slideInDown 0.3s ease;
+
+  i {
+    font-size: 15px;
+    flex-shrink: 0;
+    color: #DC2626;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================
+// BOTÓN DE ACCIÓN PRINCIPAL (TOUCH TARGET)
+// ============================================
+.cl-submit-btn {
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(135deg, #8A2038 0%, #631222 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: $radius-input;
+  font-size: 14.5px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(122, 25, 43, 0.32);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 4px;
+  touch-action: manipulation;
+
+  @media (max-width: 480px) {
+    height: 48px;
+    font-size: 14px;
+  }
+
+  &__inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    i {
+      font-size: 13px;
+      transition: transform 0.2s ease;
+    }
+  }
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #9C2741 0%, #701627 100%);
+    box-shadow: 0 6px 20px rgba(122, 25, 43, 0.42);
+    transform: translateY(-1.5px);
+
+    .cl-submit-btn__inner i {
+      transform: translateX(3px);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(122, 25, 43, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+  }
+
+  .cl-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+
+    i {
+      font-size: 16px;
+    }
+  }
+}
+
+// ============================================
+// PIE DE TARJETA Y ENLACES LEGALES
+// ============================================
+.cl-card__footer {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(226, 218, 209, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cl-security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+
+  i {
+    color: #10B981;
     font-size: 11px;
   }
 }
 
-/* ⭐ ESTILOS SWEETALERT - MANTENER */
-:host ::ng-deep {
-  .swal-popup-custom {
-    border-radius: 20px !important;
-    padding: 20px !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
-    font-family: 'Montserrat', sans-serif !important;
+.cl-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #94A3B8;
+
+  a {
+    color: #64748B;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $guinda-principal;
+      text-decoration: underline;
+    }
   }
 
-  .swal-title-custom {
-    color: #9D2449 !important;
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    font-family: 'Montserrat', sans-serif !important;
-  }
-
-  .swal-button-custom {
-    background: linear-gradient(135deg, #9D2449, #7a1a3a) !important;
-    padding: 12px 36px !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-    font-family: 'Montserrat', sans-serif !important;
-    transition: all 0.3s !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-  }
-
-  .swal-button-custom:hover {
-    background: linear-gradient(135deg, #b02a55, #9D2449) !important;
-    transform: scale(1.02) !important;
-    box-shadow: 0 4px 15px rgba(157, 36, 73, 0.3) !important;
+  .cl-dot {
+    color: #CBD5E1;
   }
 }

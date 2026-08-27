@@ -13,7 +13,7 @@ export interface AppState {
   userRole: string | null;
   userData: any | null;
   isAuthenticated: boolean;
-  filtrosPerfiles: { adulto: boolean; discapacitado: boolean; referido: boolean };
+  filtrosPerfiles: { adulto: boolean; discapacitado: boolean; referido: boolean; finado?: boolean };
   filtrosRiesgos: { g1: boolean; g2: boolean; g3: boolean; g4: boolean };
 }
 
@@ -31,6 +31,6 @@ export const initialState: AppState = {
   userRole: null,
   userData: null,
   isAuthenticated: false,
-  filtrosPerfiles: { adulto: false, discapacitado: false, referido: false },
+  filtrosPerfiles: { adulto: false, discapacitado: false, referido: false, finado: false },
   filtrosRiesgos: { g1: false, g2: false, g3: false, g4: false }
 };

@@ -23,8 +23,23 @@ export class PerfilComponent implements OnInit {
   datosUsuario: any = null;
   esMujer: boolean = true;
   cargando: boolean = true;
+  copiadoCampo: string = '';
 
   private apiUrl = environment.apiUrl;
+
+  copiarTexto(texto: string, campo: string) {
+    if (!texto) return;
+    navigator.clipboard.writeText(texto).then(() => {
+      this.copiadoCampo = campo;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.copiadoCampo = '';
+        this.cdr.detectChanges();
+      }, 2000);
+    }).catch(err => {
+      console.warn('No se pudo copiar:', err);
+    });
+  }
 
   constructor(
     private router: Router,

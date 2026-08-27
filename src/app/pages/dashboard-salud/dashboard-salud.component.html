@@ -1,0 +1,330 @@
+<!-- src/app/pages/dashboard-salud/dashboard-salud.component.html -->
+
+<div class="dashboard-container">
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <h1>
+                <i class="fas fa-chart-pie"></i>
+                Dashboard de Salud
+            </h1>
+            <span class="header-subtitle">Monitor de rendimiento y métricas</span>
+        </div>
+        <div class="header-right">
+            <div class="last-update">
+                <i class="fas fa-clock"></i>
+                <span>Última actualización: {{ ultimaActualizacion | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <button class="btn-refresh" (click)="actualizarDatos()" [disabled]="loading">
+                <i class="fas" [class.fa-sync]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
+                <span *ngIf="!loading">Actualizar</span>
+                <span *ngIf="loading">Cargando...</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- LOADING -->
+    <div class="loading-overlay" *ngIf="loading">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p>Cargando datos del dashboard...</p>
+        </div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="error-message" *ngIf="error">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>{{ error }}</span>
+        <button class="btn-retry" (click)="actualizarDatos()">
+            <i class="fas fa-redo"></i> Reintentar
+        </button>
+    </div>
+
+    <!-- CUERPO DEL DASHBOARD -->
+    <div class="dashboard-body" *ngIf="!loading && !error">
+
+        <!-- RESUMEN GENERAL -->
+        <section class="resumen-general">
+            <div class="card-resumen card-visitas-hoy">
+                <div class="card-icon" style="background: #701f2f20; color: #701f2f;">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="card-info">
+                    <span class="card-label">Visitas hoy</span>
+                    <span class="card-valor">{{ resumenGeneral.visitasHoy }} <small>/ {{ resumenGeneral.metaDiaria
+                            }}</small></span>
+                    <div class="card-progreso">
+                        <div class="barra-progreso">
+                            <div class="barra-lleno"
+                                [style.width.%]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100"
+                                [class.barra-alta]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 >= 90"
+                                [class.barra-media]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 >= 70 && (resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 < 90"
+                                [class.barra-baja]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 < 70">
+                            </div>
+                        </div>
+                        <span class="porcentaje">{{ ((resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100) |
+                            number:'1.0-0' }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-resumen card-cobertura">
+                <div class="card-icon" style="background: #1976d220; color: #1976d2;">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                <div class="card-info">
+                    <span class="card-label">Cobertura total</span>
+                    <span class="card-valor">{{ resumenGeneral.coberturaTotal }} <small>/ {{ resumenGeneral.metaTotal
+                            }}</small></span>
+                    <div class="card-progreso">
+                        <div class="barra-progreso">
+                            <div class="barra-lleno" [style.width.%]="resumenGeneral.porcentajeCobertura"
+                                [class.barra-alta]="resumenGeneral.porcentajeCobertura >= 90"
+                                [class.barra-media]="resumenGeneral.porcentajeCobertura >= 70 && resumenGeneral.porcentajeCobertura < 90"
+                                [class.barra-baja]="resumenGeneral.porcentajeCobertura < 70">
+                            </div>
+                        </div>
+                        <span class="porcentaje">{{ resumenGeneral.porcentajeCobertura | number:'1.0-0' }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-resumen card-promedio">
+                <div class="card-icon" style="background: #2e7d3220; color: #2e7d32;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="card-info">
+                    <span class="card-label">Promedio diario</span>
+                    <span class="card-valor">{{ calcularPromedioDiario() }}</span>
+                    <span class="card-sub">visitas por día</span>
+                </div>
+            </div>
+
+            <div class="card-resumen card-cumplimiento">
+                <div class="card-icon" style="background: #f57c0020; color: #f57c00;">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="card-info">
+                    <span class="card-label">Cumplimiento</span>
+                    <span class="card-valor">{{ calcularCumplimientoPromedio() }}%</span>
+                    <span class="card-sub">promedio semanal</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- RENDIMIENTO DIARIO -->
+        <section class="seccion-dashboard">
+            <div class="seccion-header">
+                <h2><i class="fas fa-calendar-alt"></i> Rendimiento diario</h2>
+                <span class="seccion-sub">Últimos 7 días</span>
+            </div>
+            <div class="rendimiento-diario">
+                <div class="dia-item" *ngFor="let dia of visitasDiarias">
+                    <div class="dia-label">{{ dia.fecha }}</div>
+                    <div class="dia-barra-container">
+                        <div class="dia-barra" [style.height.%]="(dia.realizadas / dia.meta) * 100"
+                            [class.barra-alta]="(dia.realizadas / dia.meta) * 100 >= 90"
+                            [class.barra-media]="(dia.realizadas / dia.meta) * 100 >= 70 && (dia.realizadas / dia.meta) * 100 < 90"
+                            [class.barra-baja]="(dia.realizadas / dia.meta) * 100 < 70">
+                            <span class="dia-valor">{{ dia.realizadas }}</span>
+                        </div>
+                    </div>
+                    <div class="dia-meta">/{{ dia.meta }}</div>
+                    <div class="dia-porcentaje" [style.color]="getColorPorcentaje(dia.cumplimiento)">
+                        {{ dia.cumplimiento }}%
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RENDIMIENTO POR ZONA -->
+        <section class="seccion-dashboard">
+            <div class="seccion-header">
+                <h2><i class="fas fa-map-marked-alt"></i> Rendimiento por zona</h2>
+                <div class="selector-zona-container">
+                    <label for="selectZonaRendimiento" class="select-zona-label">
+                        <i class="fas fa-location-dot"></i> Filtrar por zona:
+                    </label>
+                    <div class="select-zona-box">
+                        <select id="selectZonaRendimiento" class="select-zona-dropdown" [ngModel]="filtroZona"
+                            (ngModelChange)="cambiarFiltroZona($event)">
+                            <option value="todas">Todas las zonas ({{ zonasDisponibles.length }} colonias)</option>
+                            <option *ngFor="let zona of zonasDisponibles" [value]="zona">
+                                {{ zona }}
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down select-zona-arrow"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="tabla-zonas">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Zona</th>
+                            <th>Programadas</th>
+                            <th>Realizadas</th>
+                            <th>Cumplimiento</th>
+                            <th>Aceptación</th>
+                            <th>Rechazo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let zona of getZonasFiltradas()">
+                            <td class="zona-nombre">
+                                <i class="fas fa-location-dot" style="color: #701f2f;"></i>
+                                {{ zona.zona }}
+                            </td>
+                            <td>{{ zona.visitasProgramadas }}</td>
+                            <td>{{ zona.visitasRealizadas }}</td>
+                            <td>
+                                <span class="badge" [class.badge-success]="zona.cumplimiento >= 90"
+                                    [class.badge-warning]="zona.cumplimiento >= 70 && zona.cumplimiento < 90"
+                                    [class.badge-danger]="zona.cumplimiento < 70">
+                                    {{ zona.cumplimiento }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-success">{{ zona.aceptacion }}%</span>
+                            </td>
+                            <td>
+                                <span class="badge" [class.badge-success]="zona.rechazo <= 10"
+                                    [class.badge-warning]="zona.rechazo > 10 && zona.rechazo <= 25"
+                                    [class.badge-danger]="zona.rechazo > 25">
+                                    {{ zona.rechazo }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="estado-indicador" [class.estado-excelente]="zona.cumplimiento >= 90"
+                                    [class.estado-bueno]="zona.cumplimiento >= 70 && zona.cumplimiento < 90"
+                                    [class.estado-mejorable]="zona.cumplimiento < 70">
+                                    {{ zona.cumplimiento >= 90 ? 'Excelente' : zona.cumplimiento >= 70 ? 'Bueno' :
+                                    'Mejorable' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- RECHAZO / ACEPTACIÓN -->
+        <section class="seccion-dashboard seccion-aceptacion">
+            <div class="seccion-header">
+                <h2><i class="fas fa-thumbs-up"></i> Rechazo / Aceptación</h2>
+                <span class="seccion-sub">Zonas con mejor y peor desempeño</span>
+            </div>
+            <div class="aceptacion-grid">
+                <div class="aceptacion-card mayor-aceptacion">
+                    <div class="aceptacion-header" style="color: #2e7d32;">
+                        <i class="fas fa-arrow-up"></i>
+                        <h3>Mayor aceptación</h3>
+                    </div>
+                    <div class="aceptacion-lista">
+                        <div class="aceptacion-item" *ngFor="let zona of zonasMayorAceptacion">
+                            <span class="zona-nombre">{{ zona.zona }}</span>
+                            <div class="aceptacion-barra">
+                                <div class="aceptacion-lleno" [style.width.%]="zona.porcentaje"
+                                    style="background: linear-gradient(90deg, #2e7d32, #4caf50);">
+                                </div>
+                            </div>
+                            <span class="aceptacion-porcentaje">{{ zona.porcentaje }}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="aceptacion-card mayor-rechazo">
+                    <div class="aceptacion-header" style="color: #c62828;">
+                        <i class="fas fa-arrow-down"></i>
+                        <h3>Mayor rechazo</h3>
+                    </div>
+                    <div class="aceptacion-lista">
+                        <div class="aceptacion-item" *ngFor="let zona of zonasMayorRechazo">
+                            <span class="zona-nombre">{{ zona.zona }}</span>
+                            <div class="aceptacion-barra">
+                                <div class="aceptacion-lleno" [style.width.%]="zona.porcentaje"
+                                    style="background: linear-gradient(90deg, #c62828, #ef5350);">
+                                </div>
+                            </div>
+                            <span class="aceptacion-porcentaje">{{ zona.porcentaje }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HISTÓRICO QUINCENAL -->
+        <section class="seccion-dashboard">
+            <div class="seccion-header">
+                <h2><i class="fas fa-history"></i> Histórico quincenal</h2>
+                <span class="seccion-sub">Cada 15 días</span>
+            </div>
+            <div class="historico-container">
+                <div class="historico-item" *ngFor="let item of historicoQuincenal">
+                    <div class="historico-periodo">{{ item.periodo }}</div>
+                    <div class="historico-barra-container">
+                        <div class="historico-barra" [style.width.%]="(item.visitas / 250) * 100"
+                            [style.background]="item.visitas >= 200 ? '#2e7d32' : item.visitas >= 180 ? '#f57c00' : '#c62828'">
+                            <span class="historico-valor">{{ item.visitas }}</span>
+                        </div>
+                    </div>
+                    <div class="historico-promedio">Prom: {{ item.promedio }}/día</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HORARIOS POR ZONA -->
+        <section class="seccion-dashboard">
+            <div class="seccion-header">
+                <h2><i class="fas fa-clock"></i> Horarios por zona</h2>
+                <span class="seccion-sub">Mejores horarios para visitar</span>
+            </div>
+            <div class="horarios-grid">
+                <div class="horario-card" *ngFor="let item of horariosZonas">
+                    <div class="horario-icon">
+                        <i class="fas fa-clock" style="color: #701f2f;"></i>
+                    </div>
+                    <div class="horario-info">
+                        <div class="horario-zona">{{ item.zona }}</div>
+                        <div class="horario-hora">{{ item.horario }}</div>
+                        <div class="horario-pacientes">
+                            <i class="fas fa-users"></i> {{ item.pacientes }} pacientes
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RESUMEN DE MÉTRICAS -->
+        <section class="seccion-dashboard resumen-metricas">
+            <div class="seccion-header">
+                <h2><i class="fas fa-chart-simple"></i> Resumen de métricas</h2>
+            </div>
+            <div class="metricas-grid">
+                <div class="metrica-item">
+                    <span class="metrica-label">Total visitas (7 días)</span>
+                    <span class="metrica-valor">{{ calcularTotalVisitas() }}</span>
+                </div>
+                <div class="metrica-item">
+                    <span class="metrica-label">Meta semanal</span>
+                    <span class="metrica-valor">{{ visitasDiarias.length * 15 }}</span>
+                </div>
+                <div class="metrica-item">
+                    <span class="metrica-label">Cumplimiento semanal</span>
+                    <span class="metrica-valor" [style.color]="getColorPorcentaje(calcularCumplimientoPromedio())">
+                        {{ calcularCumplimientoPromedio() }}%
+                    </span>
+                </div>
+                <div class="metrica-item">
+                    <span class="metrica-label">Mejor día</span>
+                    <span class="metrica-valor" style="color: #2e7d32;">
+                        {{ getMejorDia() }}
+                    </span>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>
