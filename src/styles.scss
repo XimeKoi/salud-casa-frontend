@@ -115,6 +115,19 @@ app-root {
   forced-color-adjust: none !important;
 }
 
+@media (prefers-color-scheme: dark) {
+
+  :root,
+  html,
+  body,
+  app-root {
+    color-scheme: light !important;
+    forced-color-adjust: none !important;
+    background-color: #FAF8F5 !important;
+    color: #1E293B !important;
+  }
+}
+
 h1,
 h2,
 h3,
