@@ -1233,7 +1233,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             this.clusterGroup.eachLayer((layer: any) => {
               if (popupAbierto) return;
               try {
-                if (layer instanceof L.Marker) {
+                if (layer && (layer._icon || layer.options?.icon || typeof layer.getPopup === 'function')) {
                   const popup = layer.getPopup();
                   if (popup) {
                     const content = popup.getContent();
@@ -1553,7 +1553,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       this.map.eachLayer((layer: any) => {
-        if (layer instanceof L.Marker || layer instanceof L.MarkerClusterGroup) {
+        if (layer instanceof L.TileLayer) {
+          return;
+        }
+        if (layer === this.searchMarker) {
+          return;
+        }
+        if (layer && (layer._icon || layer.options?.icon || typeof layer.getAllChildMarkers === 'function')) {
           try { this.map?.removeLayer(layer); } catch (e) { }
         }
       });

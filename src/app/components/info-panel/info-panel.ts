@@ -431,12 +431,15 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
   }
 
   private limpiarMarcadoresDelMapa(map: L.Map) {
+    if (!map) return;
     map.eachLayer((layer: any) => {
-      if (layer instanceof L.MarkerClusterGroup) {
-        map.removeLayer(layer);
+      if (layer instanceof L.TileLayer) {
+        return;
       }
-      if (layer instanceof L.Marker) {
-        map.removeLayer(layer);
+      if (layer && (layer._icon || layer.options?.icon || typeof layer.getAllChildMarkers === 'function')) {
+        try {
+          map.removeLayer(layer);
+        } catch (e) { }
       }
     });
     console.log('🧹 Marcadores del mapa limpiados');
