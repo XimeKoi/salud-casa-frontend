@@ -37,6 +37,7 @@
 /* Global Styles & Variables */
 :root {
   color-scheme: light !important;
+  forced-color-adjust: none !important;
   /* Modern Palette */
   --primary-color: #7E101F;
   /* Guinda */
@@ -85,15 +86,18 @@
 
 html {
   color-scheme: light !important;
-  background-color: #FAF8F5;
+  forced-color-adjust: none !important;
+  background-color: #FAF8F5 !important;
   height: 100%;
 }
 
 body {
   font-family: var(--font-main);
-  color: var(--text-main);
+  color: var(--text-main) !important;
   background-color: #FAF8F5 !important;
+  background: #FAF8F5 !important;
   color-scheme: light !important;
+  forced-color-adjust: none !important;
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 100%;
@@ -106,7 +110,9 @@ app-root {
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
-  background-color: #FAF8F5;
+  background-color: #FAF8F5 !important;
+  color-scheme: light !important;
+  forced-color-adjust: none !important;
 }
 
 h1,

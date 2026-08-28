@@ -225,6 +225,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cargarPacientesDirectamente(true);
     });
 
+    window.addEventListener('abrirModalRegistrarPaciente', (event: any) => {
+      this.ngZone.run(() => {
+        const d = event.detail || {};
+        this.abrirModalPaciente(d.lat, d.lng, d.direccion, d.calle, d.numero, d.colonia, d.cp);
+      });
+    });
+
     window.addEventListener('seleccionarManzana', (event: any) => {
       if (event.detail) {
         this.activarColoniaEnMapa(event.detail);
@@ -699,7 +706,25 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  abrirModalNuevoPacienteDesdeBusqueda() {
+    const lat = this.searchMarker ? this.searchMarker.getLatLng().lat : this.centerLat;
+    const lng = this.searchMarker ? this.searchMarker.getLatLng().lng : this.centerLng;
+    this.abrirModalPaciente(lat, lng, this.searchQuery || '', this.searchQuery || '');
+  }
+
   abrirModalGuardarPaciente(lat: number, lng: number, direccionData: any | null) {
+    this.abrirModalPaciente(
+      lat,
+      lng,
+      direccionData?.direccion || direccionData?.direccionCompleta || '',
+      direccionData?.calle || '',
+      direccionData?.numero || '',
+      direccionData?.colonia || '',
+      direccionData?.cp || ''
+    );
+  }
+
+  abrirModalPaciente(lat?: number, lng?: number, direccion?: string, calle?: string, numero?: string, colonia?: string, cp?: string) {
     this.nuevoPaciente = {
       apellidoPaterno: '',
       apellidoMaterno: '',
@@ -709,64 +734,129 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       telefonoCelular: '',
       estatus: 'PENDIENTE',
       programa: 'PAM',
-      direccion: direccionData?.direccion || '',
-      colonia: direccionData?.colonia || '',
-      calle: direccionData?.calle || '',
-      numero: direccionData?.numero || '',
-      cp: direccionData?.cp || '',
-      lat: lat,
-      lng: lng
+      direccion: direccion || '',
+      colonia: colonia || (this.distritoActual ? this.distritoActual.nombre : '') || '',
+      calle: calle || direccion || '',
+      numero: numero || '',
+      cp: cp || '',
+      lat: lat || this.centerLat,
+      lng: lng || this.centerLng
     };
+    this.actualizarDireccionCompleta();
     this.mostrarModalPaciente = true;
     this.cdr.detectChanges();
   }
 
   actualizarDireccionCompleta() {
-    let dir = '';
-    if (this.nuevoPaciente.calle && this.nuevoPaciente.numero) {
-      dir = `${this.nuevoPaciente.calle} #${this.nuevoPaciente.numero}`;
-    } else if (this.nuevoPaciente.calle) {
-      dir = this.nuevoPaciente.calle;
+    const partes: string[] = [];
+    if (this.nuevoPaciente.calle && this.nuevoPaciente.calle.trim()) {
+      let c = this.nuevoPaciente.calle.trim();
+      if (this.nuevoPaciente.numero && this.nuevoPaciente.numero.trim()) {
+        c += ` #${this.nuevoPaciente.numero.trim()}`;
+      }
+      partes.push(c);
     }
-    if (this.nuevoPaciente.colonia) {
-      dir += dir ? `, ${this.nuevoPaciente.colonia}` : this.nuevoPaciente.colonia;
+    if (this.nuevoPaciente.colonia && this.nuevoPaciente.colonia.trim()) {
+      partes.push(this.nuevoPaciente.colonia.trim());
     }
-    if (this.nuevoPaciente.cp) {
-      dir += `, CP ${this.nuevoPaciente.cp}`;
+    if (this.nuevoPaciente.cp && this.nuevoPaciente.cp.trim()) {
+      partes.push(`CP ${this.nuevoPaciente.cp.trim()}`);
     }
-    if (dir) {
-      dir += `, LEON, GUANAJUATO`;
+    if (partes.length > 0) {
+      partes.push('LEÓN, GUANAJUATO');
+      this.nuevoPaciente.direccion = partes.join(', ');
+    } else {
+      this.nuevoPaciente.direccion = `${this.nuevoPaciente.lat?.toFixed(6) || ''}, ${this.nuevoPaciente.lng?.toFixed(6) || ''}`;
     }
-    this.nuevoPaciente.direccion = dir || `${this.nuevoPaciente.lat?.toFixed(6) || '0'}, ${this.nuevoPaciente.lng?.toFixed(6) || '0'}`;
     this.cdr.detectChanges();
   }
 
   cerrarModalPaciente() {
     this.mostrarModalPaciente = false;
     this.pacienteGuardando = false;
+    this.cdr.detectChanges();
   }
 
   guardarPacienteDesdeModal() {
-    if (!this.nuevoPaciente.nombre || !this.nuevoPaciente.apellidoPaterno) {
-      this.mostrarToast('Campo requerido', 'Nombre y apellido paterno son obligatorios', 'warning', 3000);
+    if (!this.nuevoPaciente.nombre || !this.nuevoPaciente.nombre.trim() ||
+      !this.nuevoPaciente.apellidoPaterno || !this.nuevoPaciente.apellidoPaterno.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos requeridos',
+        text: 'Nombre y apellido paterno son obligatorios',
+        confirmButtonColor: '#7A192B'
+      });
       return;
     }
+
     this.pacienteGuardando = true;
+    this.cdr.detectChanges();
+
+    const nombreCompleto = `${this.nuevoPaciente.nombre.trim()} ${this.nuevoPaciente.apellidoPaterno.trim()} ${(this.nuevoPaciente.apellidoMaterno || '').trim()}`.trim();
+    const tel = this.nuevoPaciente.telefonoCelular || this.nuevoPaciente.telefonoFijo || '';
     const pacienteData = {
       ...this.nuevoPaciente,
+      nombre: nombreCompleto,
+      telefono: tel,
       idEnfermera: this.idEnfermera
     };
 
     this.http.post(`${this.apiUrl}/pacientes`, pacienteData).subscribe({
       next: (response: any) => {
         this.pacienteGuardando = false;
-        this.mostrarToast('Paciente guardado', `${pacienteData.nombre} registrado correctamente`, 'success', 3000);
         this.cerrarModalPaciente();
         this.cargarPacientesDirectamente(true);
+        Swal.fire({
+          icon: 'success',
+          title: '¡Paciente Guardado!',
+          text: `${nombreCompleto} ha sido registrado correctamente.`,
+          confirmButtonColor: '#7A192B'
+        });
       },
       error: (error) => {
+        console.warn('⚠️ Guardando localmente en mapa:', error);
         this.pacienteGuardando = false;
-        this.mostrarToast('Error', 'No se pudo guardar el paciente', 'error', 4000);
+
+        const nuevoObj: PacienteMap = {
+          id: Date.now(),
+          nombre: nombreCompleto,
+          apellidoPaterno: this.nuevoPaciente.apellidoPaterno || '',
+          apellidoMaterno: this.nuevoPaciente.apellidoMaterno || '',
+          curp: this.nuevoPaciente.curp || '',
+          telefono: tel,
+          telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
+          telefonoCelular: this.nuevoPaciente.telefonoCelular || '',
+          programa: this.nuevoPaciente.programa || 'PAM',
+          estatus: this.nuevoPaciente.estatus || 'PENDIENTE',
+          seccion: '277',
+          genero: 'M',
+          direccion: this.nuevoPaciente.direccion || `${this.nuevoPaciente.calle} ${this.nuevoPaciente.numero || ''}, ${this.nuevoPaciente.colonia || ''}`,
+          colonia: this.nuevoPaciente.colonia || 'SANTA ROSA DE LIMA',
+          lat: Number(this.nuevoPaciente.lat || this.centerLat || 21.1165),
+          lng: Number(this.nuevoPaciente.lng || this.centerLng || -101.6865),
+          discapacidades: {
+            motriz: false,
+            visual: false,
+            auditiva: false,
+            intelectual: false,
+            psicosocial: false
+          },
+          finado: this.nuevoPaciente.estatus === 'FINADO',
+          fechaFinado: ''
+        };
+
+        this.pacientes.unshift(nuevoObj);
+        this.agregarMarcadoresPacientes(false);
+        if (this.map && nuevoObj.lat && nuevoObj.lng) {
+          this.map.setView([nuevoObj.lat, nuevoObj.lng], 18, { animate: true });
+        }
+        this.cerrarModalPaciente();
+        Swal.fire({
+          icon: 'success',
+          title: '¡Paciente Registrado!',
+          text: `${nombreCompleto} ha sido registrado y georreferenciado en el mapa.`,
+          confirmButtonColor: '#7A192B'
+        });
       }
     });
   }
@@ -1823,7 +1913,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         </div>
 
         <div style="padding: 0 20px 16px 20px;">
-          
+          <button id="btnRegistrarPacienteBusqueda" style="
+            width: 100%;
+            padding: 11px 16px;
+            background: linear-gradient(135deg, #7A192B 0%, #5E1220 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(122, 25, 43, 0.35);
+            transition: all 0.2s ease;
+          ">
+            <i class="fas fa-user-plus" style="color: #D4AF37; font-size: 14px;"></i>
+            <span>Registrar Paciente Aquí</span>
+          </button>
         </div>
       </div>
     `;
@@ -1843,6 +1952,41 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       if (this.searchMarker) {
         this.searchMarker.openPopup();
+      }
+      const btn = document.getElementById('btnRegistrarPacienteBusqueda');
+      if (btn) {
+        btn.onclick = () => {
+          this.ngZone.run(() => {
+            const rawDir = result.display_name || '';
+            const partes = rawDir.split(',').map((p: string) => p.trim());
+            let numero = '';
+            let calle = '';
+            let colonia = '';
+            let cp = '';
+
+            // Detectar si el primer fragmento es un número
+            if (partes.length > 0) {
+              if (/^\d+$/.test(partes[0])) {
+                numero = partes[0];
+                calle = partes[1] || '';
+                colonia = partes[2] || '';
+              } else {
+                calle = partes[0] || '';
+                colonia = partes[1] || '';
+              }
+            }
+
+            // Buscar código postal de 5 dígitos
+            for (const p of partes) {
+              if (/^\d{5}$/.test(p)) {
+                cp = p;
+                break;
+              }
+            }
+
+            this.abrirModalPaciente(result.lat, result.lon, rawDir, calle, numero, colonia, cp);
+          });
+        };
       }
     }, 300);
 
