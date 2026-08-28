@@ -4,8 +4,29 @@
   <app-header></app-header>
 
   <div class="main-container">
+    <!-- Backdrop oscuro para móvil cuando el sidebar de colonias está abierto -->
+    <div class="sidebar-backdrop" *ngIf="mostrarSidebar && sidebarMobileOpen" (click)="closeSidebarMobile()"></div>
+
+    <!-- Botón flotante móvil para abrir filtros territoriales cuando estamos en el mapa -->
+    <button *ngIf="mostrarSidebar" class="btn-colonias-floating-mobile" (click)="toggleSidebarMobile()"
+      title="Ver Colonias">
+      <i class="fas fa-layer-group"></i>
+      <span>Colonias</span>
+      <span class="colonias-badge-count">{{ coloniasFiltradas.length }}</span>
+      <span class="active-dot" *ngIf="coloniaSeleccionada"></span>
+    </button>
+
     <!-- ⭐ SIDEBAR TERRITORIAL -->
-    <div *ngIf="mostrarSidebar" class="new-sidebar">
+    <div *ngIf="mostrarSidebar" class="new-sidebar" [class.mobile-open]="sidebarMobileOpen">
+
+      <!-- Fila superior para cerrar en móviles -->
+      <div class="mobile-sidebar-close-row">
+        <span>Filtro Territorial</span>
+        <button type="button" class="btn-close-side-mobile" (click)="closeSidebarMobile()"
+          aria-label="Cerrar panel de colonias">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
       <!-- CABECERA INSTITUCIONAL ROJA -->
       <div class="header-red">
@@ -52,18 +73,9 @@
         <!-- BUSCADOR RÁPIDO DE COLONIAS -->
         <div class="colonias-search-wrap">
           <i class="fas fa-search search-icon"></i>
-          <input
-            type="text"
-            [(ngModel)]="busquedaColonia"
-            placeholder="Buscar colonia..."
-            class="colonias-search-input"
-          />
-          <button
-            *ngIf="busquedaColonia"
-            (click)="busquedaColonia = ''"
-            class="btn-clear"
-            title="Limpiar búsqueda"
-          >
+          <input type="text" [(ngModel)]="busquedaColonia" placeholder="Buscar colonia..."
+            class="colonias-search-input" />
+          <button *ngIf="busquedaColonia" (click)="busquedaColonia = ''" class="btn-clear" title="Limpiar búsqueda">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -78,11 +90,7 @@
         <div class="colonias-list-viewport" *ngIf="coloniasFiltradas && coloniasFiltradas.length > 0">
 
           <!-- Opción: Todas las colonias -->
-          <div
-            (click)="seleccionarColonia('')"
-            class="colonia-card item-all"
-            [class.active]="!coloniaSeleccionada"
-          >
+          <div (click)="seleccionarColonia('')" class="colonia-card item-all" [class.active]="!coloniaSeleccionada">
             <div class="colonia-left">
               <span class="all-icon">
                 <i class="fas fa-globe-americas"></i>
@@ -98,19 +106,11 @@
           </div>
 
           <!-- Tarjetas individuales de colonia -->
-          <div
-            *ngFor="let col of coloniasFiltradas"
-            (click)="seleccionarColonia(col.id)"
-            class="colonia-card"
-            [class.active]="isColoniaSeleccionada(col.id)"
-            [style.border-left-color]="col.color"
-          >
+          <div *ngFor="let col of coloniasFiltradas" (click)="seleccionarColonia(col.id)" class="colonia-card"
+            [class.active]="isColoniaSeleccionada(col.id)" [style.border-left-color]="col.color">
             <div class="colonia-left">
-              <span
-                class="colonia-pip"
-                [style.background]="col.color"
-                [style.box-shadow]="'0 0 0 3px ' + col.color + '25'"
-              ></span>
+              <span class="colonia-pip" [style.background]="col.color"
+                [style.box-shadow]="'0 0 0 3px ' + col.color + '25'"></span>
               <div class="colonia-meta">
                 <span class="colonia-name" [title]="col.nombre">
                   {{ col.nombre }}
@@ -118,11 +118,8 @@
                 <span class="colonia-subtext">Colonia de trabajo</span>
               </div>
             </div>
-            <span
-              class="colonia-badge-pill"
-              [class.active-pill]="isColoniaSeleccionada(col.id)"
-              [style.background]="isColoniaSeleccionada(col.id) ? col.color : ''"
-            >
+            <span class="colonia-badge-pill" [class.active-pill]="isColoniaSeleccionada(col.id)"
+              [style.background]="isColoniaSeleccionada(col.id) ? col.color : ''">
               {{ col.totalPacientes }} pac.
             </span>
           </div>

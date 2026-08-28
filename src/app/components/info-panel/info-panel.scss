@@ -653,3 +653,33 @@
 .prof-bar-fill.red-fill {
   background: linear-gradient(90deg, #c62828, #ef5350);
 }
+
+// ============================================
+// ⭐ RESPONSIVE PARA DISPOSITIVOS MÓVILES
+// ============================================
+@media (max-width: 768px) {
+  .app-info-panel {
+    padding: 14px 12px;
+    gap: 14px;
+  }
+
+  .header-red {
+    padding: 10px 12px;
+
+    .info-logo-img {
+      height: 42px !important;
+    }
+
+    .brand-wordmark-img {
+      height: 22px !important;
+    }
+  }
+
+  .pfilters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .metric-card {
+    padding: 10px 12px;
+  }
+}

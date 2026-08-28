@@ -1033,3 +1033,53 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
     background: #b91c1c;
   }
 }
+
+// ============================================
+// ⭐ RESPONSIVE PARA DISPOSITIVOS MÓVILES
+// ============================================
+@media (max-width: 768px) {
+  .page-header {
+    padding: 10px 14px;
+
+    .header-main-row {
+      padding: 0;
+      gap: 10px;
+    }
+
+    .header-title-box {
+      h1 {
+        font-size: 17px;
+      }
+
+      .header-subtitle {
+        display: none;
+      }
+    }
+
+    .btn-return-map {
+      padding: 7px 12px;
+      font-size: 11.5px;
+    }
+  }
+
+  .content-wrapper {
+    padding: 10px 10px 50px 10px;
+  }
+
+  .filter-pills-bar {
+    overflow-x: auto;
+    padding-bottom: 6px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .notification-card {
+    padding: 12px 10px;
+    gap: 10px;
+  }
+
+  .modal-dialog-modern {
+    max-width: 95vw;
+    margin: 12px;
+  }
+}

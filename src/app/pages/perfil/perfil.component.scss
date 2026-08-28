@@ -74,6 +74,7 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
     opacity: 0;
     transform: translateY(-10px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -174,9 +175,11 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
   &::-webkit-scrollbar {
     width: 6px;
   }
+
   &::-webkit-scrollbar-track {
     background: #eae2d8;
   }
+
   &::-webkit-scrollbar-thumb {
     background: $primary;
     border-radius: 4px;
@@ -752,5 +755,83 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
       box-shadow: 0 6px 20px rgba(126, 16, 31, 0.35);
       background: linear-gradient(135deg, $primary-dark 0%, $primary-light 100%);
     }
+  }
+}
+
+// ============================================
+// ⭐ RESPONSIVE PARA DISPOSITIVOS MÓVILES
+// ============================================
+@media (max-width: 768px) {
+  .page-header {
+    padding: 10px 14px;
+
+    .header-main-row {
+      padding: 0;
+      gap: 10px;
+    }
+
+    .header-title-box {
+      h1 {
+        font-size: 17px;
+      }
+
+      .header-subtitle {
+        display: none;
+      }
+    }
+
+    .btn-return-map {
+      padding: 7px 12px;
+      font-size: 11.5px;
+    }
+  }
+
+  .content-wrapper {
+    padding: 12px 12px 40px 12px;
+  }
+
+  .profile-hero-card {
+    border-radius: 14px;
+  }
+
+  .hero-content-flex {
+    padding: 16px 14px;
+    gap: 14px;
+  }
+
+  .hero-avatar-wrap {
+    .avatar-ring {
+      width: 68px;
+      height: 68px;
+    }
+  }
+
+  .hero-info {
+    .hero-name {
+      font-size: 18px;
+    }
+  }
+
+  .hero-credential-seal {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 8px 14px;
+  }
+
+  .hero-metrics-strip {
+    padding: 12px 14px;
+    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .info-group-card {
+    padding: 16px 14px;
   }
 }

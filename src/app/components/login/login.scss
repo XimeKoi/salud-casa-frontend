@@ -25,8 +25,9 @@ $radius-input: 14px;
   min-height: 100vh;
   min-height: 100dvh;
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: $text-main;
-  background: linear-gradient(145deg, $bg-gradient-start 0%, $bg-gradient-mid 50%, $bg-gradient-end 100%);
+  color: $text-main !important;
+  color-scheme: light !important;
+  background: linear-gradient(145deg, $bg-gradient-start 0%, $bg-gradient-mid 50%, $bg-gradient-end 100%) !important;
   position: relative;
   overflow-x: hidden;
 }
@@ -40,7 +41,11 @@ $radius-input: 14px;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  color-scheme: light !important;
+  color: $text-main !important;
+  background: linear-gradient(145deg, $bg-gradient-start 0%, $bg-gradient-mid 50%, $bg-gradient-end 100%) !important;
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
@@ -318,7 +323,9 @@ $radius-input: 14px;
 
 .cl-card {
   width: 100%;
-  background: $card-bg;
+  background: #FFFFFF !important;
+  color: $text-main !important;
+  color-scheme: light !important;
   border-radius: $radius-card;
   border: 1px solid $border-color;
   box-shadow: 0 16px 40px -12px rgba(122, 25, 43, 0.1), 0 4px 12px rgba(0, 0, 0, 0.03);
@@ -506,13 +513,14 @@ $radius-input: 14px;
 .cl-input {
   width: 100%;
   height: 48px;
-  background: $input-bg;
+  background: #F8FAFC !important;
+  color: $text-main !important;
+  color-scheme: light !important;
   border: 1.5px solid $border-input;
   border-radius: $radius-input;
   padding: 0 42px 0 42px;
   font-size: 16px; // Crucial: 16px previene zoom no deseado en iOS Safari
   font-family: inherit;
-  color: $text-main;
   font-weight: 500;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-appearance: none;
@@ -529,7 +537,7 @@ $radius-input: 14px;
 
   &:focus {
     outline: none;
-    background: #FFFFFF;
+    background: #FFFFFF !important;
     border-color: $guinda-principal;
     box-shadow: 0 0 0 3.5px rgba(122, 25, 43, 0.12);
 

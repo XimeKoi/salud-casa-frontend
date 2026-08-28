@@ -39,8 +39,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
   coloresManzanas: { [key: string]: string } = {};
 
   mostrarSidebar: boolean = true;
+  sidebarMobileOpen: boolean = false;
   busquedaColonia: string = '';
   colonias: ColoniaInfo[] = [];
+
+  toggleSidebarMobile() {
+    this.sidebarMobileOpen = !this.sidebarMobileOpen;
+    this.cdr.detectChanges();
+  }
+
+  closeSidebarMobile() {
+    this.sidebarMobileOpen = false;
+    this.cdr.detectChanges();
+  }
 
   private coloresCache: { [key: string]: string } = {};
   private subscriptions: Subscription[] = [];
@@ -253,6 +264,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
           }
         }));
       }
+    }
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      this.sidebarMobileOpen = false;
     }
     this.cdr.detectChanges();
   }

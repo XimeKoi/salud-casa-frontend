@@ -440,3 +440,164 @@ $text-muted: #64748b;
     color: #cbd5e1;
   }
 }
+
+// ============================================
+// ⭐ ESTILOS RESPONSIVOS PARA MÓVILES (DRAWER & OVERLAYS)
+// ============================================
+.sidebar-backdrop {
+  display: none;
+}
+
+.btn-colonias-floating-mobile {
+  display: none;
+}
+
+.mobile-sidebar-close-row {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    height: 100dvh;
+    width: 100%;
+  }
+
+  .main-container {
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+  }
+
+  .content-area {
+    width: 100% !important;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // Backdrop
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 1080;
+    animation: fadeInBackdrop 0.2s ease-out;
+  }
+
+  @keyframes fadeInBackdrop {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  // Botón flotante móvil para abrir colonias
+  .btn-colonias-floating-mobile {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    bottom: 24px;
+    left: 16px;
+    z-index: 1050;
+    background: linear-gradient(135deg, #7A192B 0%, #5E1220 100%);
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 30px;
+    border: 1.5px solid rgba(212, 175, 55, 0.6);
+    box-shadow: 0 4px 18px rgba(122, 25, 43, 0.45);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    touch-action: manipulation;
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    i {
+      color: #E5BE57;
+      font-size: 13px;
+    }
+
+    .colonias-badge-count {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .active-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  // Fila para cerrar en el sidebar móvil
+  .mobile-sidebar-close-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px 8px 6px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #f1e6dc;
+    margin-bottom: 4px;
+
+    .btn-close-side-mobile {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+
+      &:hover,
+      &:active {
+        background: #fee2e2;
+        color: #dc2626;
+        border-color: #fca5a5;
+      }
+    }
+  }
+
+  // Sidebar como Drawer Flotante
+  .new-sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 86vw;
+    max-width: 330px;
+    z-index: 1090;
+    box-shadow: 6px 0 28px rgba(0, 0, 0, 0.25);
+    transform: translateX(-105%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background: #ffffff;
+
+    &.mobile-open {
+      transform: translateX(0);
+    }
+  }
+}

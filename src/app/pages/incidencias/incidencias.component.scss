@@ -199,9 +199,11 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
   &::-webkit-scrollbar {
     width: 6px;
   }
+
   &::-webkit-scrollbar-track {
     background: #eae2d8;
   }
+
   &::-webkit-scrollbar-thumb {
     background: $primary;
     border-radius: 4px;
@@ -228,6 +230,7 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
     opacity: 0;
     transform: translateY(-12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1018,5 +1021,64 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
     &:hover {
       background: rgba(220, 38, 38, 0.9);
     }
+  }
+}
+
+// ============================================
+// ⭐ RESPONSIVE PARA DISPOSITIVOS MÓVILES
+// ============================================
+@media (max-width: 768px) {
+  .page-header {
+    padding: 10px 14px;
+
+    .header-main-row {
+      padding: 0;
+      gap: 10px;
+    }
+
+    .header-title-box {
+      h1 {
+        font-size: 17px;
+      }
+
+      .header-subtitle {
+        display: none;
+      }
+    }
+
+    .header-actions-group {
+      width: 100%;
+      justify-content: space-between;
+
+      .btn-new-incident,
+      .btn-return-map {
+        flex: 1;
+        padding: 8px 10px;
+        font-size: 12px;
+        justify-content: center;
+      }
+    }
+  }
+
+  .content-wrapper {
+    padding: 12px 12px 50px 12px;
+  }
+
+  .filter-pills-bar {
+    overflow-x: auto;
+    padding-bottom: 6px;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .incidencias-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .modal-dialog-modern {
+    max-width: 95vw;
+    margin: 12px;
+    padding: 18px 14px;
   }
 }

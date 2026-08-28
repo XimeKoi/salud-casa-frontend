@@ -856,3 +856,70 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
     cursor: not-allowed;
   }
 }
+
+// ============================================
+// ⭐ RESPONSIVE PARA DISPOSITIVOS MÓVILES
+// ============================================
+@media (max-width: 768px) {
+  .page-header {
+    padding: 10px 14px;
+
+    .header-main-row {
+      padding: 0;
+      gap: 10px;
+    }
+
+    .header-title-box {
+      h1 {
+        font-size: 17px;
+      }
+
+      .header-subtitle {
+        display: none;
+      }
+    }
+
+    .btn-return-map {
+      padding: 7px 12px;
+      font-size: 11.5px;
+    }
+  }
+
+  .content-wrapper {
+    padding: 12px 12px 50px 12px;
+  }
+
+  .captura-card {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+
+  .patient-details-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .btn-condition-toggle {
+    min-width: 130px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .disabilities-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .form-bottom-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+
+    .btn-cancel-form,
+    .btn-submit-form {
+      width: 100%;
+      justify-content: center;
+      padding: 12px;
+      font-size: 14px;
+    }
+  }
+}

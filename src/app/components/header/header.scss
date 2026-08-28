@@ -522,30 +522,62 @@ $border-color: #ebdcd0;
 // Responsive
 @media (max-width: 768px) {
   .main-header {
-    padding: 0 14px;
-    height: 58px;
+    padding: 0 10px;
+    height: 56px;
+  }
+
+  .header-left-area {
+    gap: 8px;
+  }
+
+  .header-logo-title {
+    gap: 8px;
   }
 
   .brand-logo {
-    height: 34px;
+    height: 32px;
   }
 
-  .bienestar {
-    font-size: 1.05rem;
+  .brand-wordmark {
+    height: 20px;
   }
 
   .secretaria {
-    font-size: 0.55rem;
+    font-size: 9px;
+  }
+
+  .brand-divider,
+  .program-text {
+    display: none !important;
+  }
+
+  .header-right-area {
+    gap: 6px;
+  }
+
+  .btn-nav {
+    padding: 8px 10px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 9px;
+
+    .btn-text {
+      display: none !important;
+    }
+
+    i {
+      font-size: 16px;
+    }
   }
 
   .sidebar-demo {
-    top: 58px;
-    height: calc(100vh - 58px);
+    top: 56px;
+    height: calc(100vh - 56px);
     width: 280px;
   }
 
   .overlay {
-    top: 58px;
-    height: calc(100vh - 58px);
+    top: 56px;
+    height: calc(100vh - 56px);
   }
 }
