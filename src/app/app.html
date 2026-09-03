@@ -1,1 +1,64 @@
+<!-- ⭐ INTRODUCCIÓN & SPLASH SCREEN ANIMADO CUIDALIA -->
+<div class="cuidalia-app-splash" *ngIf="mostrarSplash()" [class.splash-fade-out]="splashAnimandoSalida()"
+  (click)="omitirSplash()">
+  <div class="splash-ambient-bg">
+    <div class="ambient-sphere sphere-1"></div>
+    <div class="ambient-sphere sphere-2"></div>
+    <div class="ambient-grid-lines"></div>
+  </div>
+
+  <div class="splash-content-container" (click)="$event.stopPropagation()">
+    <!-- Emblema Principal con Luz y 3D Float -->
+    <div class="splash-logo-card">
+      <div class="logo-glow-halo"></div>
+      <div class="logo-card-surface">
+        <img src="cuidalia-casa-cuidados.png" alt="Cuidalia Casa de Cuidados" class="splash-house-icon" />
+        <img src="cuidalia-wordmark.png" alt="Cuidalia" class="splash-wordmark-img" />
+      </div>
+    </div>
+
+    <!-- Slogan de Marca -->
+    <div class="splash-tagline-wrap">
+      <span class="splash-slogan">Cercanía que cuida</span>
+      <span class="splash-sub-slogan">Atención Médica Domiciliaria</span>
+    </div>
+
+    <!-- Píldoras de Bienvenida con Iconos -->
+    <div class="splash-features-row">
+      <div class="splash-pill">
+        <i class="fas fa-location-dot"></i>
+        <span>Control Territorial</span>
+      </div>
+      <div class="splash-pill">
+        <i class="fas fa-user-doctor"></i>
+        <span>Enfermería en Campo</span>
+      </div>
+      <div class="splash-pill">
+        <i class="fas fa-heart-pulse"></i>
+        <span>Atención Integral</span>
+      </div>
+    </div>
+
+    <!-- Barra de Carga & Estado -->
+    <div class="splash-loader-wrap">
+      <div class="splash-progress-track">
+        <div class="splash-progress-fill" [style.width.%]="splashProgreso()"></div>
+      </div>
+      <div class="splash-status-row">
+        <span class="status-msg">
+          <i class="fas fa-circle-notch fa-spin"></i>
+          {{ splashEstadoTexto() }}
+        </span>
+        <span class="status-pct">{{ splashProgreso() }}%</span>
+      </div>
+    </div>
+
+    <!-- Botón de Salto Rápido -->
+    <button class="btn-skip-splash" (click)="omitirSplash()" title="Entrar directamente">
+      <span>Toca para ingresar</span>
+      <i class="fas fa-angles-right"></i>
+    </button>
+  </div>
+</div>
+
 <router-outlet></router-outlet>

@@ -1,35 +1,43 @@
 // src/app/components/header/header.scss
 
 // ============================================
-// ⭐ VARIABLES INSTITUCIONALES BIENESTAR
+// ⭐ VARIABLES INSTITUCIONALES CUIDALIA
 // ============================================
-$primary-guinda: #9F2241;
-$primary-dark: #691C32;
-$primary-light: #BC3C5A;
-$accent-gold: #BC955C;
-$accent-gold-light: #ddc195;
-$accent-gold-soft: #fbf7f0;
-$bg-header: #ffffff;
-$text-main: #1e293b;
-$text-secondary: #64748b;
-$border-color: #ebdcd0;
+$cuidalia-plum: #520D2F;
+$cuidalia-plum-dark: #38061F;
+$cuidalia-plum-light: #7E1848;
+$cuidalia-coral: #FF6B55;
+$cuidalia-gold: #D4A03D;
+$cuidalia-border: #EBDCD5;
+$text-main: #1F1018;
+$text-secondary: #6B5B64;
+
+// Aliases para compatibilidad
+$primary-guinda: #520D2F;
+$primary-dark: #38061F;
+$primary-light: #7E1848;
+$accent-gold: #D4A03D;
+$accent-gold-light: #FF8F7D;
+$accent-gold-soft: #FFF1EE;
+$bg-header: #FAF4F0;
+$border-color: #EBDCD5;
 
 // ============================================
-// ⭐ HEADER PRINCIPAL
+// ⭐ HEADER PRINCIPAL CON COLOR SÓLIDO OSCURO INSTITUCIONAL
 // ============================================
 .main-header {
-  background: $bg-header;
-  border-bottom: 3.5px solid $primary-guinda;
-  box-shadow: 0 4px 18px rgba(105, 28, 50, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: #520D2F;
+  border-bottom: 3.5px solid $cuidalia-coral;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.15);
   padding: 0 24px;
-  height: 64px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 1000;
-  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Montserrat', system-ui, -apple-system, sans-serif;
 
   &::after {
     content: '';
@@ -38,7 +46,7 @@ $border-color: #ebdcd0;
     left: 0;
     right: 0;
     height: 1.5px;
-    background: linear-gradient(90deg, $accent-gold 0%, rgba(188, 149, 92, 0.5) 50%, $accent-gold 100%);
+    background: linear-gradient(90deg, #FDE047 0%, $cuidalia-coral 50%, #FDE047 100%);
     pointer-events: none;
   }
 }
@@ -55,221 +63,253 @@ $border-color: #ebdcd0;
   gap: 10px;
 }
 
-// Botón hamburguesa
+// Botón hamburguesa en Blanco Sólido de Alto Contraste
 .hamburger {
   font-size: 17px;
   cursor: pointer;
-  background: #fbf8f5;
-  border: 1.5px solid #dfcfc0;
-  width: 40px;
-  height: 40px;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  color: $primary-guinda;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  color: #991B1B;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
 
   &:hover {
-    background: $primary-guinda;
-    color: #ffffff;
-    border-color: $primary-guinda;
-    transform: scale(1.05);
-    box-shadow: 0 3px 10px rgba(159, 34, 65, 0.25);
+    background: #FFF1F2;
+    color: #B91C1C;
+    transform: scale(1.06);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
   }
 }
 
-// Logotipo y branding original Bienestar
+// Logotipo y branding Cuidalia con Cápsula en Colores Originales
 .header-logo-title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   user-select: none;
   transition: opacity 0.2s ease;
 
   &:hover {
-    opacity: 0.95;
+    opacity: 0.98;
   }
 }
 
-.brand-logo {
-  height: 42px;
-  min-height: 36px;
-  width: auto;
-  object-fit: contain;
-  filter: brightness(0.95) contrast(1.05);
-  transition: transform 0.2s ease;
+.brand-identity-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  padding: 5px 14px 5px 8px;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 
   &:hover {
-    transform: scale(1.04);
+    transform: scale(1.025);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
   }
-}
 
-.logo-bienestar {
-  line-height: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  .brand-wordmark {
-    height: 22px;
-    width: auto;
+  .brand-logo.care-home-logo {
+    width: 44px;
+    height: 44px;
     object-fit: contain;
+    flex-shrink: 0;
   }
-}
 
-.bienestar {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 900;
-  color: $primary-guinda;
-  font-size: 1.3rem;
-  letter-spacing: 0.8px;
-  text-shadow: 0 1px 2px rgba(159, 34, 65, 0.12);
-}
+  .brand-text-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1;
 
-.secretaria {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
-  color: $accent-gold;
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 3px;
+    .brand-wordmark {
+      height: 28px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .secretaria {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      font-weight: 700;
+      color: $cuidalia-coral;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 2px;
+      text-shadow: none;
+    }
+  }
 }
 
 .brand-divider {
   width: 1.5px;
-  height: 32px;
-  background: linear-gradient(180deg, transparent, $accent-gold, transparent);
-  margin: 0 6px;
+  height: 36px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  margin: 0 4px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 860px) {
     display: none;
   }
 }
 
 .program-text {
-  line-height: 1.2;
+  line-height: 1.25;
 
-  @media (max-width: 768px) {
+  @media (max-width: 860px) {
     display: none;
   }
 }
 
 .title-main {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Montserrat', sans-serif;
   font-weight: 800;
-  font-size: 0.85rem;
-  color: $text-main;
+  font-size: 0.88rem;
+  color: #FFFFFF;
   letter-spacing: -0.2px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .subtitle-main {
-  font-size: 0.72rem;
-  color: $text-secondary;
+  font-size: 0.74rem;
+  color: #FFE4E6;
   font-weight: 600;
-  margin-top: 2px;
+  margin-top: 3px;
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.location-label {
+  display: inline-flex;
+  align-items: center;
   gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #FFE4E6;
 
   i {
-    color: $primary-guinda;
-    font-size: 10px;
+    color: #FFA091;
+    font-size: 11px;
   }
 }
 
-.live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #16a34a;
-  box-shadow: 0 0 0 2.5px rgba(22, 163, 74, 0.25);
-  display: inline-block;
+@keyframes livePulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
 }
 
-// Botones de navegación derecha
+// Botones de navegación derecha en Blanco Sólido Ultra-Legibles
 .btn-nav {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
-  background: #fbf8f5;
-  border: 1.5px solid #dfcfc0;
-  border-radius: 10px;
-  color: $text-main;
+  padding: 9px 15px;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  color: $cuidalia-plum;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   position: relative;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
 
   i {
     font-size: 14px;
-    color: $primary-guinda;
-    transition: transform 0.2s ease;
+    color: $cuidalia-plum;
+    transition: transform 0.2s ease, color 0.2s ease;
   }
 
   .btn-text {
+    color: $cuidalia-plum;
+    font-weight: 800;
+
     @media (max-width: 650px) {
       display: none;
     }
   }
 
   &:hover {
-    background: #ffffff;
-    border-color: $primary-guinda;
-    color: $primary-guinda;
+    background: #FFF1EE;
+    border-color: #FFFFFF;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(159, 34, 65, 0.15);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 
     i {
+      color: $cuidalia-coral;
       transform: scale(1.15);
+    }
+
+    .btn-text {
+      color: $cuidalia-plum;
     }
   }
 
   &.btn-notificacion {
     .badge-notificacion {
       position: absolute;
-      top: -5px;
-      right: -5px;
-      background: #dc2626;
+      top: -6px;
+      right: -6px;
+      background: $cuidalia-coral;
       color: #ffffff;
-      font-size: 10px;
-      font-weight: 800;
+      font-size: 10.5px;
+      font-weight: 900;
       border-radius: 9999px;
-      min-width: 18px;
-      height: 18px;
+      min-width: 19px;
+      height: 19px;
       padding: 0 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
-      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(255, 107, 85, 0.6);
+      border: 2px solid #FFFFFF;
     }
   }
 }
 
 // ============================================
-// ⭐ SIDEBAR DE MÓDULOS (DRAWER ELEVADO)
+// ⭐ SIDEBAR DE MÓDULOS (DRAWER ELEVADO TEXTURIZADO)
 // ============================================
 .sidebar-demo {
   position: fixed;
-  top: 64px;
-  left: -340px;
-  width: 320px;
-  height: calc(100vh - 64px);
-  background: #ffffff;
-  border-right: 1.5px solid #dfcfc0;
-  transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  top: 70px;
+  left: -350px;
+  width: 325px;
+  height: calc(100vh - 70px);
+  height: calc(100dvh - 70px);
+  background: linear-gradient(180deg, #FAF6F3 0%, #F5EAE4 50%, #EFE3DC 100%);
+  background-image:
+    radial-gradient(rgba(82, 13, 47, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, #FAF6F3 0%, #F5EAE4 50%, #EFE3DC 100%);
+  background-size: 20px 20px, 100% 100%;
+  border-right: 1.5px solid #E2D3CA;
+  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1050;
   display: flex;
   flex-direction: column;
-  box-shadow: 8px 0 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 10px 0 35px rgba(82, 13, 47, 0.12);
   overflow-y: auto;
-  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Montserrat', system-ui, -apple-system, sans-serif;
 
   &.open {
     left: 0;
@@ -280,54 +320,58 @@ $border-color: #ebdcd0;
   }
 
   &::-webkit-scrollbar-track {
-    background: #f8f6f2;
+    background: #F3EAE4;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: $primary-guinda;
+    background: $cuidalia-plum;
     border-radius: 4px;
   }
 }
 
 .sidebar-header-box {
   padding: 16px 18px;
-  background: linear-gradient(135deg, $primary-dark 0%, $primary-guinda 100%);
-  border-bottom: 2.5px solid $accent-gold;
+  background: linear-gradient(135deg, #7D174A 0%, #600E35 100%);
+  border-bottom: 2.5px solid $cuidalia-coral;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(96, 14, 53, 0.25);
 
   .sidebar-title-group {
     display: flex;
     align-items: center;
     gap: 12px;
 
-    i {
-      font-size: 24px;
-      color: #fce082;
+    .sidebar-icon-wrap {
+      width: 38px;
+      height: 38px;
+      background: #FFFFFF;
+      color: #7D174A;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
     }
 
-    .sidebar-app-name {
-      display: block;
+    .sidebar-nav-title {
       font-size: 15.5px;
       font-weight: 800;
-      color: #ffffff;
-      line-height: 1.2;
-    }
-
-    .sidebar-app-sub {
-      display: block;
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.82);
-      font-weight: 500;
+      color: #FFFFFF;
+      letter-spacing: -0.2px;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     }
   }
 
   .btn-close-side {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #FFFFFF;
     width: 32px;
     height: 32px;
     border-radius: 8px;
@@ -335,11 +379,12 @@ $border-color: #ebdcd0;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: #FFFFFF;
+      color: #7D174A;
       transform: scale(1.08);
     }
   }
@@ -347,122 +392,164 @@ $border-color: #ebdcd0;
 
 .sidebar-modules-list {
   flex: 1;
-  padding: 14px 12px;
+  padding: 16px 14px;
 
-  .module-group-label {
-    font-size: 10.5px;
-    font-weight: 800;
-    color: #94a3b8;
-    letter-spacing: 0.8px;
-    padding: 6px 12px 10px 12px;
-  }
-
-  ul {
+  .modules-nav-list {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
   }
 
-  li {
+  .nav-module-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    color: $text-main;
-    font-size: 13.5px;
-    font-weight: 700;
+    gap: 13px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #FFFFFF;
+    border: 1.5px solid #EADBCE;
+    color: #2E1B24;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(82, 13, 47, 0.04);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: $cuidalia-coral;
+      transform: scaleY(0);
+      transition: transform 0.2s ease;
+    }
 
     .icon-bubble {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
+      font-size: 16px;
       flex-shrink: 0;
-      transition: transform 0.2s ease;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
 
       &.icon-map {
-        background: #fdf2f4;
-        color: $primary-guinda;
+        background: #FDF2F4;
+        color: $cuidalia-plum;
+        box-shadow: 0 2px 8px rgba(82, 13, 47, 0.15);
       }
 
       &.icon-stats {
-        background: #eff6ff;
-        color: #2563eb;
+        background: #EFF6FF;
+        color: #2563EB;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
       }
 
       &.icon-patients {
-        background: #f0fdf4;
-        color: #16a34a;
+        background: #F0FDF4;
+        color: #16A34A;
+        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
       }
 
       &.icon-notif {
-        background: #fef8ec;
-        color: #b45309;
+        background: #FFF7ED;
+        color: #EA580C;
+        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.15);
       }
 
       &.icon-cal {
-        background: #faf5ff;
-        color: #9333ea;
+        background: #FAF5FF;
+        color: #9333EA;
+        box-shadow: 0 2px 8px rgba(147, 51, 234, 0.15);
       }
 
       &.icon-user {
-        background: #f1f5f9;
+        background: #F1F5F9;
         color: #475569;
+        box-shadow: 0 2px 8px rgba(71, 85, 105, 0.15);
       }
 
       &.icon-capture {
-        background: #fff1f2;
-        color: #e11d48;
+        background: #FFF1F2;
+        color: #E11D48;
+        box-shadow: 0 2px 8px rgba(225, 29, 72, 0.15);
       }
 
       &.icon-incidents {
-        background: #fff7ed;
-        color: #ea580c;
+        background: #FFF7ED;
+        color: #EA580C;
+        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.15);
       }
     }
 
-    .module-title {
+    .module-text-wrap {
       flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+
+      .module-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #2A1420;
+        line-height: 1.25;
+        transition: color 0.2s ease;
+      }
+
+      .module-desc {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: #7D6B75;
+        margin-top: 2px;
+        letter-spacing: 0.1px;
+      }
     }
 
     .badge-side {
-      background: #dc2626;
+      background: $cuidalia-coral;
       color: #ffffff;
       font-size: 10.5px;
       font-weight: 800;
       padding: 2px 8px;
       border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(255, 107, 85, 0.4);
     }
 
     .arrow-icon {
-      color: #cbd5e1;
+      color: #C8B9B3;
       font-size: 11px;
-      transition: transform 0.2s ease;
+      transition: all 0.2s ease;
     }
 
     &:hover {
-      background: #fbf7f2;
-      border-color: #ecdcd0;
-      color: $primary-guinda;
+      background: #FFFFFF;
+      border-color: $cuidalia-plum;
       transform: translateX(4px);
+      box-shadow: 0 6px 18px rgba(82, 13, 47, 0.12);
+
+      &::before {
+        transform: scaleY(1);
+      }
+
+      .module-title {
+        color: $cuidalia-plum;
+      }
 
       .icon-bubble {
-        transform: scale(1.08);
+        transform: scale(1.1);
       }
 
       .arrow-icon {
-        color: $primary-guinda;
-        transform: translateX(2px);
+        color: $cuidalia-coral;
+        transform: translateX(3px);
       }
     }
   }
@@ -470,8 +557,8 @@ $border-color: #ebdcd0;
 
 .sidebar-footer {
   padding: 16px;
-  border-top: 1px solid #ebdcd0;
-  background: #fdfaf7;
+  border-top: 1.5px solid #EBDDD7;
+  background: #FAF4F0;
 
   .btn-cerrar-sesion-sidebar {
     width: 100%;
@@ -481,8 +568,8 @@ $border-color: #ebdcd0;
     gap: 9px;
     padding: 11px 16px;
     background: #ffffff;
-    border: 1.5px solid #fecaca;
-    color: #dc2626;
+    border: 1.5px solid #FECACA;
+    color: #DC2626;
     border-radius: 10px;
     font-size: 13px;
     font-weight: 700;
@@ -491,9 +578,9 @@ $border-color: #ebdcd0;
     transition: all 0.2s ease;
 
     &:hover {
-      background: #dc2626;
+      background: #DC2626;
       color: #ffffff;
-      border-color: #dc2626;
+      border-color: #DC2626;
       box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
     }
   }
@@ -523,27 +610,50 @@ $border-color: #ebdcd0;
 @media (max-width: 768px) {
   .main-header {
     padding: 0 10px;
-    height: 56px;
+    height: 58px;
   }
 
   .header-left-area {
     gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .hamburger {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+    border-radius: 10px;
+    flex-shrink: 0;
   }
 
   .header-logo-title {
-    gap: 8px;
+    gap: 6px;
+    min-width: 0;
   }
 
-  .brand-logo {
-    height: 32px;
-  }
+  .brand-identity-card {
+    padding: 3px 8px 3px 5px;
+    gap: 6px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
-  .brand-wordmark {
-    height: 20px;
-  }
+    .brand-logo.care-home-logo {
+      width: 30px;
+      height: 30px;
+    }
 
-  .secretaria {
-    font-size: 9px;
+    .brand-text-col {
+      .brand-wordmark {
+        height: 19px;
+      }
+
+      .secretaria {
+        font-size: 8px;
+        letter-spacing: 0.3px;
+        margin-top: 1px;
+      }
+    }
   }
 
   .brand-divider,
@@ -553,31 +663,45 @@ $border-color: #ebdcd0;
 
   .header-right-area {
     gap: 6px;
+    flex-shrink: 0;
   }
 
   .btn-nav {
-    padding: 8px 10px;
-    height: 38px;
-    min-width: 38px;
-    border-radius: 9px;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    justify-content: center;
+    flex-shrink: 0;
 
     .btn-text {
       display: none !important;
     }
 
     i {
-      font-size: 16px;
+      font-size: 14px;
+    }
+
+    &.btn-notificacion .badge-notificacion {
+      top: -4px;
+      right: -4px;
+      min-width: 17px;
+      height: 17px;
+      font-size: 9.5px;
     }
   }
 
   .sidebar-demo {
-    top: 56px;
-    height: calc(100vh - 56px);
-    width: 280px;
+    top: 58px;
+    height: calc(100vh - 58px);
+    height: calc(100dvh - 58px);
+    width: 86vw;
+    max-width: 320px;
   }
 
   .overlay {
-    top: 56px;
-    height: calc(100vh - 56px);
+    top: 58px;
+    height: calc(100vh - 58px);
+    height: calc(100dvh - 58px);
   }
 }

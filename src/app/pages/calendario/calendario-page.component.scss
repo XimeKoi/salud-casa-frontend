@@ -1179,12 +1179,65 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 .modal-dialog-modern {
   background: $bg-surface;
   border-radius: $radius-lg;
-  box-shadow: $shadow-lg;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
   border: 1px solid $border-color;
   width: 100%;
+  max-width: 580px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  &.dialog-schedule-wide {
+    max-width: 980px;
+    width: 95vw;
+
+    .dialog-header {
+      padding: 18px 26px;
+
+      h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: #38081F;
+      }
+
+      .dialog-subtitle {
+        font-size: 13px;
+        color: #7D6974;
+        margin-top: 3px;
+      }
+    }
+
+    .dialog-body {
+      padding: 22px 26px;
+      max-height: 78vh;
+      overflow-y: auto;
+    }
+
+    .patient-search-section {
+      margin-bottom: 16px;
+    }
+
+    .search-input-wrap {
+      .search-text-input {
+        height: 46px;
+        font-size: 14px;
+        padding-left: 14px;
+      }
+    }
+
+    .selected-patient-card {
+      padding: 16px 18px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+
+    .patient-config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+  }
 }
 
 .dialog-header {

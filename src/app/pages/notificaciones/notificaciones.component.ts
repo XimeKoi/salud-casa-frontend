@@ -21,16 +21,17 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
 
   notificaciones: Notificacion[] = [];
   notificacionesFiltradas: Notificacion[] = [];
+  notificacionesPaginadas: Notificacion[] = [];
   contador: any = { total: 0, noLeidas: 0, urgentes: 0 };
   cargando: boolean = true;
-  cargandoMas: boolean = false;
   filtroActual: string = 'todas';
   busquedaTexto: string = '';
   private subscriptions: Subscription[] = [];
-  hasMore: boolean = true;
   totalItems: number = 0;
-  private paginaActual: number = 1;
-  private pageSize: number = 10;
+  paginaActual: number = 1;
+  pageSize: number = 8;
+  pageSizes: number[] = [5, 8, 12, 20];
+  totalPaginas: number = 1;
   private todasLasNotificaciones: Notificacion[] = [];
   notificacionEliminando: boolean = false;
 
@@ -57,19 +58,11 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     this.escucharNotificaciones();
   }
 
-  ngAfterViewInit() {
-    setTimeout(() => {
-      if (this.scrollContainer) {
-        this.scrollContainer.nativeElement.addEventListener('scroll', () => {
-          this.onContainerScroll();
-        });
-      }
-    }, 500);
-  }
+  ngAfterViewInit() { }
 
   get todasSeleccionadas(): boolean {
-    return this.notificacionesFiltradas.length > 0 &&
-      this.notificacionesFiltradas.every(n => this.notificacionesSeleccionadas.includes(n.id));
+    return this.notificacionesPaginadas.length > 0 &&
+      this.notificacionesPaginadas.every(n => this.notificacionesSeleccionadas.includes(n.id));
   }
 
   get algunasSeleccionadas(): boolean {
@@ -77,17 +70,29 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
       !this.todasSeleccionadas;
   }
 
-  onContainerScroll() {
-    if (!this.scrollContainer) return;
+  get rangoInicio(): number {
+    if (this.notificacionesFiltradas.length === 0) return 0;
+    return (this.paginaActual - 1) * this.pageSize + 1;
+  }
 
-    const element = this.scrollContainer.nativeElement;
-    const scrollTop = element.scrollTop;
-    const scrollHeight = element.scrollHeight;
-    const clientHeight = element.clientHeight;
+  get rangoFin(): number {
+    return Math.min(this.paginaActual * this.pageSize, this.notificacionesFiltradas.length);
+  }
 
-    if (scrollTop + clientHeight >= scrollHeight - 200 && this.hasMore && !this.cargandoMas) {
-      this.cargarMasNotificaciones();
+  get paginasArray(): number[] {
+    const arr: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.paginaActual - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPaginas, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
     }
+
+    for (let i = start; i <= end; i++) {
+      arr.push(i);
+    }
+    return arr;
   }
 
   cargarNotificaciones() {
@@ -111,14 +116,11 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
         if (data && data.length > 0) {
           this.todasLasNotificaciones = data;
           this.totalItems = data.length;
-          this.hasMore = data.length > this.pageSize;
-          this.mostrarPagina(1);
           localStorage.setItem('notificacionesCache', JSON.stringify(data));
         } else {
           this.todasLasNotificaciones = [];
           this.notificaciones = [];
           this.totalItems = 0;
-          this.hasMore = false;
         }
 
         this.aplicarFiltro();
@@ -134,11 +136,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
             if (data && data.length > 0) {
               this.todasLasNotificaciones = data;
               this.totalItems = data.length;
-              this.hasMore = data.length > this.pageSize;
-              this.mostrarPagina(1);
               this.aplicarFiltro();
-              this.cargando = false;
-              this.cdr.detectChanges();
             }
           } catch (e) {
             console.error('Error al cargar caché:', e);
@@ -150,28 +148,63 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     });
   }
 
-  mostrarPagina(page: number) {
-    const start = (page - 1) * this.pageSize;
-    const end = Math.min(start + this.pageSize, this.todasLasNotificaciones.length);
-    this.notificaciones = this.todasLasNotificaciones.slice(start, end);
-    this.paginaActual = page;
-    this.hasMore = end < this.todasLasNotificaciones.length;
-    console.log(`📄 Mostrando página ${page}: ${this.notificaciones.length} notificaciones`);
-    this.aplicarFiltro();
+  aplicarFiltro() {
+    let base = [...this.todasLasNotificaciones];
+    if (this.filtroActual === 'noLeidas') {
+      base = base.filter(n => !n.leida);
+    }
+    if (this.busquedaTexto && this.busquedaTexto.trim()) {
+      const q = this.busquedaTexto.trim().toLowerCase();
+      base = base.filter(n =>
+        (n.titulo && n.titulo.toLowerCase().includes(q)) ||
+        (n.mensaje && n.mensaje.toLowerCase().includes(q)) ||
+        (n.tipo && n.tipo.toLowerCase().includes(q))
+      );
+    }
+    this.notificacionesFiltradas = base;
+    this.notificaciones = base;
+    this.totalItems = base.length;
+    this.actualizarPaginacion();
   }
 
-  cargarMasNotificaciones() {
-    if (this.cargandoMas || !this.hasMore) return;
+  actualizarPaginacion() {
+    this.totalPaginas = Math.ceil(this.notificacionesFiltradas.length / this.pageSize) || 1;
+    if (this.paginaActual > this.totalPaginas) {
+      this.paginaActual = this.totalPaginas;
+    }
+    if (this.paginaActual < 1) {
+      this.paginaActual = 1;
+    }
+    const start = (this.paginaActual - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    this.notificacionesPaginadas = this.notificacionesFiltradas.slice(start, end);
+  }
 
-    console.log('🔄 Cargando página siguiente...');
-    this.cargandoMas = true;
-
-    setTimeout(() => {
-      this.paginaActual++;
-      this.mostrarPagina(this.paginaActual);
-      this.cargandoMas = false;
+  irAPagina(page: number) {
+    if (page >= 1 && page <= this.totalPaginas && page !== this.paginaActual) {
+      this.paginaActual = page;
+      this.actualizarPaginacion();
       this.cdr.detectChanges();
-    }, 500);
+    }
+  }
+
+  paginaAnterior() {
+    if (this.paginaActual > 1) {
+      this.irAPagina(this.paginaActual - 1);
+    }
+  }
+
+  paginaSiguiente() {
+    if (this.paginaActual < this.totalPaginas) {
+      this.irAPagina(this.paginaActual + 1);
+    }
+  }
+
+  cambiarPageSize(nuevoSize: number) {
+    this.pageSize = Number(nuevoSize);
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
+    this.cdr.detectChanges();
   }
 
   async limpiarTodasNotificaciones() {
@@ -276,7 +309,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
                   this.notificaciones = [];
                   this.notificacionesFiltradas = [];
                   this.totalItems = 0;
-                  this.hasMore = false;
                   this.contador = { total: 0, noLeidas: 0, urgentes: 0 };
                   localStorage.removeItem('notificacionesCache');
                   this.notificacionEliminando = false;
@@ -320,9 +352,8 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
           if (data && data.length > 0 && !this.notificacionEliminando) {
             this.todasLasNotificaciones = data;
             this.totalItems = data.length;
-            this.hasMore = data.length > this.pageSize;
-            this.mostrarPagina(1);
             localStorage.setItem('notificacionesCache', JSON.stringify(data));
+            this.aplicarFiltro();
             this.cargando = false;
             this.cdr.detectChanges();
           }
@@ -402,6 +433,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
         this.notificacionesService.marcarTodasLeidas().subscribe({
           next: () => {
             this.notificaciones.forEach(n => n.leida = true);
+            this.notificacionesPaginadas.forEach(n => n.leida = true);
             this.todasLasNotificaciones.forEach(n => n.leida = true);
             this.contador.noLeidas = 0;
             this.cdr.detectChanges();
@@ -423,9 +455,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     this.notificacionesService.eliminarNotificacion(id).subscribe({
       next: () => {
         this.todasLasNotificaciones = this.todasLasNotificaciones.filter(n => n.id !== id);
-        this.notificaciones = this.notificaciones.filter(n => n.id !== id);
         this.totalItems = this.todasLasNotificaciones.length;
-        this.hasMore = this.todasLasNotificaciones.length > this.pageSize;
         localStorage.setItem('notificacionesCache', JSON.stringify(this.todasLasNotificaciones));
         this.aplicarFiltro();
         this.cdr.detectChanges();
@@ -436,24 +466,9 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
 
   cambiarFiltro(filtro: string) {
     this.filtroActual = filtro;
+    this.paginaActual = 1;
     this.aplicarFiltro();
     this.cdr.detectChanges();
-  }
-
-  aplicarFiltro() {
-    let base = [...this.notificaciones];
-    if (this.filtroActual === 'noLeidas') {
-      base = base.filter(n => !n.leida);
-    }
-    if (this.busquedaTexto && this.busquedaTexto.trim()) {
-      const q = this.busquedaTexto.trim().toLowerCase();
-      base = base.filter(n =>
-        (n.titulo && n.titulo.toLowerCase().includes(q)) ||
-        (n.mensaje && n.mensaje.toLowerCase().includes(q)) ||
-        (n.tipo && n.tipo.toLowerCase().includes(q))
-      );
-    }
-    this.notificacionesFiltradas = base;
   }
 
   toggleSeleccion(id: number) {
@@ -508,7 +523,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
             if (eliminadas === ids.length) {
               this.notificacionesSeleccionadas = [];
               this.totalItems = this.todasLasNotificaciones.length;
-              this.hasMore = this.todasLasNotificaciones.length > this.pageSize;
               localStorage.setItem('notificacionesCache', JSON.stringify(this.todasLasNotificaciones));
               this.aplicarFiltro();
               this.cdr.detectChanges();

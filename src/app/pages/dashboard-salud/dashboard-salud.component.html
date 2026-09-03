@@ -46,6 +46,7 @@
 
         <!-- RESUMEN GENERAL -->
         <section class="resumen-general">
+            <!-- 1 & 3. VISITAS HOY Y PRODUCTIVIDAD -->
             <div class="card-resumen card-visitas-hoy">
                 <div class="card-icon" style="background: #701f2f20; color: #701f2f;">
                     <i class="fas fa-calendar-day"></i>
@@ -57,7 +58,7 @@
                     <div class="card-progreso">
                         <div class="barra-progreso">
                             <div class="barra-lleno"
-                                [style.width.%]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100"
+                                [style.width.%]="getPorcentajeBarra(resumenGeneral.visitasHoy, resumenGeneral.metaDiaria)"
                                 [class.barra-alta]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 >= 90"
                                 [class.barra-media]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 >= 70 && (resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 < 90"
                                 [class.barra-baja]="(resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100 < 70">
@@ -66,9 +67,17 @@
                         <span class="porcentaje">{{ ((resumenGeneral.visitasHoy / resumenGeneral.metaDiaria) * 100) |
                             number:'1.0-0' }}%</span>
                     </div>
+                    <span class="card-sub" *ngIf="resumenGeneral.visitasHoy < resumenGeneral.metaDiaria">
+                        Meta: 12-15/día · Faltan {{ resumenGeneral.metaDiaria - resumenGeneral.visitasHoy }} para la
+                        meta
+                    </span>
+                    <span class="card-sub text-green" *ngIf="resumenGeneral.visitasHoy >= resumenGeneral.metaDiaria">
+                        Meta: 12-15/día · ¡Meta de hoy cumplida!
+                    </span>
                 </div>
             </div>
 
+            <!-- 7. COBERTURA TOTAL DEL PADRÓN -->
             <div class="card-resumen card-cobertura">
                 <div class="card-icon" style="background: #1976d220; color: #1976d2;">
                     <i class="fas fa-flag-checkered"></i>
@@ -87,9 +96,14 @@
                         </div>
                         <span class="porcentaje">{{ resumenGeneral.porcentajeCobertura | number:'1.0-0' }}%</span>
                     </div>
+                    <span class="card-sub">
+                        Llevas {{ resumenGeneral.coberturaTotal }} de {{ resumenGeneral.metaTotal }} ({{
+                        resumenGeneral.porcentajeCobertura | number:'1.0-0' }}% cubierto)
+                    </span>
                 </div>
             </div>
 
+            <!-- PROMEDIO DIARIO -->
             <div class="card-resumen card-promedio">
                 <div class="card-icon" style="background: #2e7d3220; color: #2e7d32;">
                     <i class="fas fa-chart-line"></i>
@@ -97,10 +111,11 @@
                 <div class="card-info">
                     <span class="card-label">Promedio diario</span>
                     <span class="card-valor">{{ calcularPromedioDiario() }}</span>
-                    <span class="card-sub">visitas por día</span>
+                    <span class="card-sub">visitas por día (Rango: 12-15)</span>
                 </div>
             </div>
 
+            <!-- CUMPLIMIENTO -->
             <div class="card-resumen card-cumplimiento">
                 <div class="card-icon" style="background: #f57c0020; color: #f57c00;">
                     <i class="fas fa-bullseye"></i>
@@ -117,19 +132,22 @@
         <section class="seccion-dashboard">
             <div class="seccion-header">
                 <h2><i class="fas fa-calendar-alt"></i> Rendimiento diario</h2>
-                <span class="seccion-sub">Últimos 7 días</span>
+                <span class="seccion-sub">Últimos 7 días · Meta: 15 visitas/día</span>
             </div>
             <div class="rendimiento-diario">
                 <div class="dia-item" *ngFor="let dia of visitasDiarias">
-                    <div class="dia-label">{{ dia.fecha }}</div>
-                    <div class="dia-barra-container">
-                        <div class="dia-barra" [style.height.%]="(dia.realizadas / dia.meta) * 100"
+                    <div class="dia-valor-top" [style.color]="getColorPorcentaje(dia.cumplimiento)">
+                        <strong>{{ dia.realizadas }}</strong>
+                    </div>
+                    <div class="dia-barra-container"
+                        [title]="dia.realizadas + ' de ' + dia.meta + ' visitas (' + dia.cumplimiento + '%)'">
+                        <div class="dia-barra" [style.height.%]="getPorcentajeBarra(dia.realizadas, dia.meta)"
                             [class.barra-alta]="(dia.realizadas / dia.meta) * 100 >= 90"
                             [class.barra-media]="(dia.realizadas / dia.meta) * 100 >= 70 && (dia.realizadas / dia.meta) * 100 < 90"
                             [class.barra-baja]="(dia.realizadas / dia.meta) * 100 < 70">
-                            <span class="dia-valor">{{ dia.realizadas }}</span>
                         </div>
                     </div>
+                    <div class="dia-label">{{ dia.fecha }}</div>
                     <div class="dia-meta">/{{ dia.meta }}</div>
                     <div class="dia-porcentaje" [style.color]="getColorPorcentaje(dia.cumplimiento)">
                         {{ dia.cumplimiento }}%
@@ -154,7 +172,6 @@
                                 {{ zona }}
                             </option>
                         </select>
-                        <i class="fas fa-chevron-down select-zona-arrow"></i>
                     </div>
                 </div>
             </div>
@@ -259,15 +276,15 @@
         <section class="seccion-dashboard">
             <div class="seccion-header">
                 <h2><i class="fas fa-history"></i> Histórico quincenal</h2>
-                <span class="seccion-sub">Cada 15 días</span>
+                <span class="seccion-sub">Corte cada 15 días</span>
             </div>
             <div class="historico-container">
                 <div class="historico-item" *ngFor="let item of historicoQuincenal">
                     <div class="historico-periodo">{{ item.periodo }}</div>
                     <div class="historico-barra-container">
-                        <div class="historico-barra" [style.width.%]="(item.visitas / 250) * 100"
-                            [style.background]="item.visitas >= 200 ? '#2e7d32' : item.visitas >= 180 ? '#f57c00' : '#c62828'">
-                            <span class="historico-valor">{{ item.visitas }}</span>
+                        <div class="historico-barra" [style.width.%]="item.cumplimiento"
+                            [style.background]="item.visitas >= 60 ? '#2e7d32' : item.visitas >= 40 ? '#f57c00' : '#c62828'">
+                            <span class="historico-valor">{{ item.visitas }} visitas</span>
                         </div>
                     </div>
                     <div class="historico-promedio">Prom: {{ item.promedio }}/día</div>
@@ -279,7 +296,7 @@
         <section class="seccion-dashboard">
             <div class="seccion-header">
                 <h2><i class="fas fa-clock"></i> Horarios por zona</h2>
-                <span class="seccion-sub">Mejores horarios para visitar</span>
+                <span class="seccion-sub">Zonas de mayor concentración y horarios de visita</span>
             </div>
             <div class="horarios-grid">
                 <div class="horario-card" *ngFor="let item of horariosZonas">
@@ -304,12 +321,12 @@
             </div>
             <div class="metricas-grid">
                 <div class="metrica-item">
-                    <span class="metrica-label">Total visitas (7 días)</span>
-                    <span class="metrica-valor">{{ calcularTotalVisitas() }}</span>
+                    <span class="metrica-label">Total visitas realizadas</span>
+                    <span class="metrica-valor">{{ resumenGeneral.coberturaTotal }}</span>
                 </div>
                 <div class="metrica-item">
-                    <span class="metrica-label">Meta semanal</span>
-                    <span class="metrica-valor">{{ visitasDiarias.length * 15 }}</span>
+                    <span class="metrica-label">Meta diaria objetivo</span>
+                    <span class="metrica-valor">12 - 15</span>
                 </div>
                 <div class="metrica-item">
                     <span class="metrica-label">Cumplimiento semanal</span>

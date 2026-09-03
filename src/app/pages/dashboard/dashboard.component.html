@@ -1,8 +1,31 @@
 <div class="dashboard-container">
-    <div class="map-wrapper">
-        <app-map></app-map>
+  <!-- ⭐ BOTÓN FLOTANTE MÓVIL: CONTROL TERRITORIAL (DERECHA) ⭐ -->
+  <button class="btn-control-territorial-mobile" (click)="toggleInfoPanelMobile()"
+    title="Ver Estadísticas y Control Territorial">
+    <i class="fas fa-chart-pie"></i>
+    <span>Control Territorial</span>
+    <span class="active-dot"></span>
+  </button>
+
+  <!-- ⭐ MAPA PRINCIPAL: SIEMPRE VISIBLE ⭐ -->
+  <div class="map-wrapper">
+    <app-map></app-map>
+  </div>
+
+  <!-- ⭐ BACKDROP OSCURO PARA MÓVIL CUANDO EL PANEL ESTÁ ABIERTO ⭐ -->
+  <div class="info-panel-backdrop" *ngIf="infoPanelMobileOpen" (click)="cerrarInfoPanelMobile()"></div>
+
+  <!-- ⭐ PANEL DE CONTROL TERRITORIAL (DESKTOP: LATERAL | MÓVIL: BOTTOM SHEET) ⭐ -->
+  <div class="info-wrapper" [class.mobile-sheet-open]="infoPanelMobileOpen">
+    <div class="mobile-sheet-header">
+      <div class="mobile-sheet-title">
+        <i class="fas fa-chart-pie"></i>
+        <span>Control Territorial</span>
+      </div>
+      <button type="button" class="btn-close-sheet" (click)="cerrarInfoPanelMobile()" aria-label="Cerrar panel">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
-    <div class="info-wrapper">
-        <app-info-panel></app-info-panel>
-    </div>
+    <app-info-panel></app-info-panel>
+  </div>
 </div>

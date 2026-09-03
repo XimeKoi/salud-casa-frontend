@@ -19,7 +19,17 @@ console.log('🔍 [dashboard] Cargando DashboardComponent...');
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent {
+  infoPanelMobileOpen: boolean = false;
+
   constructor() {
     console.log('🏗️ [DashboardComponent] Constructor ejecutado');
+  }
+
+  toggleInfoPanelMobile() {
+    this.infoPanelMobileOpen = !this.infoPanelMobileOpen;
+  }
+
+  cerrarInfoPanelMobile() {
+    this.infoPanelMobileOpen = false;
   }
 }

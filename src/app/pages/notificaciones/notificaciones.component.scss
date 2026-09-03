@@ -1035,6 +1035,147 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 // ============================================
+// ⭐ BARRA DE PAGINACIÓN ELEGANTE
+// ============================================
+.pagination-bar-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1.5px solid #eadbce;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  box-shadow: 0 4px 14px rgba(82, 13, 47, 0.04);
+  flex-wrap: wrap;
+
+  .pagination-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6c5562;
+
+    i {
+      color: #FF6B55;
+      font-size: 14px;
+    }
+
+    strong {
+      color: #38081F;
+      font-weight: 800;
+    }
+  }
+
+  .pagination-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .page-size-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    .size-label {
+      font-size: 12px;
+      color: #7d6974;
+      font-weight: 600;
+    }
+
+    .custom-size-select {
+      background: #faf4f0;
+      border: 1.5px solid #eadbce;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #38081F;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &:focus,
+      &:hover {
+        border-color: #FF6B55;
+        background: #ffffff;
+      }
+    }
+  }
+
+  .pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-page-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #faf4f0;
+    border: 1.5px solid #eadbce;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #520D2F;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: #FFF1EE;
+      color: #FF6B55;
+      border-color: #FF6B55;
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-numbers-list {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-page-number {
+    min-width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1.5px solid #eadbce;
+    background: #ffffff;
+    color: #38081F;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover:not(.active) {
+      background: #FFF1EE;
+      color: #FF6B55;
+      border-color: #FF6B55;
+    }
+
+    &.active {
+      background: #520D2F;
+      color: #ffffff;
+      border-color: #520D2F;
+      box-shadow: 0 2px 8px rgba(82, 13, 47, 0.25);
+    }
+  }
+}
+
+// ============================================
 // ⭐ RESPONSIVE PARA DISPOSITIVOS MÓVILES
 // ============================================
 @media (max-width: 768px) {

@@ -113,71 +113,51 @@ export class PacientesMapService {
         return partes.length >= 2 ? partes[1] : '';
     }
 
-    public extraerColonia(direccion: string): string {
+    public extraerColonia(direccion: string, coloniaOriginal?: string): string {
+        if (coloniaOriginal && coloniaOriginal.length > 2 && !coloniaOriginal.toUpperCase().includes('DISPONIBLE') && !coloniaOriginal.toUpperCase().includes('SIN COLONIA')) {
+            const c = coloniaOriginal.toUpperCase().trim();
+            if (c.includes('ROSA')) return 'Santa Rosa de Lima';
+            if (c.includes('NARANJO')) return 'Los Naranjos';
+            if (c.includes('MANANTIAL')) return 'Los Manantiales';
+            if (c.includes('MISION') && (c.includes('JOSE') || c.includes('JESUITA'))) return 'Misión de San José';
+            if (c.includes('REAL') && c.includes('JOSE')) return 'Real San José';
+            if (c.includes('CONSUELO')) return 'San José del Consuelo';
+            if (c.includes('VICTORIA')) return 'Residencial Victoria';
+            if (c.includes('SANTA FE')) return 'Misión de Santa Fe';
+            if (c.includes('CENTRO') || c.includes('OBREGON') || c.includes('HIDALGO')) return 'Zona Centro';
+            return coloniaOriginal.trim();
+        }
+
         if (!direccion) return 'Santa Rosa de Lima';
 
-        let limpia = direccion.trim();
+        const d = direccion.toUpperCase().trim();
+        if (d.includes('ROSA')) return 'Santa Rosa de Lima';
+        if (d.includes('NARANJO')) return 'Los Naranjos';
+        if (d.includes('MANANTIAL')) return 'Los Manantiales';
+        if (d.includes('MISION') && (d.includes('JOSE') || d.includes('JESUITA'))) return 'Misión de San José';
+        if (d.includes('REAL') && d.includes('JOSE')) return 'Real San José';
+        if (d.includes('CONSUELO')) return 'San José del Consuelo';
+        if (d.includes('VICTORIA')) return 'Residencial Victoria';
+        if (d.includes('ARBOLEDA')) return 'Arboledas de San José';
+        if (d.includes('PIRUL')) return 'Los Pirules';
+        if (d.includes('PRIVANZA') || d.includes('VIREO')) return 'Privanza';
+        if (d.includes('CANTERA')) return 'La Cantera';
+        if (d.includes('SANTA FE')) return 'Misión de Santa Fe';
+        if (d.includes('SANTA CLARA')) return 'Santa Clara';
+        if (d.includes('AMERICA')) return 'Américas';
+        if (d.includes('CENTRO') || d.includes('OBREGON') || d.includes('HIDALGO')) return 'Zona Centro';
+        if (d.includes('MORENA')) return 'Ex Hacienda la Morena';
+        if (d.includes('SAN FELIPE')) return 'San Felipe de Jesús';
+        if (d.includes('VIBORAS')) return 'Las Víboras';
+        if (d.includes('SAN CARLOS')) return 'San Carlos';
+        if (d.includes('SAN MIGUEL')) return 'San Miguel';
+        if (d.includes('BEETHOVEN') || d.includes('CHOPIN') || d.includes('MOZART') || d.includes('WAGNER') || d.includes('LEON MODERNO')) return 'León Moderno';
 
-        const coloniasConocidas = [
-            'SANTA ROSA DE LIMA', 'JARDINES DE LOS NARANJOS', 'LOS NARANJOS',
-            'REAL DE SAN JOSE', 'MISION DE SAN JOSE', 'RESIDENCIAL VICTORIA',
-            'SAN JOSE DEL CONSUELO', 'SAN JOSE DEL CONSUELO II', 'EL MANANTIAL',
-            'LOS MANANTIALES', 'VALLE DE SEÑORA', 'VALLE DE SEÑORA II',
-            'PREDIO SAN PABLO SUR', 'BOSQUES DE LA PRADERA', 'DELTA DE JEREZ',
-            'EL PALMAR', 'RESIDENCIAL PLATINO', 'SAN BENIGNO',
-            'SAN PEDRO DE LOS HERNANDEZ', 'SAN IGNACIO', 'SAN ISIDRO',
-            'SAN MARTIN', 'SAN LAZARO', 'QUINTA SAN LORENZO', 'PASEO DE LA CASTELLANA',
-            'PASEO DEL MOLINO', 'PEÑITAS', 'OBREGON', 'JARDINES DEL SOL',
-            'LA AZTECA', 'ZONA CENTRO'
-        ];
-
-        const upper = limpia.toUpperCase();
-        for (const col of coloniasConocidas) {
-            if (upper.includes(col)) {
-                return col;
-            }
-        }
-
-        const patrones = [
-            /COL(?:ONIA)?\.?\s*([^,|]+)/i,
-            /FRACC(?:IONAMIENTO)?\.?\s*([^,|]+)/i,
-            /RESIDENCIAL\s*([^,|]+)/i,
-            /JARDINES\s*([^,|]+)/i,
-            /MISION\s*([^,|]+)/i,
-            /VALLE\s*([^,|]+)/i,
-            /BARRIO\s*([^,|]+)/i
-        ];
-
-        for (const patron of patrones) {
-            const match = limpia.match(patron);
-            if (match && match[1]) {
-                const encontrada = match[1].replace(/CP\s*\d{5}/gi, '').trim();
-                if (encontrada.length > 2 && !/^\d+$/.test(encontrada)) {
-                    return encontrada;
-                }
-            }
-        }
-
-        const separador = limpia.includes('|') ? '|' : ',';
-        const partes = limpia.split(separador);
-        if (partes.length >= 2) {
-            let col = partes[1].trim()
-                .replace(/^COL\.\s*/i, '')
-                .replace(/^FRACC\.\s*/i, '')
-                .replace(/CP\s*\d{5}/gi, '')
-                .trim();
-            if (col.length > 2 && !/^\d+$/.test(col) && !col.toUpperCase().includes('LEON') && !col.toUpperCase().includes('GTO')) {
-                return col;
-            }
-            if (partes.length >= 3) {
-                let col3 = partes[2].trim()
-                    .replace(/^COL\.\s*/i, '')
-                    .replace(/^FRACC\.\s*/i, '')
-                    .replace(/CP\s*\d{5}/gi, '')
-                    .trim();
-                if (col3.length > 2 && !/^\d+$/.test(col3) && !col3.toUpperCase().includes('LEON') && !col3.toUpperCase().includes('GTO')) {
-                    return col3;
-                }
+        const parts = d.split(/[|,]/);
+        if (parts.length > 1) {
+            let p = parts[1].replace(/COL(?:ONIA)?\.?/g, '').replace(/FRACC(?:IONAMIENTO)?\.?/g, '').replace(/CP\s*\d+/g, '').trim();
+            if (p.length > 3 && !p.includes('LEON') && !p.includes('GTO') && !p.includes('MEXICO')) {
+                return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
             }
         }
 

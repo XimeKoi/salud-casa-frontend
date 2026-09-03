@@ -118,10 +118,8 @@ export class CalendarioPageComponent implements OnInit {
                                 const pacienteCompleto = this.todosLosPacientes.find(p => p.id === this.pacienteDesdeMapa.id);
                                 if (pacienteCompleto) {
                                     this.agregarPacienteSeleccionado(pacienteCompleto);
-                                    this.mostrarToast('📅 Paciente cargado', `${pacienteCompleto.nombreCompleto} listo para agendar`, 'success');
                                 } else {
                                     this.agregarPacienteSeleccionado(this.pacienteDesdeMapa);
-                                    this.mostrarToast('📅 Paciente cargado', `${this.pacienteDesdeMapa.nombre} listo para agendar`, 'success');
                                 }
                             }
                         }, 600);
@@ -160,17 +158,55 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     private construirNombreCompleto(p: any): string {
-        const apellidoPaterno = p.apellidoPaterno || '';
-        const apellidoMaterno = p.apellidoMaterno || '';
-        const nombre = p.nombre || '';
-        if (apellidoPaterno && apellidoMaterno) {
-            return `${apellidoPaterno} ${apellidoMaterno} ${nombre}`.trim();
-        } else if (apellidoPaterno) {
-            return `${apellidoPaterno} ${nombre}`.trim();
-        } else if (apellidoMaterno) {
-            return `${apellidoMaterno} ${nombre}`.trim();
+        const nombre = (p.nombre || '').trim();
+        const apPaterno = (p.apellidoPaterno || '').trim();
+        const apMaterno = (p.apellidoMaterno || '').trim();
+
+        // Si el nombre ya contiene el apellido paterno, evitar duplicar
+        if (apPaterno && nombre.toUpperCase().includes(apPaterno.toUpperCase())) {
+            return this.limpiarNombreDuplicado(nombre, apPaterno, apMaterno);
         }
-        return nombre || 'Paciente sin nombre';
+
+        const partes: string[] = [];
+        if (nombre) partes.push(nombre);
+        if (apPaterno) partes.push(apPaterno);
+        if (apMaterno) partes.push(apMaterno);
+
+        const res = partes.join(' ').trim();
+        return this.limpiarNombreDuplicado(res || nombre || 'Paciente sin nombre', apPaterno, apMaterno);
+    }
+
+    private limpiarNombreDuplicado(nombre: string, apP?: string, apM?: string): string {
+        if (!nombre) return 'Paciente sin nombre';
+        let n = nombre.trim();
+        const p = (apP || '').trim();
+        const m = (apM || '').trim();
+
+        if (p && m) {
+            const patronInicio = new RegExp(`^${p}\\s+${m}\\s+`, 'i');
+            const patronFin = new RegExp(`\\s+${p}\\s+${m}$`, 'i');
+            if (patronInicio.test(n) && patronFin.test(n)) {
+                n = n.replace(patronInicio, '').trim();
+            }
+        } else if (p) {
+            const patronInicio = new RegExp(`^${p}\\s+`, 'i');
+            const patronFin = new RegExp(`\\s+${p}$`, 'i');
+            if (patronInicio.test(n) && patronFin.test(n)) {
+                n = n.replace(patronInicio, '').trim();
+            }
+        }
+
+        const tokens = n.split(/\s+/).filter(Boolean);
+        const uniqueTokens: string[] = [];
+        tokens.forEach(token => {
+            const upper = token.toUpperCase();
+            const occurrences = tokens.filter(t => t.toUpperCase() === upper).length;
+            if (occurrences > 1 && uniqueTokens.some(t => t.toUpperCase() === upper)) {
+                return;
+            }
+            uniqueTokens.push(token);
+        });
+        return uniqueTokens.join(' ');
     }
 
     private extraerColonia(direccion: string): string {
@@ -553,7 +589,7 @@ export class CalendarioPageComponent implements OnInit {
         return `${anio}-${mes}-${dia}`;
     }
 
-    // ⭐⭐⭐ NUEVO: Enviar confirmación por WhatsApp ⭐⭐⭐
+    // ⭐⭐⭐ NUEVO: Enviar confirmación por WhatsApp / SMS ⭐⭐⭐
     private enviarConfirmacionWhatsApp(visita: VisitaProgramada) {
         if (!visita.pacienteTelefono) {
             console.warn(`⚠️ No hay teléfono para ${visita.pacienteNombre}`);
@@ -561,25 +597,34 @@ export class CalendarioPageComponent implements OnInit {
         }
 
         const fechaFormateada = this.formatearFechaLegible(visita.fecha);
+        let telLimpio = (visita.pacienteTelefono || '').replace(/\D/g, '');
+        if (telLimpio.length === 10) {
+            telLimpio = `+52${telLimpio}`;
+        }
+
+        const mensajeLimpio = `Cuidalia: Le confirmamos su visita médica para ${visita.pacienteNombre} el día ${fechaFormateada} a las ${visita.hora}.`;
 
         const payload = {
-            telefono: visita.pacienteTelefono,
+            telefono: telLimpio,
             nombrePaciente: visita.pacienteNombre,
             fecha: fechaFormateada,
             hora: visita.hora,
-            direccion: visita.pacienteDireccion
+            direccion: '', // Se elimina la dirección del mensaje
+            mensaje: mensajeLimpio,
+            texto: mensajeLimpio,
+            omitirDireccion: true,
+            omitirRecordatorio: true
         };
 
-        console.log('📤 Enviando confirmación WhatsApp:', payload);
+        console.log('📤 Enviando confirmación WhatsApp / SMS:', payload);
 
         this.http.post(`${this.apiUrl}/whatsapp/confirmacion`, payload).subscribe({
             next: (response: any) => {
                 if (response.success) {
-                    console.log(`✅ Confirmación WhatsApp enviada a ${visita.pacienteNombre}`);
-                    // ⭐ CORREGIDO: SOLO 3 ARGUMENTOS
+                    console.log(`✅ Confirmación enviada a ${visita.pacienteNombre}`);
                     this.mostrarToast(
-                        '📱 Confirmación enviada',
-                        `Se envió confirmación por WhatsApp a ${visita.pacienteNombre}`,
+                        '📱 SMS enviado',
+                        `Se envió confirmación a ${visita.pacienteNombre}`,
                         'success'
                     );
                 } else {
@@ -587,7 +632,7 @@ export class CalendarioPageComponent implements OnInit {
                 }
             },
             error: (error) => {
-                console.error('❌ Error enviando confirmación WhatsApp:', error);
+                console.error('❌ Error enviando confirmación WhatsApp / SMS:', error);
             }
         });
     }
@@ -773,14 +818,25 @@ export class CalendarioPageComponent implements OnInit {
             // Enviar notificación (esto funciona)
             this.enviarNotificacionVisitaProgramada(visita);
 
-            // ⭐ LLAMADA DIRECTA AL ENDPOINT DE WHATSAPP ⭐
+            // ⭐ LLAMADA DIRECTA AL ENDPOINT DE WHATSAPP / SMS ⭐
             if (visita.pacienteTelefono) {
+                let telLimpio = (visita.pacienteTelefono || '').replace(/\D/g, '');
+                if (telLimpio.length === 10) {
+                    telLimpio = `+52${telLimpio}`;
+                }
+                const fechaFormateada = this.formatearFechaLegible(visita.fecha);
+                const mensajeLimpio = `Cuidalia: Le confirmamos su visita médica para ${visita.pacienteNombre} el día ${fechaFormateada} a las ${visita.hora}.`;
+
                 const payload = {
-                    telefono: visita.pacienteTelefono,
+                    telefono: telLimpio,
                     nombrePaciente: visita.pacienteNombre,
-                    fecha: this.formatearFechaLegible(visita.fecha),
+                    fecha: fechaFormateada,
                     hora: visita.hora,
-                    direccion: visita.pacienteDireccion
+                    direccion: '', // Se elimina la dirección
+                    mensaje: mensajeLimpio,
+                    texto: mensajeLimpio,
+                    omitirDireccion: true,
+                    omitirRecordatorio: true
                 };
 
                 console.log('📤 ENVIANDO SMS DIRECTAMENTE:', payload);
@@ -829,30 +885,46 @@ export class CalendarioPageComponent implements OnInit {
         }
     }
 
+    private ultimoCambioId: number | null = null;
+    private ultimoCambioEstado: string = '';
+    private ultimoCambioTiempo: number = 0;
+    private toastTimer: any = null;
+
     cambiarEstadoVisita(id: number, nuevoEstado: string) {
-        const visita = this.visitasProgramadas.find(v => v.id === id);
-        if (visita) {
-            visita.estado = nuevoEstado as any;
-            this.guardarVisitasEnStorage();
-            this.generarCalendario();
-
-            let tipo: 'success' | 'error' | 'info' = 'info';
-            let mensaje = '';
-
-            if (nuevoEstado === 'completada') {
-                tipo = 'success';
-                mensaje = 'Visita marcada como completada ✅';
-            } else if (nuevoEstado === 'cancelada') {
-                tipo = 'error';
-                mensaje = 'Visita cancelada ❌';
-            } else {
-                tipo = 'info';
-                mensaje = 'Visita marcada como pendiente ⏳';
-            }
-
-            this.mostrarToast('Estado actualizado', mensaje, tipo);
-            this.cdr.detectChanges();
+        const ahora = Date.now();
+        // Evitar doble ejecución si el evento change se dispara dos veces en móviles Android
+        if (this.ultimoCambioId === id && this.ultimoCambioEstado === nuevoEstado && (ahora - this.ultimoCambioTiempo < 1200)) {
+            return;
         }
+
+        const visita = this.visitasProgramadas.find(v => v.id === id);
+        if (!visita) return;
+        if (visita.estado === nuevoEstado) return;
+
+        this.ultimoCambioId = id;
+        this.ultimoCambioEstado = nuevoEstado;
+        this.ultimoCambioTiempo = ahora;
+
+        visita.estado = nuevoEstado as any;
+        this.guardarVisitasEnStorage();
+        this.generarCalendario();
+
+        let tipo: 'success' | 'error' | 'info' = 'info';
+        let mensaje = '';
+
+        if (nuevoEstado === 'completada') {
+            tipo = 'success';
+            mensaje = 'Visita marcada como completada ✅';
+        } else if (nuevoEstado === 'cancelada') {
+            tipo = 'error';
+            mensaje = 'Visita cancelada ❌';
+        } else {
+            tipo = 'info';
+            mensaje = 'Visita marcada como pendiente ⏳';
+        }
+
+        this.mostrarToast('Estado actualizado', mensaje, tipo);
+        this.cdr.detectChanges();
 
         this.http.patch(`${this.apiUrl}/calendario/visitas/${id}`, { estado: nuevoEstado }).subscribe({
             next: () => console.log('✅ Estado actualizado en backend'),
@@ -891,16 +963,24 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     mostrarToast(titulo: string, mensaje: string, tipo: 'success' | 'error' | 'info' = 'info') {
+        if (this.toastTimer) {
+            clearTimeout(this.toastTimer);
+            this.toastTimer = null;
+        }
         this.mensajeToast = mensaje;
         this.tipoToast = tipo;
         this.mostrarToastFlag = true;
 
-        setTimeout(() => {
+        this.toastTimer = setTimeout(() => {
             this.cerrarToast();
-        }, 4000);
+        }, 3000);
     }
 
     cerrarToast() {
+        if (this.toastTimer) {
+            clearTimeout(this.toastTimer);
+            this.toastTimer = null;
+        }
         this.mostrarToastFlag = false;
     }
 

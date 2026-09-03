@@ -159,6 +159,18 @@ export class DashboardSaludComponent implements OnInit, OnDestroy {
         return '#c62828';
     }
 
+    getBgPorcentaje(porcentaje: number): string {
+        if (porcentaje >= 90) return 'rgba(46, 125, 50, 0.12)';
+        if (porcentaje >= 70) return 'rgba(245, 124, 0, 0.12)';
+        return 'rgba(198, 40, 40, 0.12)';
+    }
+
+    getPorcentajeBarra(realizadas: number, meta: number): number {
+        if (!meta || meta <= 0) return 0;
+        const pct = (realizadas / meta) * 100;
+        return Math.min(100, Math.max(4, Math.round(pct)));
+    }
+
     calcularTotalVisitas(): number {
         return this.visitasDiarias.reduce((sum, d) => sum + d.realizadas, 0);
     }
@@ -190,9 +202,13 @@ export class DashboardSaludComponent implements OnInit, OnDestroy {
     }
 
     getZonasFiltradas(): any[] {
-        if (this.filtroZona === 'todas') {
+        if (!this.filtroZona || this.filtroZona === 'todas') {
             return this.rendimientoZonas;
         }
-        return this.rendimientoZonas.filter(z => z.zona === this.filtroZona);
+        const buscada = this.filtroZona.trim().toLowerCase();
+        return this.rendimientoZonas.filter(z => {
+            const zn = (z.zona || '').trim().toLowerCase();
+            return zn === buscada || zn.includes(buscada) || buscada.includes(zn);
+        });
     }
 }

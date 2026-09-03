@@ -84,8 +84,7 @@
               <span class="tab-count">{{ notificaciones.length }}</span>
             </button>
 
-            <button class="tab-item" [class.active]="filtroActual === 'noLeidas'"
-              (click)="cambiarFiltro('noLeidas')">
+            <button class="tab-item" [class.active]="filtroActual === 'noLeidas'" (click)="cambiarFiltro('noLeidas')">
               <i class="fas fa-envelope"></i>
               <span>No Leídas</span>
               <span class="tab-count info" *ngIf="contador.noLeidas > 0">{{ contador.noLeidas }}</span>
@@ -97,8 +96,8 @@
             <i class="fas fa-magnifying-glass search-ico"></i>
             <input type="text" class="search-notif-input" [(ngModel)]="busquedaTexto" (input)="aplicarFiltro()"
               placeholder="Buscar en avisos, títulos o mensajes..." />
-            <button *ngIf="busquedaTexto" class="btn-clear-notif-search"
-              (click)="busquedaTexto = ''; aplicarFiltro()" title="Limpiar búsqueda">
+            <button *ngIf="busquedaTexto" class="btn-clear-notif-search" (click)="busquedaTexto = ''; aplicarFiltro()"
+              title="Limpiar búsqueda">
               <i class="fas fa-xmark"></i>
             </button>
           </div>
@@ -140,8 +139,8 @@
       </div>
 
       <!-- ⭐ FEED DE NOTIFICACIONES -->
-      <div class="notifications-feed" #scrollContainer>
-        <div *ngFor="let notificacion of notificacionesFiltradas; let i = index" class="notification-card"
+      <div class="notifications-feed">
+        <div *ngFor="let notificacion of notificacionesPaginadas; let i = index" class="notification-card"
           [class.leida]="notificacion.leida" [class.no-leida]="!notificacion.leida"
           [class.seleccionada]="isSeleccionada(notificacion.id)">
           <!-- Checkbox de selección -->
@@ -205,18 +204,46 @@
             <span class="unread-dot" *ngIf="!notificacion.leida" title="Notificación sin leer"></span>
           </div>
         </div>
+      </div>
 
-        <!-- Indicador de carga adicional -->
-        <div class="loading-more-pill" *ngIf="cargandoMas">
-          <i class="fas fa-circle-notch fa-spin"></i>
-          <span>Cargando más notificaciones...</span>
+      <!-- ⭐ BARRA DE PAGINACIÓN DE NOTIFICACIONES -->
+      <div class="pagination-bar-card" *ngIf="notificacionesFiltradas.length > 0">
+        <div class="pagination-info">
+          <i class="fas fa-layer-group"></i>
+          <span>Mostrando <strong>{{ rangoInicio }}</strong> - <strong>{{ rangoFin }}</strong> de <strong>{{
+              notificacionesFiltradas.length }}</strong> avisos</span>
         </div>
 
-        <!-- Fin de lista -->
-        <div class="end-of-feed"
-          *ngIf="!cargando && !cargandoMas && notificacionesFiltradas.length > 0 && !hasMore">
-          <i class="fas fa-circle-check"></i>
-          <span>Has llegado al final de tus notificaciones</span>
+        <div class="pagination-controls-group">
+          <!-- Selector de tamaño de página -->
+          <div class="page-size-selector">
+            <span class="size-label">Por página:</span>
+            <select class="custom-size-select" [value]="pageSize" (change)="cambiarPageSize($any($event.target).value)">
+              <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+
+          <!-- Botones de Navegación -->
+          <div class="pagination-buttons">
+            <button class="btn-page-nav" (click)="paginaAnterior()" [disabled]="paginaActual === 1"
+              title="Página anterior">
+              <i class="fas fa-chevron-left"></i>
+              <span class="btn-nav-label">Anterior</span>
+            </button>
+
+            <div class="page-numbers-list">
+              <button *ngFor="let p of paginasArray" class="btn-page-number" [class.active]="p === paginaActual"
+                (click)="irAPagina(p)">
+                {{ p }}
+              </button>
+            </div>
+
+            <button class="btn-page-nav" (click)="paginaSiguiente()" [disabled]="paginaActual === totalPaginas"
+              title="Página siguiente">
+              <span class="btn-nav-label">Siguiente</span>
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -250,7 +277,8 @@
         </div>
         <div class="preview-details">
           <strong>{{ notificacionAEliminar.titulo }}</strong>
-          <span>{{ notificacionAEliminar.mensaje | slice:0:75 }}{{ notificacionAEliminar.mensaje.length > 75 ? '...' : '' }}</span>
+          <span>{{ notificacionAEliminar.mensaje | slice:0:75 }}{{ notificacionAEliminar.mensaje.length > 75 ? '...' :
+            '' }}</span>
         </div>
       </div>
     </div>
@@ -258,8 +286,8 @@
     <div class="dialog-footer">
       <button class="btn-dialog-cancel" (click)="cerrarModalEliminar()">Cancelar</button>
       <button class="btn-dialog-delete" (click)="ejecutarEliminar()" [disabled]="notificacionEliminando">
-        <i class="fas" [class.fa-trash-can]="!notificacionEliminando"
-          [class.fa-spinner]="notificacionEliminando" [class.fa-spin]="notificacionEliminando"></i>
+        <i class="fas" [class.fa-trash-can]="!notificacionEliminando" [class.fa-spinner]="notificacionEliminando"
+          [class.fa-spin]="notificacionEliminando"></i>
         <span>{{ notificacionEliminando ? 'Eliminando...' : 'Sí, eliminar' }}</span>
       </button>
     </div>
@@ -267,8 +295,7 @@
 </div>
 
 <!-- ⭐ MODAL: ELIMINAR MÚLTIPLE -->
-<div class="modal-backdrop-glass" [class.active]="modalEliminarMultipleVisible"
-  (click)="cerrarModalEliminarMultiple()">
+<div class="modal-backdrop-glass" [class.active]="modalEliminarMultipleVisible" (click)="cerrarModalEliminarMultiple()">
   <div class="modal-dialog-modern" (click)="$event.stopPropagation()">
     <div class="dialog-header header-warning">
       <div class="dialog-title-group">
@@ -302,10 +329,9 @@
 
     <div class="dialog-footer">
       <button class="btn-dialog-cancel" (click)="cerrarModalEliminarMultiple()">Cancelar</button>
-      <button class="btn-dialog-delete" (click)="ejecutarEliminarMultiple()"
-        [disabled]="notificacionEliminando">
-        <i class="fas" [class.fa-trash-can]="!notificacionEliminando"
-          [class.fa-spinner]="notificacionEliminando" [class.fa-spin]="notificacionEliminando"></i>
+      <button class="btn-dialog-delete" (click)="ejecutarEliminarMultiple()" [disabled]="notificacionEliminando">
+        <i class="fas" [class.fa-trash-can]="!notificacionEliminando" [class.fa-spinner]="notificacionEliminando"
+          [class.fa-spin]="notificacionEliminando"></i>
         <span>{{ notificacionEliminando ? 'Eliminando...' : 'Eliminar seleccionadas' }}</span>
       </button>
     </div>

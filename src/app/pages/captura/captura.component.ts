@@ -86,12 +86,14 @@ export class CapturaComponent implements OnInit {
                         const nombre = p.nombre || '';
 
                         let nombreCompleto = nombre;
-                        if (apellidoPaterno && apellidoMaterno) {
-                            nombreCompleto = `${apellidoPaterno} ${apellidoMaterno} ${nombre}`;
+                        if (apellidoPaterno && nombre.toUpperCase().includes(apellidoPaterno.toUpperCase())) {
+                            nombreCompleto = nombre;
+                        } else if (apellidoPaterno && apellidoMaterno) {
+                            nombreCompleto = `${nombre} ${apellidoPaterno} ${apellidoMaterno}`.trim();
                         } else if (apellidoPaterno) {
-                            nombreCompleto = `${apellidoPaterno} ${nombre}`;
+                            nombreCompleto = `${nombre} ${apellidoPaterno}`.trim();
                         } else if (apellidoMaterno) {
-                            nombreCompleto = `${apellidoMaterno} ${nombre}`;
+                            nombreCompleto = `${nombre} ${apellidoMaterno}`.trim();
                         }
 
                         return {

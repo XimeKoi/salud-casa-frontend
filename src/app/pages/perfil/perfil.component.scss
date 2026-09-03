@@ -663,6 +663,32 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
     font-size: 12px;
     font-weight: 800;
   }
+
+  .status-pill-success {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    padding: 3px 10px;
+    border-radius: $radius-pill;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+
+  .status-pill-secure {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    padding: 3px 10px;
+    border-radius: $radius-pill;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
 }
 
 // Contact strip elevated

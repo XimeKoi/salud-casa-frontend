@@ -198,4 +198,30 @@ export class LoginComponent {
       }
     });
   }
+
+  // ============================================
+  // CONTACTAR SOPORTE CLÍNICO
+  // ============================================
+  contactarSoporte(event: Event) {
+    event.preventDefault();
+    Swal.fire({
+      icon: 'info',
+      title: 'Mesa de Ayuda Cuidalia',
+      html: `
+        <div style="text-align: left; font-size: 13px; line-height: 1.6; color: #444; font-family: 'Montserrat', sans-serif;">
+          <p style="margin-bottom: 8px;">
+            Si presentas problemas para ingresar o requieres asistencia con tus credenciales:
+          </p>
+          <div style="background: #FAF2EE; border-left: 4px solid #520D2F; padding: 10px 12px; border-radius: 8px; margin: 10px 0;">
+            <p style="margin: 0 0 4px; font-weight: 700; color: #520D2F;">Coordinación y Soporte:</p>
+            <p style="margin: 0; color: #666; font-size: 12px;">soporte@cuidalia.mx</p>
+          </div>
+        </div>
+      `,
+      confirmButtonColor: '#520D2F',
+      confirmButtonText: 'Entendido',
+      background: '#ffffff',
+      iconColor: '#520D2F'
+    });
+  }
 }

@@ -1,67 +1,193 @@
 // src/app/pages/dashboard/dashboard.component.scss
 
 .dashboard-container {
-    display: flex;
-    height: 100%;
-    width: 100%;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
 .map-wrapper {
-    flex: 3;
-    position: relative;
+  flex: 3;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 .info-wrapper {
-    width: 360px;
-    border-left: 1px solid #e9e0d6;
-    overflow-y: auto;
-    background: #fefaf7;
+  width: 360px;
+  border-left: 1.5px solid #EBDCD5;
+  overflow-y: auto;
+  background: #fefaf7;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+// Botón flotante móvil de Control Territorial (oculto en desktop)
+.btn-control-territorial-mobile {
+  display: none;
+}
+
+.mobile-sheet-header {
+  display: none;
+}
+
+.info-panel-backdrop {
+  display: none;
 }
 
 /* ⭐ RESPONSIVE DASHBOARD */
 @media (max-width: 1200px) {
-    .info-wrapper {
-        width: 320px;
-    }
+  .info-wrapper {
+    width: 330px;
+  }
 }
 
 @media (max-width: 992px) {
-    .dashboard-container {
-        flex-direction: column;
+
+  // Botón flotante móvil posicionado limpiamente en la derecha inferior
+  .btn-control-territorial-mobile {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    position: fixed;
+    bottom: 18px;
+    right: 12px;
+    z-index: 1040;
+    background: linear-gradient(135deg, #520D2F 0%, #38061F 100%);
+    color: #ffffff;
+    padding: 9px 15px;
+    border-radius: 30px;
+    border: 1.5px solid rgba(255, 107, 85, 0.6);
+    box-shadow: 0 4px 18px rgba(82, 13, 47, 0.45);
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    touch-action: manipulation;
+    max-width: 48vw;
+
+    &:active {
+      transform: scale(0.95);
     }
 
-    .map-wrapper {
-        flex: 1;
-        min-height: 50vh;
+    i {
+      color: #FF6B55;
+      font-size: 13px;
     }
 
-    .info-wrapper {
-        width: 100%;
-        min-height: 40vh;
-        max-height: 50vh;
-        border-left: none;
-        border-top: 1px solid #e9e0d6;
+    .active-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+      flex-shrink: 0;
     }
-}
+  }
 
-@media (max-width: 768px) {
-    .map-wrapper {
-        min-height: 40vh;
+  // Mapa ocupa el 100% de la pantalla en móvil
+  .map-wrapper {
+    flex: 1;
+    height: 100%;
+    width: 100%;
+  }
+
+  // Backdrop oscuro
+  .info-panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1080;
+    animation: fadeInBackdrop 0.25s ease-out;
+  }
+
+  @keyframes fadeInBackdrop {
+    from {
+      opacity: 0;
     }
 
-    .info-wrapper {
-        min-height: 35vh;
-        max-height: 45vh;
+    to {
+      opacity: 1;
     }
-}
+  }
 
-@media (max-width: 480px) {
-    .map-wrapper {
-        min-height: 35vh;
+  // Info Panel como Bottom Sheet Drawer que se desliza desde abajo
+  .info-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 84vh;
+    height: 84dvh;
+    max-height: 84dvh;
+    background: #ffffff;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
+    border: 1px solid #ebdcd5;
+    border-bottom: none;
+    z-index: 1090;
+    transform: translateY(105%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+
+    &.mobile-sheet-open {
+      transform: translateY(0);
     }
 
-    .info-wrapper {
-        min-height: 30vh;
-        max-height: 40vh;
+    // Cabecera del Bottom Sheet móvil
+    .mobile-sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: linear-gradient(135deg, #7D174A 0%, #520D2F 100%);
+      color: #ffffff;
+      border-radius: 21px 21px 0 0;
+      border-bottom: 2.5px solid #FF6B55;
+      flex-shrink: 0;
+
+      .mobile-sheet-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+
+        i {
+          color: #FF6B55;
+          font-size: 14px;
+        }
+      }
+
+      .btn-close-sheet {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+
+        &:active {
+          background: rgba(220, 38, 38, 0.8);
+          transform: scale(0.95);
+        }
+      }
     }
+  }
 }

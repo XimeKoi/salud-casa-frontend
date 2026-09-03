@@ -1,195 +1,185 @@
-<!-- src/app/components/login/login.html -->
-<div class="cuidalia-login-wrapper">
-  <!-- Efectos de luz sutiles de fondo -->
-  <div class="ambient-glow ambient-glow--1"></div>
-  <div class="ambient-glow ambient-glow--2"></div>
+<div class="cuidalia-login-stage">
+  <!-- Luces Ambientales de Fondo para Profundidad de Lujo -->
+  <div class="ambient-glow-layer" aria-hidden="true">
+    <div class="glow-sphere sphere-1"></div>
+    <div class="glow-sphere sphere-2"></div>
+    <div class="glow-sphere sphere-3"></div>
+    <div class="ambient-mesh"></div>
+  </div>
 
-  <!-- HEADER INSTITUCIONAL (Tablet / Desktop) -->
-  <header class="cl-header">
-    <div class="cl-header__inner">
-      <div class="cl-brand">
-        <img src="cuidalia-logo.png" alt="Cuidalia" class="cl-brand__logo" />
-        <div class="cl-brand__text">
-          <img src="cuidalia-wordmark.png" alt="Cuidalia" class="cl-brand__wordmark" />
-          <span class="cl-brand__slogan">Cercanía que cuida</span>
+  <div class="cuidalia-split-card">
+    <!-- ============================================ -->
+    <!-- PANEL IZQUIERDO (GRAN ESCENARIO VISUAL 3D)   -->
+    <!-- ============================================ -->
+    <aside class="card-visual-panel">
+      <!-- Decoración Orbital Superior Izquierda -->
+      <div class="visual-planet-wrap">
+        <div class="planet-circle"></div>
+        <div class="planet-ring-1"></div>
+        <div class="planet-ring-2"></div>
+      </div>
+
+      <!-- Orbes Flotantes y Destellos -->
+      <div class="floating-orb orb-1"></div>
+      <div class="floating-orb orb-2"></div>
+      <div class="floating-orb orb-3"></div>
+      <div class="floating-sparkle sparkle-1"></div>
+      <div class="floating-sparkle sparkle-2"></div>
+      <div class="floating-sparkle sparkle-3"></div>
+      <div class="floating-sparkle sparkle-4"></div>
+
+      <!-- Escenario Central Ampliado con la Nueva Ilustración 3D -->
+      <div class="visual-center-stage">
+        <div class="center-glow-halo"></div>
+        <div class="center-circle-backdrop"></div>
+
+        <!-- Globo de Diálogo de Atención Cálida -->
+        <div class="floating-chat-bubble" title="Atención personalizada en cada hogar">
+          <span class="chat-heart"><i class="fas fa-heart"></i></span>
+          <div class="chat-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+
+        <!-- Imagen de Atención Domiciliaria en Campo -->
+        <div class="cuidalia-3d-illustration-box cuidalia-hero-illustration-box">
+          <img src="cuidalia-login-hero.jpg" alt="Cuidalia Atención Médica y Cuidado Domiciliario"
+            class="cuidalia-3d-img cuidalia-hero-img" />
+        </div>
+
+        <!-- Insignia Flotante con Emblema Cuidalia -->
+        <div class="floating-brand-badge" title="Cuidalia Salud Domiciliaria">
+          <img src="cuidalia-logo.png" alt="Cuidalia" class="mini-logo-badge" />
         </div>
       </div>
-      <div class="cl-header__badge">
-        <i class="fas fa-shield-halved"></i>
-        <span>Portal Seguro de Brigadistas</span>
-      </div>
-    </div>
-  </header>
 
-  <!-- CONTENIDO PRINCIPAL -->
-  <main class="cl-main">
-    <!-- SHOWCASE LATERAL (Desktop >= 1024px) -->
-    <section class="cl-showcase">
-      <div class="cl-showcase__content">
-        <div class="cl-pill">
-          <i class="fas fa-heart-pulse"></i>
-          <span>Atención Domiciliaria en Campo</span>
-        </div>
-
-        <h1 class="cl-showcase__title">
-          Cuidado integral y <br>
-          <span class="text-gradient-guinda">cercanía en cada</span> <br>
-          <span class="text-gradient-gold">hogar visitado</span>
-        </h1>
-
-        <p class="cl-showcase__desc">
-          Plataforma clínica para brigadas de salud: seguimiento de visitas domiciliarias, geolocalización de pacientes
-          y expedientes en tiempo real.
+      <!-- Texto Narrativo Inferior -->
+      <div class="visual-bottom-text">
+        <h2 class="visual-heading">La salud más humana, directo en cada hogar.</h2>
+        <p class="visual-subheading">
+          Plataforma clínica digital y georreferenciada para profesionales del cuidado y enfermería.
         </p>
-
-        <!-- Tarjetas de Métricas -->
-        <div class="cl-stats">
-          <div class="cl-stat-card">
-            <div class="cl-stat-card__icon">
-              <i class="fas fa-user-group"></i>
-            </div>
-            <div class="cl-stat-card__data">
-              <span class="cl-stat-card__val">12K+</span>
-              <span class="cl-stat-card__lbl">Pacientes</span>
-            </div>
-          </div>
-
-          <div class="cl-stat-card">
-            <div class="cl-stat-card__icon">
-              <i class="fas fa-map-location-dot"></i>
-            </div>
-            <div class="cl-stat-card__data">
-              <span class="cl-stat-card__val">70</span>
-              <span class="cl-stat-card__lbl">Colonias</span>
-            </div>
-          </div>
-
-          <div class="cl-stat-card">
-            <div class="cl-stat-card__icon">
-              <i class="fas fa-truck-medical"></i>
-            </div>
-            <div class="cl-stat-card__data">
-              <span class="cl-stat-card__val">24/7</span>
-              <span class="cl-stat-card__lbl">Atención</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Badge de Aplicación Progresiva (PWA) -->
-        <div class="cl-field-badge">
-          <i class="fas fa-mobile-screen-button"></i>
-          <span>PWA instalable · Cuidalia para campo y tabletas</span>
-        </div>
       </div>
-    </section>
+    </aside>
 
-    <!-- FORMULARIO DE ACCESO (Mobile-First & Responsive) -->
-    <section class="cl-form-section">
-      <div class="cl-card">
-        <!-- Encabezado de Marca (Destacado en Móvil y consistente) -->
-        <div class="cl-card__brand">
-          <div class="cl-card__logo-wrap">
-            <img src="cuidalia-logo.png" alt="Cuidalia" class="cl-card__logo" />
+    <!-- ============================================ -->
+    <!-- PANEL DERECHO (FORMULARIO DE ACCESO AMPLIADO)-->
+    <!-- ============================================ -->
+    <main class="card-form-panel">
+      <div class="form-inner-wrapper">
+        <!-- Logotipo e Identidad Centrado y Mucho Más Grande -->
+        <div class="form-brand-header">
+          <div class="brand-logo-wrap">
+            <div class="logo-glow-ring"></div>
+            <img src="cuidalia-logo.png" alt="Cuidalia" class="brand-logo-img" />
           </div>
-          <div class="cl-card__wordmark-wrap">
-            <img src="cuidalia-wordmark.png" alt="Cuidalia" class="cl-card__wordmark" />
-            <span class="cl-card__tagline">Cercanía que cuida</span>
-          </div>
+          <h1 class="brand-title">
+            <i class="fas fa-heart-pulse title-icon"></i>
+            <span>¡Bienvenido de Vuelta!</span>
+          </h1>
+          <p class="brand-subtitle">Ingresa tus credenciales de enfermer&#64;</p>
         </div>
 
-        <div class="cl-card__title-wrap">
-          <h2 class="cl-card__title">Iniciar Sesión</h2>
-          <p class="cl-card__subtitle">Ingresa tus credenciales de brigadista</p>
-        </div>
-
-        <!-- Formulario -->
-        <form (ngSubmit)="login()" class="cl-form" autocomplete="on">
-          <!-- Campo CURP -->
-          <div class="cl-field">
-            <label for="curp" class="cl-field__label">
-              <i class="fas fa-id-card"></i>
-              <span>CURP DEL BRIGADISTA</span>
-            </label>
-            <div class="cl-input-wrap">
-              <span class="cl-input-icon">
-                <i class="fas fa-user"></i>
+        <!-- Formulario de Acceso -->
+        <form (ngSubmit)="login()" class="access-form-clean" autocomplete="on">
+          <!-- Campo Usuario / CURP / Correo -->
+          <div class="clean-field-group">
+            <div class="field-label-row">
+              <label for="username" class="clean-label">
+                <i class="fas fa-id-card"></i>
+                <span>Usuario (CURP / Correo Institucional)</span>
+              </label>
+              <span class="curp-counter-pill" *ngIf="username" [class.valid]="username.length === 18">
+                {{ username.length }}/18
               </span>
-              <input id="curp" name="username" type="text" class="cl-input" placeholder="XXXX000000XXXXXX00"
-                [(ngModel)]="username" autocomplete="username" autocapitalize="characters" spellcheck="false"
-                required />
-              <button type="button" class="cl-input-clear" *ngIf="username" (click)="username = ''"
-                aria-label="Borrar CURP">
+            </div>
+            <div class="clean-input-box">
+              <input id="username" name="username" type="text" class="clean-input"
+                placeholder="Ingresa tu CURP o Correo Institucional" [(ngModel)]="username" autocomplete="username"
+                autocapitalize="characters" spellcheck="false" maxlength="50" required />
+              <button type="button" class="clean-clear-btn" *ngIf="username" (click)="username = ''"
+                aria-label="Borrar campo">
                 <i class="fas fa-circle-xmark"></i>
               </button>
             </div>
           </div>
 
           <!-- Campo Contraseña -->
-          <div class="cl-field">
-            <div class="cl-field__header">
-              <label for="password" class="cl-field__label">
+          <div class="clean-field-group">
+            <div class="field-label-row">
+              <label for="password" class="clean-label">
                 <i class="fas fa-lock"></i>
-                <span>CONTRASEÑA</span>
+                <span>Contraseña</span>
               </label>
-              <a href="#" (click)="olvidasteContrasena($event)" class="cl-forgot-link">
-                ¿La olvidaste?
-              </a>
             </div>
-            <div class="cl-input-wrap">
-              <span class="cl-input-icon">
-                <i class="fas fa-key"></i>
-              </span>
-              <input id="password" name="password" [type]="showPassword ? 'text' : 'password'" class="cl-input"
-                placeholder="••••••••" [(ngModel)]="password" (keyup.enter)="login()" autocomplete="current-password"
-                required />
-              <button type="button" class="cl-visibility-btn" (click)="togglePasswordVisibility()"
+            <div class="clean-input-box">
+              <input id="password" name="password" [type]="showPassword ? 'text' : 'password'" class="clean-input"
+                placeholder="••••••••••••" [(ngModel)]="password" (keyup.enter)="login()"
+                autocomplete="current-password" required />
+              <button type="button" class="clean-toggle-eye" (click)="togglePasswordVisibility()"
                 [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Ver contraseña'">
                 <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
               </button>
             </div>
           </div>
 
-          <!-- Mantener Sesión -->
-          <div class="cl-options">
-            <label class="cl-checkbox-label">
-              <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" class="cl-checkbox" />
-              <span class="cl-custom-check"></span>
-              <span class="cl-checkbox-text">Mantener sesión iniciada</span>
+          <!-- Opciones: Recordar & Olvidaste Contraseña -->
+          <div class="clean-options-row">
+            <label class="clean-checkbox-label">
+              <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+              <span class="custom-checkbox"></span>
+              <span class="label-text">Recordar sesión</span>
             </label>
+            <a href="#" (click)="olvidasteContrasena($event)" class="clean-forgot-link">
+              ¿Olvidaste tu contraseña?
+            </a>
           </div>
 
-          <!-- Mensaje de Error -->
-          <div class="cl-alert" *ngIf="errorMsg">
+          <!-- Alerta de Error -->
+          <div class="clean-error-banner" *ngIf="errorMsg">
             <i class="fas fa-circle-exclamation"></i>
             <span>{{ errorMsg }}</span>
           </div>
 
-          <!-- Botón de Envío -->
-          <button class="cl-submit-btn" type="submit" [disabled]="loading">
-            <span *ngIf="!loading" class="cl-submit-btn__inner">
+          <!-- Botón Principal de Acceso -->
+          <button class="clean-submit-btn" type="submit" [disabled]="loading">
+            <span *ngIf="!loading" class="btn-text-content">
               <span>Ingresar al Sistema</span>
               <i class="fas fa-arrow-right"></i>
             </span>
-            <span *ngIf="loading" class="cl-spinner">
+            <span *ngIf="loading" class="btn-spinner-clean">
               <i class="fas fa-circle-notch fa-spin"></i>
-              <span>Autenticando...</span>
+              <span>Autenticando credenciales...</span>
             </span>
           </button>
         </form>
 
-        <!-- Pie de la Tarjeta -->
-        <div class="cl-card__footer">
-          <div class="cl-security-badge">
+        <!-- Divisor Elegante -->
+        <div class="clean-divider">
+          <span class="divider-text">Soporte & Privacidad</span>
+        </div>
+
+        <!-- Botones de Soporte y Aviso de Privacidad -->
+        <div class="support-pills-row">
+          <button type="button" class="support-pill" (click)="contactarSoporte($event)">
+            <i class="fas fa-headset"></i>
+            <span>Mesa de Ayuda</span>
+          </button>
+          <button type="button" class="support-pill" (click)="avisoPrivacidad($event)">
             <i class="fas fa-shield-halved"></i>
-            <span>Acceso seguro cifrado · Cuidalia</span>
-          </div>
-          <div class="cl-legal-links">
-            <a href="#" (click)="avisoPrivacidad($event)">Aviso de Privacidad</a>
-            <span class="cl-dot">·</span>
-            <span>App Progresiva (PWA)</span>
-          </div>
+            <span>Aviso de Privacidad</span>
+          </button>
+        </div>
+
+        <!-- Enlace Inferior de Soporte -->
+        <div class="clean-bottom-register">
+          <span>¿Problemas para acceder?</span>
+          <a href="#" (click)="contactarSoporte($event)" class="register-link">Contactar Soporte Técnico</a>
         </div>
       </div>
-    </section>
-  </main>
+    </main>
+  </div>
 </div>

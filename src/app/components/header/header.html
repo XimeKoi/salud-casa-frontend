@@ -7,29 +7,34 @@
     </button>
 
     <div class="header-logo-title" (click)="irAlMapa()" style="cursor: pointer;" title="Ir al Inicio">
-      <img src="cuidalia-logo.png" alt="Cuidalia" class="brand-logo" />
-
-      <div class="brand-text logo-bienestar">
-        <img src="cuidalia-wordmark.png" alt="Cuidalia" class="brand-wordmark" />
-        <div class="secretaria">Cercanía que cuida</div>
+      <!-- Cápsula de Marca Integrada con Colores Originales Cuidalia -->
+      <div class="brand-identity-card">
+        <img src="cuidalia-casa-cuidados.png" alt="Cuidalia - Atención Domiciliaria"
+          class="brand-logo care-home-logo" />
+        <div class="brand-text-col">
+          <img src="cuidalia-wordmark.png" alt="Cuidalia" class="brand-wordmark" />
+          <span class="secretaria">Cercanía que cuida</span>
+        </div>
       </div>
 
       <div class="brand-divider"></div>
 
+      <!-- Información Operativa de la Plataforma -->
       <div class="program-text">
         <div class="title-main">Tablero de Control Operativo</div>
         <div class="subtitle-main">
-          <span class="live-dot"></span>
-          <i class="fas fa-location-dot"></i> León, Guanajuato
+          <span class="location-label">
+            <i class="fas fa-location-dot"></i> León, Guanajuato
+          </span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Iconos de navegación a módulos directos -->
+  <!-- Botones de Navegación y Accesos Rápidos -->
   <div class="header-right-area">
     <button class="btn-nav btn-mapa" (click)="irAlMapa()" title="Mapa Operativo">
-      <i class="fas fa-map-marked-alt"></i>
+      <i class="fas fa-map-location-dot"></i>
       <span class="btn-text">Mapa</span>
     </button>
 
@@ -40,7 +45,7 @@
     </button>
 
     <button class="btn-nav btn-perfil" (click)="irAPerfil()" title="Mi Perfil Profesional">
-      <i class="fas fa-user-circle"></i>
+      <i class="fas fa-user-doctor"></i>
       <span class="btn-text">Mi Perfil</span>
     </button>
   </div>
@@ -50,11 +55,10 @@
 <div class="sidebar-demo" [class.open]="sidebarOpen">
   <div class="sidebar-header-box">
     <div class="sidebar-title-group">
-      <i class="fas fa-hospital-user"></i>
-      <div>
-        <span class="sidebar-app-name">Cuidalia</span>
-        <span class="sidebar-app-sub">Atención Domiciliaria</span>
+      <div class="sidebar-icon-wrap">
+        <i class="fas fa-layer-group"></i>
       </div>
+      <span class="sidebar-nav-title">Navegación Principal</span>
     </div>
     <button class="btn-close-side" (click)="closeSidebar()" title="Cerrar menú">
       <i class="fas fa-times"></i>
@@ -62,55 +66,93 @@
   </div>
 
   <div class="sidebar-modules-list">
-    <div class="module-group-label">NAVEGACIÓN PRINCIPAL</div>
-
-    <ul>
-      <li (click)="navigateTo('dashboard')">
-        <div class="icon-bubble icon-map"><i class="fas fa-map-marked-alt"></i></div>
-        <span class="module-title">Mapa Operativo</span>
+    <ul class="modules-nav-list">
+      <li (click)="navigateTo('dashboard')" class="nav-module-item">
+        <div class="icon-bubble icon-map">
+          <i class="fas fa-map-location-dot"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Mapa Operativo</span>
+          <span class="module-desc">Georreferenciación y rutas</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
 
-      <li (click)="navigateTo('dashboard-salud')">
-        <div class="icon-bubble icon-stats"><i class="fas fa-chart-pie"></i></div>
-        <span class="module-title">Dashboard Salud</span>
+      <li (click)="navigateTo('dashboard-salud')" class="nav-module-item">
+        <div class="icon-bubble icon-stats">
+          <i class="fas fa-chart-pie"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Dashboard Salud</span>
+          <span class="module-desc">Métricas y estadísticas</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
 
-      <li (click)="navigateTo('pacientes')">
-        <div class="icon-bubble icon-patients"><i class="fas fa-notes-medical"></i></div>
-        <span class="module-title">Control de Pacientes</span>
+      <li (click)="navigateTo('pacientes')" class="nav-module-item">
+        <div class="icon-bubble icon-patients">
+          <i class="fas fa-hospital-user"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Control de Pacientes</span>
+          <span class="module-desc">Expedientes y visitas</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
 
-      <li (click)="navigateTo('notificaciones')">
-        <div class="icon-bubble icon-notif"><i class="fas fa-bell"></i></div>
-        <span class="module-title">Notificaciones</span>
+      <li (click)="navigateTo('notificaciones')" class="nav-module-item">
+        <div class="icon-bubble icon-notif">
+          <i class="fas fa-bell"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Notificaciones</span>
+          <span class="module-desc">Avisos y comunicados</span>
+        </div>
         <span class="badge-side" *ngIf="cantidadNotificaciones > 0">{{ cantidadNotificaciones }}</span>
         <i class="fas fa-chevron-right arrow-icon" *ngIf="!cantidadNotificaciones"></i>
       </li>
 
-      <li (click)="navigateTo('calendario')">
-        <div class="icon-bubble icon-cal"><i class="fas fa-calendar-alt"></i></div>
-        <span class="module-title">Calendario de Visitas</span>
+      <li (click)="navigateTo('calendario')" class="nav-module-item">
+        <div class="icon-bubble icon-cal">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Calendario de Visitas</span>
+          <span class="module-desc">Agenda y programación</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
 
-      <li (click)="navigateTo('perfil')">
-        <div class="icon-bubble icon-user"><i class="fas fa-user-md"></i></div>
-        <span class="module-title">Mi Perfil Profesional</span>
+      <li (click)="navigateTo('perfil')" class="nav-module-item">
+        <div class="icon-bubble icon-user">
+          <i class="fas fa-user-doctor"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Mi Perfil Profesional</span>
+          <span class="module-desc">Datos y credenciales</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
 
-      <li (click)="navigateTo('captura')">
-        <div class="icon-bubble icon-capture"><i class="fas fa-database"></i></div>
-        <span class="module-title">Captura de Visitas</span>
+      <li (click)="navigateTo('captura')" class="nav-module-item">
+        <div class="icon-bubble icon-capture">
+          <i class="fas fa-clipboard-list"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Captura de Visitas</span>
+          <span class="module-desc">Registro clínico en campo</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
 
-      <li (click)="navigateTo('incidencias')">
-        <div class="icon-bubble icon-incidents"><i class="fas fa-exclamation-triangle"></i></div>
-        <span class="module-title">Centro de Incidencias</span>
+      <li (click)="navigateTo('incidencias')" class="nav-module-item">
+        <div class="icon-bubble icon-incidents">
+          <i class="fas fa-shield-heart"></i>
+        </div>
+        <div class="module-text-wrap">
+          <span class="module-title">Centro de Incidencias</span>
+          <span class="module-desc">Reportes y alertas</span>
+        </div>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </li>
     </ul>

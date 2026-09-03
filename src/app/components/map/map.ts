@@ -110,6 +110,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private pacientesOriginal: any[] = [];
   private _eventListener: ((event: any) => void) | null = null;
   private _incidenciaListener: ((event: any) => void) | null = null;
+  private _resizeListener: (() => void) | null = null;
 
   private apiUrl = environment.apiUrl;
   private idEnfermera: number = 1;
@@ -270,10 +271,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }, 800);
     }, 300);
+
+    this._resizeListener = () => {
+      if (this.map) {
+        this.map.invalidateSize();
+      }
+    };
+    window.addEventListener('resize', this._resizeListener);
+    window.addEventListener('orientationchange', this._resizeListener);
   }
 
   ngOnDestroy() {
     console.log('💀 [MapComponent] ngOnDestroy');
+    if (this._resizeListener) {
+      window.removeEventListener('resize', this._resizeListener);
+      window.removeEventListener('orientationchange', this._resizeListener);
+      this._resizeListener = null;
+    }
     if (this.distritoSubscription) {
       this.distritoSubscription.unsubscribe();
     }
@@ -792,12 +806,31 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.pacienteGuardando = true;
     this.cdr.detectChanges();
 
-    const nombreCompleto = `${this.nuevoPaciente.nombre.trim()} ${this.nuevoPaciente.apellidoPaterno.trim()} ${(this.nuevoPaciente.apellidoMaterno || '').trim()}`.trim();
-    const tel = this.nuevoPaciente.telefonoCelular || this.nuevoPaciente.telefonoFijo || '';
+    const primerNombre = this.nuevoPaciente.nombre.trim();
+    const apPaterno = this.nuevoPaciente.apellidoPaterno.trim();
+    const apMaterno = (this.nuevoPaciente.apellidoMaterno || '').trim();
+    const nombreCompleto = `${primerNombre} ${apPaterno} ${apMaterno}`.trim();
+    const tel = (this.nuevoPaciente.telefonoCelular || this.nuevoPaciente.telefonoFijo || '').trim();
+    const curp = (this.nuevoPaciente.curp || '').trim().toUpperCase();
+
+    // Normalizar teléfono en formato internacional mexicano +52 si tiene 10 dígitos (para pasarelas SMS como TextBee)
+    let soloDigitos = tel.replace(/\D/g, '');
+    let telE164 = soloDigitos;
+    if (soloDigitos.length === 10) {
+      telE164 = `+52${soloDigitos}`;
+    }
+
     const pacienteData = {
       ...this.nuevoPaciente,
-      nombre: nombreCompleto,
+      nombre: primerNombre, // Solo el nombre para evitar duplicación con apellidoPaterno y apellidoMaterno
+      apellidoPaterno: apPaterno,
+      apellidoMaterno: apMaterno,
+      nombreCompleto: nombreCompleto,
+      curp: curp,
       telefono: tel,
+      telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
+      telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
+      telefonoE164: telE164,
       idEnfermera: this.idEnfermera
     };
 
@@ -822,10 +855,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           nombre: nombreCompleto,
           apellidoPaterno: this.nuevoPaciente.apellidoPaterno || '',
           apellidoMaterno: this.nuevoPaciente.apellidoMaterno || '',
-          curp: this.nuevoPaciente.curp || '',
+          curp: curp,
           telefono: tel,
           telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
-          telefonoCelular: this.nuevoPaciente.telefonoCelular || '',
+          telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
           programa: this.nuevoPaciente.programa || 'PAM',
           estatus: this.nuevoPaciente.estatus || 'PENDIENTE',
           seccion: '277',
@@ -1029,6 +1062,41 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return colonia;
   }
 
+  limpiarNombreDuplicado(nombre: string, apP?: string, apM?: string): string {
+    if (!nombre) return 'Nombre no disponible';
+    let n = nombre.trim();
+    const p = (apP || '').trim();
+    const m = (apM || '').trim();
+
+    // Si tiene "APELLIDO_P APELLIDO_M NOMBRE APELLIDO_P APELLIDO_M" o duplicación al inicio y al final
+    if (p && m) {
+      const patronInicio = new RegExp(`^${p}\\s+${m}\\s+`, 'i');
+      const patronFin = new RegExp(`\\s+${p}\\s+${m}$`, 'i');
+      if (patronInicio.test(n) && patronFin.test(n)) {
+        n = n.replace(patronInicio, '').trim();
+      }
+    } else if (p) {
+      const patronInicio = new RegExp(`^${p}\\s+`, 'i');
+      const patronFin = new RegExp(`\\s+${p}$`, 'i');
+      if (patronInicio.test(n) && patronFin.test(n)) {
+        n = n.replace(patronInicio, '').trim();
+      }
+    }
+
+    // Deduplicar tokens consecutivos o repetidos en el nombre
+    const tokens = n.split(/\s+/).filter(Boolean);
+    const uniqueTokens: string[] = [];
+    tokens.forEach(token => {
+      const upper = token.toUpperCase();
+      const occurrences = tokens.filter(t => t.toUpperCase() === upper).length;
+      if (occurrences > 1 && uniqueTokens.some(t => t.toUpperCase() === upper)) {
+        return;
+      }
+      uniqueTokens.push(token);
+    });
+    return uniqueTokens.join(' ');
+  }
+
   // ⭐⭐⭐ POPUP - GENERAR HTML CON DISEÑO PREMIUM ⭐⭐⭐
   private generarPopupHTML(paciente: any, color: string, estatusLower: string, nombreCompleto: string, direccionLimpia: string, coloniaMostrar: string): string {
     const esDiscapacidad = paciente.programa === 'DISCAPACIDAD' || paciente.programa?.includes('DIS');
@@ -1062,7 +1130,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       st = { bg: '#F1F5F9', color: '#475569', dot: '#64748B', icon: 'fa-skull', text: 'Finado' };
     }
 
-    const partesNombre = nombreCompleto.split(' ').filter(Boolean);
+    const nombreLimpio = this.limpiarNombreDuplicado(nombreCompleto, paciente.apellidoPaterno, paciente.apellidoMaterno);
+    const partesNombre = nombreLimpio.split(' ').filter(Boolean);
     let iniciales = 'CU';
     if (partesNombre.length >= 2) {
       iniciales = `${partesNombre[0][0]}${partesNombre[1][0]}`.toUpperCase();
@@ -1070,10 +1139,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       iniciales = partesNombre[0].substring(0, 2).toUpperCase();
     }
 
-    const nombreEscapado = nombreCompleto.replace(/'/g, "\\'");
-    const telefonoEscapado = (paciente.telefono || '').replace(/'/g, "\\'");
+    const telefonoMostrar = paciente.telefonoCelular || paciente.telefonoFijo || paciente.telefono || '';
+    const curpMostrar = paciente.curp || '';
+
+    const nombreEscapado = nombreLimpio.replace(/'/g, "\\'");
+    const telefonoEscapado = telefonoMostrar.replace(/'/g, "\\'");
     const direccionEscapada = direccionLimpia.replace(/'/g, "\\'");
-    const curpEscapado = (paciente.curp || '').replace(/'/g, "\\'");
+    const curpEscapado = curpMostrar.replace(/'/g, "\\'");
     const coloniaEscapada = coloniaMostrar.replace(/'/g, "\\'");
     const seccionEscapada = (paciente.seccion || '').replace(/'/g, "\\'");
 
@@ -1120,14 +1192,29 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           </div>
         </div>
 
+        <!-- Tarjeta CURP -->
+        <div class="cp-card">
+          <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
+            <i class="fas fa-id-card"></i>
+          </div>
+          <div class="cp-card-details">
+            <span class="cp-card-label">CURP</span>
+            <span class="cp-curp" style="font-family: monospace; font-weight: 800; color: #1e293b; font-size: 12.5px; letter-spacing: 0.5px;">
+              ${curpMostrar ? curpMostrar : '<em style="color:#94a3b8; font-style:normal; font-family: inherit; font-size: 11.5px;">Sin CURP registrada</em>'}
+            </span>
+          </div>
+        </div>
+
         <!-- Tarjeta Teléfono -->
         <div class="cp-card">
           <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
             <i class="fas fa-phone"></i>
           </div>
           <div class="cp-card-details">
-            <span class="cp-card-label">TELÉFONO</span>
-            <span class="cp-telefono">${paciente.telefono ? paciente.telefono : '<em style="color:#94a3b8; font-style:normal;">Sin número registrado</em>'}</span>
+            <span class="cp-card-label">TELÉFONO DE CONTACTO</span>
+            <span class="cp-telefono" style="font-weight: 800; color: #1e293b; font-size: 13.5px;">
+              ${telefonoMostrar ? `<a href="tel:${telefonoMostrar}" style="color: #7A192B; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-phone-volume" style="font-size: 11px; color: #22C55E;"></i> ${telefonoMostrar}</a>` : '<em style="color:#94a3b8; font-style:normal; font-size: 11.5px;">Sin número registrado</em>'}
+            </span>
           </div>
         </div>
 
@@ -1505,7 +1592,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             abrirModal: 'true'
           }
         });
-        this.mostrarToast('📅 Calendario', `Programando visita para ${paciente.nombre}`, 'success');
       });
     };
 
@@ -1622,7 +1708,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return 'g2';
   }
 
-  // ⭐⭐⭐ BÚSQUEDA DE DIRECCIÓN ⭐⭐⭐
+  // ⭐⭐⭐ BÚSQUEDA DE DIRECCIÓN INTELIGENTE ⭐⭐⭐
   buscarDireccion() {
     if (this.busquedaEnProgreso) {
       console.log('⏳ Búsqueda en progreso, ignorando nueva solicitud...');
@@ -1645,65 +1731,49 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const backupOriginal = [...this.pacientesOriginal];
+    const queryUpper = query.toUpperCase();
 
-    this.http.get(`${this.apiUrl}/pacientes/buscar?direccion=${encodeURIComponent(query)}`).subscribe({
-      next: (response: any) => {
-        console.log('📦 Respuesta de búsqueda en BD:', response);
+    // Detectar si la búsqueda incluye número de calle (ej. "CHOPIN 417" -> número 417, calle "CHOPIN")
+    const matchNumber = query.match(/\b\d+\b/);
+    const hasNumber = !!matchNumber;
+    const searchNum = matchNumber ? matchNumber[0] : '';
+    const searchStreet = query.replace(/\b\d+\b/g, '').replace(/[#,]/g, '').trim().toUpperCase();
 
-        let pacientes = response || [];
-        const pacientesConCoords = pacientes.filter((p: any) =>
-          p.lat && p.lng && p.lat !== 0 && p.lng !== 0
-        );
+    // 1. Verificar si existe un paciente con coincidencia EXACTA (misma calle Y mismo número exterior, o nombre completo)
+    let exactPatients: any[] = [];
+    if (hasNumber && searchStreet.length >= 2) {
+      exactPatients = backupOriginal.filter((p: any) => {
+        const dir = (p.direccion || '').toUpperCase();
+        const num = (p.numero || '').toString().trim();
+        const calle = (p.calle || '').toUpperCase();
+        const tieneCalle = (calle && calle.includes(searchStreet)) || dir.includes(searchStreet);
+        const tieneNumero = (num && num === searchNum) || dir.includes(` ${searchNum}`) || dir.includes(`#${searchNum}`);
+        return tieneCalle && tieneNumero;
+      });
+    } else {
+      // Búsqueda por nombre de persona, CURP o teléfono
+      exactPatients = backupOriginal.filter((p: any) => {
+        const nombreCompleto = `${p.nombre || ''} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`.toUpperCase();
+        const curp = (p.curp || '').toUpperCase();
+        const tel = (p.telefonoCelular || p.telefonoFijo || '');
+        return nombreCompleto.includes(queryUpper) || (curp && curp.includes(queryUpper)) || (tel && tel.includes(queryUpper));
+      });
+    }
 
-        if (pacientesConCoords.length > 0) {
-          this.mostrarPacientesEncontrados(pacientesConCoords, backupOriginal, query);
-          this.busquedaEnProgreso = false;
-          this.isSearching = false;
-          this.cdr.detectChanges();
-          return;
-        }
+    // Si encontramos al paciente EXACTO con ese número y calle, o por su nombre:
+    if (exactPatients.length > 0) {
+      console.log(`✅ Paciente exacto encontrado: ${exactPatients.length}`);
+      this.mostrarPacientesEncontrados(exactPatients, backupOriginal, query);
+      this.busquedaEnProgreso = false;
+      this.isSearching = false;
+      this.cdr.detectChanges();
+      return;
+    }
 
-        const queryUpper = query.toUpperCase();
-        const locales = backupOriginal.filter((p: any) => {
-          const dir = (p.direccion || '').toUpperCase();
-          const colonia = (p.colonia || '').toUpperCase();
-          return dir.includes(queryUpper) || colonia.includes(queryUpper);
-        });
-
-        if (locales.length > 0) {
-          this.mostrarPacientesEncontrados(locales, backupOriginal, query);
-          this.busquedaEnProgreso = false;
-          this.isSearching = false;
-          this.cdr.detectChanges();
-          return;
-        }
-
-        console.log('🌍 No se encontraron pacientes, buscando ubicación con geocoding...');
-        this.buscarUbicacionPorDireccion(query);
-
-      },
-      error: (error) => {
-        console.error('❌ Error en búsqueda de pacientes:', error);
-
-        const queryUpper = this.searchQuery.toUpperCase();
-        const locales = backupOriginal.filter((p: any) => {
-          const dir = (p.direccion || '').toUpperCase();
-          const colonia = (p.colonia || '').toUpperCase();
-          return dir.includes(queryUpper) || colonia.includes(queryUpper);
-        });
-
-        if (locales.length > 0) {
-          this.mostrarPacientesEncontrados(locales, backupOriginal, query);
-          this.busquedaEnProgreso = false;
-          this.isSearching = false;
-          this.cdr.detectChanges();
-          return;
-        }
-
-        console.log('🌍 Buscando ubicación con geocoding (fallback)...');
-        this.buscarUbicacionPorDireccion(query);
-      }
-    });
+    // 2. Si no hay paciente exacto con ese número (ej. Chopin 417 cuando solo hay Chopin 413),
+    // es una NUEVA DIRECCIÓN a geolocalizar en el mapa:
+    console.log(`🌍 Buscando ubicación geográfica para "${query}"...`);
+    this.buscarUbicacionPorDireccion(query, searchStreet, searchNum);
   }
 
   private mostrarPacientesEncontrados(pacientes: any[], backupOriginal: any[], query: string) {
@@ -1718,7 +1788,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     console.log(`✅ Mostrando ${finalPacientes.length} pacientes encontrados`);
-
     this.pacientes = finalPacientes;
 
     const zonasSet = new Set<string>();
@@ -1746,64 +1815,132 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.agregarMarcadoresPacientes();
 
-    // ⭐ ABRIR POPUP AUTOMÁTICAMENTE DEL PRIMER PACIENTE ENCONTRADO
+    // Abrir popup automáticamente del primer paciente encontrado
     setTimeout(() => {
       this.abrirPopupDelPrimerPaciente();
     }, 800);
   }
 
-  private buscarUbicacionPorDireccion(query: string) {
+  private inferirColoniaDeCalle(street: string): string {
+    if (!street) return '';
+    const stUpper = street.toUpperCase().trim();
+    const pacienteCercano = this.pacientesOriginal.find((p: any) => {
+      const dir = (p.direccion || '').toUpperCase();
+      const col = (p.colonia || '').toUpperCase();
+      const c = (p.calle || '').toUpperCase();
+      return (c && c.includes(stUpper)) || dir.includes(stUpper);
+    });
+    return pacienteCercano?.colonia || (pacienteCercano ? this.extraerColonia(pacienteCercano.direccion) : '') || '';
+  }
+
+  private buscarUbicacionPorDireccion(query: string, streetHint?: string, numHint?: string) {
     this.mostrarToast('Buscando ubicación', `Buscando "${query}" en el mapa...`, 'info', 1000);
 
-    const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=mx`;
+    const cleanQuery = query.includes('LEON') || query.includes('León') ? query : `${query}, León, Guanajuato, Mexico`;
+    const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&limit=1&countrycodes=mx`;
 
     this.http.get(geocodingUrl).subscribe({
       next: (results: any) => {
-        console.log('🌍 Resultados de geocoding:', results);
+        if (results && results.length > 0 && !isNaN(parseFloat(results[0].lat))) {
+          const res = results[0];
+          const lat = parseFloat(res.lat);
+          const lon = parseFloat(res.lon);
+          const colonia = this.inferirColoniaDeCalle(streetHint || query);
 
-        if (results && results.length > 0) {
-          const result = results[0];
-          const lat = parseFloat(result.lat);
-          const lon = parseFloat(result.lon);
+          this.mostrarMarcadorUbicacion({
+            lat: lat,
+            lon: lon,
+            display_name: `${query.toUpperCase()}${colonia ? ', ' + colonia : ''}, LEÓN, GTO.`,
+            calle: streetHint || query,
+            numero: numHint || '',
+            colonia: colonia
+          });
+          this.concluirBusquedaExitosa(query);
+          return;
+        }
 
-          if (!isNaN(lat) && !isNaN(lon)) {
+        // Si no encontró el número exacto, buscar la calle en León
+        this.fallbackUbicacionPorCalleOPacientes(query, streetHint, numHint);
+      },
+      error: () => {
+        this.fallbackUbicacionPorCalleOPacientes(query, streetHint, numHint);
+      }
+    });
+  }
+
+  private fallbackUbicacionPorCalleOPacientes(query: string, streetHint?: string, numHint?: string) {
+    // 1. Intentar geocodificar solo el nombre de la calle
+    if (streetHint && streetHint.length >= 2) {
+      const streetQuery = `${streetHint}, León, Guanajuato, Mexico`;
+      const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetQuery)}&limit=1&countrycodes=mx`;
+
+      this.http.get(fallbackUrl).subscribe({
+        next: (stResults: any) => {
+          if (stResults && stResults.length > 0 && !isNaN(parseFloat(stResults[0].lat))) {
+            const res = stResults[0];
+            const lat = parseFloat(res.lat);
+            const lon = parseFloat(res.lon);
+            const colonia = this.inferirColoniaDeCalle(streetHint);
+
             this.mostrarMarcadorUbicacion({
               lat: lat,
               lon: lon,
-              display_name: result.display_name || query
+              display_name: `${query.toUpperCase()}${colonia ? ', ' + colonia : ''}, LEÓN, GTO.`,
+              calle: streetHint,
+              numero: numHint || '',
+              colonia: colonia
             });
-
-            this.mostrarToast('Ubicación encontrada', `📍 ${result.display_name || query}`, 'success', 3000);
-            this.busquedaEnProgreso = false;
-            this.isSearching = false;
-            this.cdr.detectChanges();
+            this.concluirBusquedaExitosa(query);
             return;
           }
-        }
+          this.fallbackUbicacionPorPacientesCercanos(query, streetHint, numHint);
+        },
+        error: () => this.fallbackUbicacionPorPacientesCercanos(query, streetHint, numHint)
+      });
+      return;
+    }
 
-        this.mostrarToast('No encontrado', `No se encontró "${query}" en el mapa`, 'warning', 3000);
+    this.fallbackUbicacionPorPacientesCercanos(query, streetHint, numHint);
+  }
 
-        this.pacientes = [...this.pacientesOriginal];
-        this.agregarMarcadoresPacientes();
+  private fallbackUbicacionPorPacientesCercanos(query: string, streetHint?: string, numHint?: string) {
+    if (streetHint && streetHint.length >= 2) {
+      const stUpper = streetHint.toUpperCase().trim();
+      const pacienteCercano = this.pacientesOriginal.find((p: any) => {
+        const dir = (p.direccion || '').toUpperCase();
+        const c = (p.calle || '').toUpperCase();
+        return (c && c.includes(stUpper)) || dir.includes(stUpper);
+      });
 
-        this.busquedaEnProgreso = false;
-        this.isSearching = false;
-        this.cdr.detectChanges();
-
-      },
-      error: (error) => {
-        console.error('❌ Error en geocoding:', error);
-
-        this.mostrarToast('Error', 'No se pudo encontrar la ubicación', 'error', 3000);
-
-        this.pacientes = [...this.pacientesOriginal];
-        this.agregarMarcadoresPacientes();
-
-        this.busquedaEnProgreso = false;
-        this.isSearching = false;
-        this.cdr.detectChanges();
+      if (pacienteCercano && pacienteCercano.lat && pacienteCercano.lng) {
+        const col = pacienteCercano.colonia || this.extraerColonia(pacienteCercano.direccion);
+        this.mostrarMarcadorUbicacion({
+          lat: pacienteCercano.lat + 0.00015,
+          lon: pacienteCercano.lng + 0.00015,
+          display_name: `${query.toUpperCase()}${col ? ', ' + col : ''}, LEÓN, GTO.`,
+          calle: streetHint,
+          numero: numHint || '',
+          colonia: col
+        });
+        this.concluirBusquedaExitosa(query);
+        return;
       }
-    });
+    }
+
+    this.mostrarToast('No encontrado', `No se encontró "${query}" en el mapa`, 'warning', 3000);
+    this.busquedaEnProgreso = false;
+    this.isSearching = false;
+    this.cdr.detectChanges();
+  }
+
+  private concluirBusquedaExitosa(query: string) {
+    this.mostrarToast('Ubicación encontrada', `📍 ${query.toUpperCase()}`, 'success', 3000);
+    // Mantener los pacientes originales en el mapa para referencia visual alrededor del punto
+    this.pacientes = [...this.pacientesOriginal];
+    this.agregarMarcadoresPacientes();
+    this.busquedaEnProgreso = false;
+    this.isSearching = false;
+    this.cdr.detectChanges();
   }
 
   private mostrarMarcadorUbicacion(result: any) {
@@ -1816,7 +1953,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const searchIcon = L.divIcon({
       html: `<div style="
-        background: #7E101F;
+        background: #520D2F;
         width: 48px;
         height: 48px;
         border-radius: 50%;
@@ -1824,20 +1961,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 22px;
-        border: 4px solid white;
-        box-shadow: 0 0 0 6px rgba(126, 16, 31, 0.25), 0 4px 24px rgba(0,0,0,0.3);
+        font-size: 20px;
+        border: 3.5px solid white;
+        box-shadow: 0 0 0 6px rgba(255, 107, 85, 0.35), 0 6px 24px rgba(0,0,0,0.35);
         animation: searchPulseMarker 1.8s ease-in-out infinite;
         z-index: 9999;
         pointer-events: auto;
       ">
-        <i class="fas fa-map-pin"></i>
+        <i class="fas fa-location-dot" style="color: #FF6B55;"></i>
       </div>
       <style>
         @keyframes searchPulseMarker {
-          0% { transform: scale(1); box-shadow: 0 0 0 6px rgba(126, 16, 31, 0.25); }
-          50% { transform: scale(1.15); box-shadow: 0 0 0 16px rgba(126, 16, 31, 0.08); }
-          100% { transform: scale(1); box-shadow: 0 0 0 6px rgba(126, 16, 31, 0.25); }
+          0% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 107, 85, 0.35); }
+          50% { transform: scale(1.12); box-shadow: 0 0 0 16px rgba(255, 107, 85, 0.1); }
+          100% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 107, 85, 0.35); }
         }
       </style>`,
       className: 'search-marker',
@@ -1847,58 +1984,49 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     const searchPopupContent = `
-      <div style="
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        max-width: 340px;
-        min-width: 280px;
-        padding: 0;
-        background: #ffffff;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        animation: ppSlideIn 0.3s ease;
-      ">
+      <div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; max-width: 310px; width: 100%;">
         <div style="
-          background: linear-gradient(135deg, #7E101F, #5B0C16);
-          padding: 16px 20px;
+          background: linear-gradient(135deg, #520D2F 0%, #38061F 100%);
           color: white;
+          padding: 13px 15px;
+          border-radius: 12px 12px 0 0;
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         ">
           <div style="
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.12);
-            border-radius: 12px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             flex-shrink: 0;
-            border: 1px solid rgba(255,255,255,0.10);
+            color: #FF6B55;
           ">
-            <i class="fas fa-search-location"></i>
+            <i class="fas fa-location-crosshairs"></i>
           </div>
-          <div style="flex: 1;">
-            <div style="font-size: 14px; font-weight: 700;">📍 Ubicación encontrada</div>
-            <div style="font-size: 11px; opacity: 0.7; line-height: 1.3;">No hay pacientes registrados aquí</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">Ubicación Encontrada</div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.2;">Punto disponible en mapa</div>
           </div>
         </div>
 
-        <div style="padding: 16px 20px;">
+        <div style="padding: 12px 14px;">
           <div style="
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            padding: 10px 14px;
-            background: #F8F7F6;
-            border-radius: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            padding: 9px 12px;
+            background: #FAF6F4;
+            border: 1px solid #EBDCD5;
+            border-radius: 8px;
+            margin-bottom: 8px;
           ">
-            <i class="fas fa-location-dot" style="color: #7E101F; font-size: 14px; margin-top: 2px;"></i>
-            <span style="font-size: 13px; color: #333; line-height: 1.4; word-break: break-word;">
+            <i class="fas fa-location-dot" style="color: #520D2F; font-size: 13px; margin-top: 2px;"></i>
+            <span style="font-size: 12px; color: #1F1018; font-weight: 700; line-height: 1.35; word-break: break-word;">
               ${result.display_name || 'Dirección no disponible'}
             </span>
           </div>
@@ -1906,37 +2034,37 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           <div style="
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 11px;
-            color: #999;
-            background: #F5F5F5;
-            padding: 6px 14px;
-            border-radius: 8px;
+            gap: 6px;
+            font-size: 10.5px;
+            color: #7A6972;
+            background: #F2ECE8;
+            padding: 5px 10px;
+            border-radius: 6px;
           ">
-            <i class="fas fa-crosshairs" style="color: #7E101F; font-size: 10px;"></i>
-            <span>Lat: ${result.lat.toFixed(6)}, Lng: ${result.lon.toFixed(6)}</span>
+            <i class="fas fa-crosshairs" style="color: #FF6B55; font-size: 10px;"></i>
+            <span>Lat: ${result.lat.toFixed(5)}, Lng: ${result.lon.toFixed(5)}</span>
           </div>
         </div>
 
-        <div style="padding: 0 20px 16px 20px;">
+        <div style="padding: 0 14px 14px 14px;">
           <button id="btnRegistrarPacienteBusqueda" style="
             width: 100%;
-            padding: 11px 16px;
-            background: linear-gradient(135deg, #7A192B 0%, #5E1220 100%);
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #7D174A 0%, #520D2F 100%);
             color: #ffffff;
             border: none;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 14px rgba(122, 25, 43, 0.35);
+            gap: 7px;
+            box-shadow: 0 4px 12px rgba(82, 13, 47, 0.3);
             transition: all 0.2s ease;
           ">
-            <i class="fas fa-user-plus" style="color: #D4AF37; font-size: 14px;"></i>
+            <i class="fas fa-user-plus" style="color: #FF6B55; font-size: 13px;"></i>
             <span>Registrar Paciente Aquí</span>
           </button>
         </div>
@@ -1948,7 +2076,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       zIndexOffset: 10000
     })
       .bindPopup(searchPopupContent, {
-        maxWidth: 340,
+        maxWidth: 320,
         className: 'search-popup',
         autoClose: false,
         closeOnClick: false
@@ -1963,41 +2091,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       if (btn) {
         btn.onclick = () => {
           this.ngZone.run(() => {
-            const rawDir = result.display_name || '';
-            const partes = rawDir.split(',').map((p: string) => p.trim());
-            let numero = '';
-            let calle = '';
-            let colonia = '';
-            let cp = '';
-
-            // Detectar si el primer fragmento es un número
-            if (partes.length > 0) {
-              if (/^\d+$/.test(partes[0])) {
-                numero = partes[0];
-                calle = partes[1] || '';
-                colonia = partes[2] || '';
-              } else {
-                calle = partes[0] || '';
-                colonia = partes[1] || '';
-              }
-            }
-
-            // Buscar código postal de 5 dígitos
-            for (const p of partes) {
-              if (/^\d{5}$/.test(p)) {
-                cp = p;
-                break;
-              }
-            }
-
-            this.abrirModalPaciente(result.lat, result.lon, rawDir, calle, numero, colonia, cp);
+            const calle = result.calle || '';
+            const numero = result.numero || '';
+            const colonia = result.colonia || '';
+            const dir = result.display_name || '';
+            this.abrirModalPaciente(result.lat, result.lon, dir, calle, numero, colonia, '');
           });
         };
       }
     }, 300);
 
     if (this.map) {
-      this.map.setView([result.lat, result.lon], 16);
+      this.map.setView([result.lat, result.lon], 18);
     }
   }
 
