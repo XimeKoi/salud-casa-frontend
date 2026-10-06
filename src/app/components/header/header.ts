@@ -82,6 +82,8 @@ export class HeaderComponent {
     console.log('Cerrando sesión...');
     localStorage.removeItem('token');
     localStorage.removeItem('rol');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('isAuthenticated');
     this.router.navigate(['/login']);
   }
 }

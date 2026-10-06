@@ -1753,3 +1753,74 @@
     }
   }
 }
+
+/* ⭐ GPS BANNER & TABLET ERGONOMICS */
+.btn-action.btn-location {
+  color: #0284c7;
+  border-color: rgba(2, 132, 199, 0.25);
+
+  &:hover:not(:disabled) {
+    background: #0284c7;
+    color: white;
+    box-shadow: 0 8px 28px rgba(2, 132, 199, 0.35);
+    border-color: #0284c7;
+  }
+}
+
+.gps-detected-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid #bae6fd;
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+
+  .gps-badge-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #0284c7;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+  }
+
+  .gps-badge-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .gps-badge-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0369a1;
+  }
+
+  .gps-badge-coords {
+    font-size: 11px;
+    font-family: monospace;
+    font-weight: 600;
+    color: #0c4a6e;
+  }
+
+  .gps-badge-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid #bbf7d0;
+  }
+}

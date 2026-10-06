@@ -60,6 +60,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   mostrarModalPaciente: boolean = false;
   pacienteGuardando: boolean = false;
+  obteniendoUbicacion: boolean = false;
+  accuracyCircle: L.Circle | null = null;
   capaManzanaSeleccionada: L.Circle | null = null;
   ultimaManzanaSeleccionada: any = null;
   coordsPacientesFiltrados: L.LatLng[] = [];
@@ -135,6 +137,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   ) {
     console.log('🏗️ [MapComponent] Constructor ejecutado');
     console.log('🌍 [MapComponent] API URL:', this.apiUrl);
+    try {
+      const userStr = localStorage.getItem('userData');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        if (userObj.id) {
+          this.idEnfermera = userObj.id;
+        }
+      }
+    } catch (e) { }
   }
 
   cargarPacientesDirectamente(forceRefresh: boolean = false) {
@@ -631,16 +642,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // ⭐ BÚSQUEDA CON GEOLOCALIZACIÓN Y MODAL DE REGISTRO
-  buscarDireccionConEntrecalles() {
-    this.obtenerUbicacionActual();
-  }
+  // ⭐ BÚSQUEDA CON GEOLOCALIZACIÓN Y MODAL DE REGISTRO AUTOMÁTICO
+  obtenerUbicacionActualYRegistrar() {
+    if (this.obteniendoUbicacion) return;
 
-  private obtenerUbicacionActual() {
     if (!navigator.geolocation) {
-      this.mostrarToast('Error', 'Tu navegador no soporta geolocalización', 'error', 3000);
+      this.mostrarToast('Error', 'Tu tableta o navegador no soporta geolocalización', 'error', 3000);
       return;
     }
+
+    this.obteniendoUbicacion = true;
+    this.mostrarToast('📍 Obteniendo GPS', 'Detectando coordenadas del domicilio...', 'info', 3000);
+    this.cdr.detectChanges();
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -649,49 +662,112 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         const accuracy = position.coords.accuracy;
 
         if (this.map) {
-          this.map.setView([lat, lng], 17);
+          this.map.setView([lat, lng], 18, { animate: true });
         }
 
         this.mostrarMarcadorUbicacionActual(lat, lng, accuracy);
 
+        this.mostrarToast('📍 GPS fijado', 'Identificando calle y colonia...', 'info', 2000);
+
         const direccionData = await this.obtenerDireccionDesdeCoordenadas(lat, lng);
+
+        this.obteniendoUbicacion = false;
 
         if (direccionData) {
           this.abrirModalGuardarPaciente(lat, lng, {
             calle: direccionData.calle || '',
             numero: direccionData.numero || '',
             colonia: direccionData.colonia || '',
+            cp: direccionData.cp || '',
             direccion: direccionData.direccionCompleta || ''
           });
+          const textoCalle = direccionData.calle ? `${direccionData.calle}. ` : '';
+          this.mostrarToast('✅ Domicilio detectado', `${textoCalle}Completa los datos del paciente.`, 'success', 3500);
         } else {
           this.abrirModalGuardarPaciente(lat, lng, null);
+          this.mostrarToast('📍 Coordenadas listas', 'Completa los datos del paciente.', 'info', 3500);
         }
+        this.cdr.detectChanges();
       },
       (error) => {
         console.error('❌ Error de geolocalización:', error);
-        this.mostrarToast('Error de ubicación', 'No se pudo obtener tu ubicación.', 'error', 4000);
+        this.obteniendoUbicacion = false;
+        this.cdr.detectChanges();
+
+        let errorMsg = 'No se pudo obtener tu ubicación GPS.';
+        if (error.code === 1) {
+          errorMsg = 'Permiso de GPS denegado. Permite el acceso a la ubicación en tu tableta.';
+        } else if (error.code === 2) {
+          errorMsg = 'Ubicación GPS no disponible en este momento.';
+        } else if (error.code === 3) {
+          errorMsg = 'Tiempo de espera agotado al conectar con el GPS.';
+        }
+
+        this.mostrarToast('Aviso de ubicación', errorMsg, 'warning', 4000);
+
+        // Aún con error de GPS, abrimos el modal con las coordenadas actuales para no bloquear al enfermero
+        const fallbackLat = this.centerLat || 21.1165;
+        const fallbackLng = this.centerLng || -101.6865;
+        this.abrirModalGuardarPaciente(fallbackLat, fallbackLng, null);
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 12000,
         maximumAge: 0
       }
     );
   }
 
-  private mostrarMarcadorUbicacionActual(lat: number, lng: number, accuracy: number) {
+  // Alias para mantener compatibilidad
+  buscarDireccionConEntrecalles() {
+    this.obtenerUbicacionActualYRegistrar();
+  }
+
+  private mostrarMarcadorUbicacionActual(lat: number, lng: number, accuracy?: number) {
     if (this.searchMarker) {
       try { this.map?.removeLayer(this.searchMarker); } catch (e) { }
+      this.searchMarker = null;
     }
+    if (this.accuracyCircle) {
+      try { this.map?.removeLayer(this.accuracyCircle); } catch (e) { }
+      this.accuracyCircle = null;
+    }
+
     const myIcon = L.divIcon({
-      html: `<div style="background: #1976d2; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(25,118,210,0.6);"></div>`,
+      html: `
+        <div class="gps-pulse-wrapper">
+          <div class="gps-pulse-ring"></div>
+          <div class="gps-pulse-dot">
+            <i class="fas fa-location-arrow"></i>
+          </div>
+        </div>
+      `,
       className: 'current-pos-icon',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11]
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
     });
-    this.searchMarker = L.marker([lat, lng], { icon: myIcon });
+
+    this.searchMarker = L.marker([lat, lng], { icon: myIcon, zIndexOffset: 1000 });
+    const accText = accuracy && accuracy > 0 ? ` (±${Math.round(accuracy)}m)` : '';
+    this.searchMarker.bindTooltip(`📍 Domicilio actual${accText}`, {
+      permanent: false,
+      direction: 'top',
+      offset: [0, -18]
+    });
+
     if (this.map) {
       this.searchMarker.addTo(this.map);
+
+      if (accuracy && accuracy > 0 && accuracy < 500) {
+        this.accuracyCircle = L.circle([lat, lng], {
+          radius: Math.min(accuracy, 120),
+          color: '#0284c7',
+          fillColor: '#38bdf8',
+          fillOpacity: 0.12,
+          weight: 1.5,
+          dashArray: '4, 4'
+        }).addTo(this.map);
+      }
     }
   }
 
@@ -699,23 +775,29 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18&accept-language=es`;
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'SaludCasaApp/1.0', 'Accept-Language': 'es' }
+        headers: { 'User-Agent': 'CuidaliaApp/1.0', 'Accept-Language': 'es' }
       });
       if (!response.ok) return null;
       const data = await response.json();
       if (data && data.address) {
         const addr = data.address;
-        const calle = addr.road || addr.street || addr.pedestrian || addr.footway || '';
+        const calle = (addr.road || addr.street || addr.pedestrian || addr.footway || addr.path || addr.residential || '').toUpperCase();
         const numero = addr.house_number || '';
-        const colonia = addr.suburb || addr.neighbourhood || addr.district || addr.quarter || '';
+        let colonia = (addr.suburb || addr.neighbourhood || addr.residential || addr.district || addr.quarter || addr.city_district || addr.subdivision || '').toUpperCase();
+
+        if (!colonia && data.display_name) {
+          colonia = this.pacientesMapService.extraerColonia(data.display_name).toUpperCase();
+        }
+
         const cp = addr.postcode || '';
-        const ciudad = addr.city || addr.town || addr.village || addr.municipality || 'León';
-        const estado = addr.state || addr.region || 'Guanajuato';
+        const ciudad = (addr.city || addr.town || addr.village || addr.municipality || 'León').toUpperCase();
+        const estado = (addr.state || addr.region || 'Guanajuato').toUpperCase();
         const direccionCompleta = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         return { calle, numero, colonia, cp, ciudad, estado, direccionCompleta, displayName: data.display_name };
       }
       return null;
     } catch (e) {
+      console.warn('⚠️ Error en reverse geocoding:', e);
       return null;
     }
   }
@@ -739,6 +821,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   abrirModalPaciente(lat?: number, lng?: number, direccion?: string, calle?: string, numero?: string, colonia?: string, cp?: string) {
+    const calleLimpia = (calle || '').trim().toUpperCase();
+    const coloniaLimpia = (colonia || (this.distritoActual ? this.distritoActual.nombre : '') || '').trim().toUpperCase();
+    const cpLimpio = (cp || '').trim();
+    const numLimpio = (numero || '').trim();
+
     this.nuevoPaciente = {
       apellidoPaterno: '',
       apellidoMaterno: '',
@@ -749,10 +836,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       estatus: 'PENDIENTE',
       programa: 'PAM',
       direccion: direccion || '',
-      colonia: colonia || (this.distritoActual ? this.distritoActual.nombre : '') || '',
-      calle: calle || direccion || '',
-      numero: numero || '',
-      cp: cp || '',
+      colonia: coloniaLimpia,
+      calle: calleLimpia,
+      numero: numLimpio,
+      cp: cpLimpio,
       lat: lat || this.centerLat,
       lng: lng || this.centerLng
     };
@@ -1149,6 +1236,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const coloniaEscapada = coloniaMostrar.replace(/'/g, "\\'");
     const seccionEscapada = (paciente.seccion || '').replace(/'/g, "\\'");
 
+    const tieneCoords = paciente.lat && paciente.lng && paciente.lat !== 0 && paciente.lng !== 0;
+    const urlRuta = tieneCoords
+      ? `https://www.google.com/maps/dir/?api=1&destination=${paciente.lat},${paciente.lng}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
+
     return `
     <div class="cuidalia-pop">
       <!-- HEADER -->
@@ -1227,6 +1319,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       <!-- FOOTER ACTIONS -->
       <div class="cp-footer">
+        <a class="cp-btn cp-btn-ruta"
+           href="${urlRuta}"
+           target="_blank" rel="noopener noreferrer"
+           title="Cómo llegar con Google Maps">
+          <i class="fas fa-location-arrow"></i>
+          <span>Ruta</span>
+        </a>
+
         <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
           onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
             pacienteId: ${paciente.id},
@@ -2119,6 +2219,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.searchMarker) {
       try { this.map?.removeLayer(this.searchMarker); } catch (e) { }
       this.searchMarker = null;
+    }
+
+    if (this.accuracyCircle) {
+      try { this.map?.removeLayer(this.accuracyCircle); } catch (e) { }
+      this.accuracyCircle = null;
     }
 
     if (this.map) {

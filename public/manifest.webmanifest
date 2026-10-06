@@ -1,13 +1,13 @@
 {
     "name": "Cuidalia",
     "short_name": "Cuidalia",
-    "description": "Cuidalia - Cercanía que cuida. Sistema de Atención Domiciliaria Integral.",
+    "description": "Cuidalia · Cercanía que cuida. Sistema de Atención Médica Domiciliaria.",
     "theme_color": "#520D2F",
     "background_color": "#520D2F",
     "display": "standalone",
     "orientation": "portrait-primary",
     "scope": "/",
-    "start_url": "/",
+    "start_url": "/login",
     "icons": [
         {
             "src": "icons/icon-72x72.png",

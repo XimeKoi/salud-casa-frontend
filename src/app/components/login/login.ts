@@ -45,9 +45,12 @@ export class LoginComponent {
   // MÉTODO PRINCIPAL DE LOGIN
   // ============================================
   login() {
+    const usuarioLimpio = (this.username || '').trim();
+    const passwordLimpio = (this.password || '').trim();
+
     // Validar que los campos no estén vacíos
-    if (!this.username || !this.password) {
-      this.errorMsg = 'Ingrese CURP y contraseña';
+    if (!usuarioLimpio || !passwordLimpio) {
+      this.errorMsg = 'Ingrese su usuario / CURP y contraseña';
       return;
     }
 
@@ -55,8 +58,8 @@ export class LoginComponent {
     this.errorMsg = '';
 
     this.http.post(`${this.apiUrl}/auth/login`, {
-      usuario: this.username,
-      password: this.password
+      usuario: usuarioLimpio,
+      password: passwordLimpio
     }).subscribe({
       next: (response: any) => {
         this.loading = false;
@@ -82,6 +85,7 @@ export class LoginComponent {
           }));
 
           // Guardar datos en localStorage
+          localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('rol', userData.role);
           localStorage.setItem('userData', JSON.stringify(userData));
 

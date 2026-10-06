@@ -99,7 +99,7 @@
             <div class="clean-input-box">
               <input id="username" name="username" type="text" class="clean-input"
                 placeholder="Ingresa tu CURP o Correo Institucional" [(ngModel)]="username" autocomplete="username"
-                autocapitalize="characters" spellcheck="false" maxlength="50" required />
+                autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="50" required />
               <button type="button" class="clean-clear-btn" *ngIf="username" (click)="username = ''"
                 aria-label="Borrar campo">
                 <i class="fas fa-circle-xmark"></i>
@@ -118,7 +118,7 @@
             <div class="clean-input-box">
               <input id="password" name="password" [type]="showPassword ? 'text' : 'password'" class="clean-input"
                 placeholder="••••••••••••" [(ngModel)]="password" (keyup.enter)="login()"
-                autocomplete="current-password" required />
+                autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required />
               <button type="button" class="clean-toggle-eye" (click)="togglePasswordVisibility()"
                 [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Ver contraseña'">
                 <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>

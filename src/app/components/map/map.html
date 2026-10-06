@@ -21,10 +21,12 @@
 
     <!-- ⭐ BOTONES DE ACCIÓN RÁPIDA -->
     <div class="action-buttons">
-      <button class="btn-action btn-location" (click)="buscarDireccionConEntrecalles()" [disabled]="isSearching"
-        title="Mi ubicación">
-        <i class="fas fa-location-dot"></i>
-        <span class="btn-tooltip">Mi ubicación</span>
+      <button class="btn-action btn-location" (click)="obtenerUbicacionActualYRegistrar()"
+        [disabled]="isSearching || obteniendoUbicacion"
+        [title]="obteniendoUbicacion ? 'Detectando ubicación GPS...' : 'Detectar domicilio GPS y registrar paciente'">
+        <i class="fas" [class.fa-location-dot]="!obteniendoUbicacion" [class.fa-spinner]="obteniendoUbicacion"
+          [class.fa-spin]="obteniendoUbicacion"></i>
+        <span class="btn-tooltip">{{ obteniendoUbicacion ? 'Detectando...' : 'Mi ubicación' }}</span>
       </button>
 
       <button class="btn-action btn-refresh" (click)="recargarPacientes()" [disabled]="loadingPacientes"
@@ -86,6 +88,20 @@
 
       <!-- ⭐ BODY -->
       <div class="modal-body">
+
+        <!-- ⭐ BANNER GPS DETECTADO -->
+        <div class="gps-detected-banner" *ngIf="nuevoPaciente.lat && nuevoPaciente.lng">
+          <div class="gps-badge-icon">
+            <i class="fas fa-location-crosshairs"></i>
+          </div>
+          <div class="gps-badge-info">
+            <span class="gps-badge-title">Ubicación GPS Domiciliar Fijada</span>
+            <span class="gps-badge-coords">{{ nuevoPaciente.lat.toFixed(6) }}, {{ nuevoPaciente.lng.toFixed(6) }}</span>
+          </div>
+          <span class="gps-badge-status">
+            <i class="fas fa-check-circle"></i> Georreferenciado
+          </span>
+        </div>
 
         <!-- ⭐ CAMPOS PERSONALES -->
         <div class="form-section">

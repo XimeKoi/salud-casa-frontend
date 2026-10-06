@@ -1042,6 +1042,30 @@ button:active {
     }
   }
 
+  .cp-btn-ruta {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #ffffff !important;
+    border: none;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);
+
+    i {
+      color: #ffffff;
+      font-size: 11px;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.38);
+      filter: brightness(1.06);
+      color: #ffffff !important;
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
   .cp-btn-agendar {
     color: #ffffff;
     border: none;
@@ -1071,6 +1095,61 @@ button:active {
     &:active {
       transform: translateY(0);
     }
+  }
+}
+
+/* ⭐ GPS LIVE PULSING MARKER */
+.current-pos-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.gps-pulse-wrapper {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gps-pulse-ring {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.4);
+  animation: gpsPulse 2s ease-out infinite;
+}
+
+@keyframes gpsPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.gps-pulse-dot {
+  position: relative;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 3px 12px rgba(2, 132, 199, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+
+  i {
+    transform: rotate(45deg);
   }
 }
 
