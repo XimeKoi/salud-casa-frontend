@@ -5,6 +5,7 @@
   <header class="page-header">
     <div class="header-main-row">
       <div class="header-title-box">
+        <app-page-header-nav></app-page-header-nav>
         <div class="header-icon-wrapper">
           <i class="fas fa-calendar-days"></i>
         </div>
@@ -278,33 +279,36 @@
           </button>
         </div>
 
-        <!-- Sugerencias Amplias -->
+        <!-- Sugerencias Amplias con Diseño Visual Rico y Colorido -->
         <div class="suggestions-flyout"
           *ngIf="mostrarSugerencias && sugerenciasPacientes.length > 0 && busquedaPaciente.length > 0">
           <div class="suggestion-row" *ngFor="let p of sugerenciasPacientes" (click)="agregarPacienteSeleccionado(p)">
-            <div class="suggestion-avatar">
-              <i class="fas fa-circle-user"></i>
+            <div class="suggestion-avatar" [class.finado]="p.estaFinado">
+              <span>{{ (p.nombreCompleto || p.nombre || 'P').charAt(0).toUpperCase() }}</span>
             </div>
             <div class="suggestion-info">
-              <div class="patient-name">{{ p.nombreCompleto }}</div>
-              <div class="patient-meta">
-                <span><i class="fas fa-id-badge"></i> ID: {{ p.id }}</span>
-                <span *ngIf="p.curp"><i class="fas fa-id-card"></i> {{ p.curp }}</span>
-                <span><i class="fas fa-map-pin"></i> {{ p.colonia || 'Sin colonia' }}</span>
-                <span *ngIf="p.estaFinado" class="finado-tag-small">FINADO</span>
+              <div class="patient-name-row">
+                <span class="patient-name">{{ p.nombreCompleto }}</span>
+                <span *ngIf="p.estaFinado" class="badge-finado-pill"><i class="fas fa-skull"></i> FINADO</span>
+              </div>
+              <div class="patient-meta-badges">
+                <span class="meta-pill pill-id"><i class="fas fa-hashtag"></i> ID {{ p.id }}</span>
+                <span class="meta-pill pill-curp" *ngIf="p.curp"><i class="fas fa-id-card"></i> {{ p.curp }}</span>
+                <span class="meta-pill pill-colonia" *ngIf="p.colonia"><i class="fas fa-location-dot"></i> {{ p.colonia }}</span>
               </div>
             </div>
-            <div class="suggestion-add-btn" *ngIf="!p.estaFinado" title="Agregar paciente a la lista">
+            <button type="button" class="suggestion-add-btn" *ngIf="!p.estaFinado" title="Agregar paciente a la programación">
               <i class="fas fa-plus"></i>
-            </div>
+              <span>Agregar</span>
+            </button>
           </div>
         </div>
 
         <div class="suggestions-flyout"
           *ngIf="mostrarSugerencias && sugerenciasPacientes.length === 0 && busquedaPaciente.length > 0">
           <div class="suggestion-empty-state">
-            <i class="fas fa-magnifying-glass"></i>
-            <span>No se encontraron pacientes que coincidan con la búsqueda</span>
+            <i class="fas fa-search"></i>
+            <span>No se encontró ningún paciente con "{{ busquedaPaciente }}"</span>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿// src/app/guards/auth.guard.ts
+// src/app/guards/auth.guard.ts
 
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
@@ -12,7 +12,8 @@ export const authGuard: CanActivateFn = (route, state) => {
   const token = localStorage.getItem('token');
   const isAuthFlag = localStorage.getItem('isAuthenticated') === 'true';
 
-  const estaAutenticado = isAuthFlag || Boolean(userData || rol || token);
+  const checkVal = (v: string | null) => Boolean(v && v !== 'null' && v !== 'undefined' && v.trim() !== '');
+  const estaAutenticado = isAuthFlag || checkVal(userData) || checkVal(rol) || checkVal(token);
 
   if (estaAutenticado) {
     return true;
@@ -20,10 +21,9 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   // Si no está autenticado, redirigir al login
   console.warn('⛔ Acceso denegado. Redirigiendo a /login desde:', state.url);
-  router.navigate(['/login'], {
+  return router.createUrlTree(['/login'], {
     queryParams: { returnUrl: state.url }
   });
-  return false;
 };
 
 export const publicGuard: CanActivateFn = () => {
@@ -31,14 +31,15 @@ export const publicGuard: CanActivateFn = () => {
 
   const userData = localStorage.getItem('userData');
   const rol = localStorage.getItem('rol');
+  const token = localStorage.getItem('token');
   const isAuthFlag = localStorage.getItem('isAuthenticated') === 'true';
 
-  const estaAutenticado = isAuthFlag || Boolean(userData || rol);
+  const checkVal = (v: string | null) => Boolean(v && v !== 'null' && v !== 'undefined' && v.trim() !== '');
+  const estaAutenticado = isAuthFlag || checkVal(userData) || checkVal(rol) || checkVal(token);
 
   // Si el usuario ya inició sesión e intenta ir a /login, llevarlo al dashboard
   if (estaAutenticado) {
-    router.navigate(['/dashboard']);
-    return false;
+    return router.createUrlTree(['/dashboard']);
   }
 
   return true;

@@ -5,6 +5,7 @@
   <header class="page-header">
     <div class="header-main-row">
       <div class="header-title-box">
+        <app-page-header-nav></app-page-header-nav>
         <div class="header-icon-wrapper">
           <i class="fas fa-file-signature"></i>
         </div>
@@ -179,9 +180,17 @@
 
           <div class="field-item">
             <label><i class="fas fa-list-ol"></i> Número de Visita</label>
-            <div class="visit-number-badge">
-              <span>Visita Consecutiva N.º</span>
-              <strong>{{ numVisita }}</strong>
+            <div class="visit-number-badge visit-number-interactive">
+              <span class="badge-title-text">Visita Consecutiva N.º</span>
+              <div class="visit-stepper-box">
+                <button type="button" class="btn-step-counter" (click)="numVisita = (numVisita > 1 ? numVisita - 1 : 1)" title="Disminuir número de visita">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <input type="number" class="input-visit-number" [(ngModel)]="numVisita" min="1" max="99" title="Ingresa o edita el número de visita" />
+                <button type="button" class="btn-step-counter" (click)="numVisita = numVisita + 1" title="Aumentar número de visita">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -28,10 +28,12 @@ interface Incidencia {
     };
 }
 
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+
 @Component({
     selector: 'app-incidencias',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, PageHeaderNavComponent],
     templateUrl: './incidencias.component.html',
     styleUrls: ['./incidencias.component.scss']
 })

@@ -1,8 +1,9 @@
-// src/app/components/header/header.ts
-
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { MenuService } from '../../services/menu.service';
 
 @Component({
   selector: 'app-header',
@@ -11,18 +12,56 @@ import { Router } from '@angular/router';
   templateUrl: './header.html',
   styleUrls: ['./header.scss']
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   sidebarOpen = false;
   cantidadNotificaciones = 3;
+  esRutaMapa = true;
 
-  constructor(private router: Router) { }
+  private menuSub?: Subscription;
+  private routerSub?: Subscription;
+
+  constructor(
+    private router: Router,
+    public menuService: MenuService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.calcularEsRutaMapa();
+    this.routerSub = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.actualizarEsRutaMapa();
+    });
+  }
+
+  ngOnInit() {
+    this.menuSub = this.menuService.sidebarOpen.subscribe(open => {
+      this.sidebarOpen = open;
+      this.cdr.markForCheck();
+    });
+  }
+
+  ngOnDestroy() {
+    this.menuSub?.unsubscribe();
+    this.routerSub?.unsubscribe();
+  }
+
+  private calcularEsRutaMapa(): boolean {
+    const rawUrl = this.router.url.split('?')[0].replace(/\/+$/, '');
+    this.esRutaMapa = rawUrl === '/dashboard' || rawUrl === '';
+    return this.esRutaMapa;
+  }
+
+  private actualizarEsRutaMapa() {
+    this.calcularEsRutaMapa();
+    this.cdr.markForCheck();
+  }
 
   toggleSidebar() {
-    this.sidebarOpen = !this.sidebarOpen;
+    this.menuService.toggleMenu();
   }
 
   closeSidebar() {
-    this.sidebarOpen = false;
+    this.menuService.cerrarMenu();
   }
 
   navigateTo(section: string) {

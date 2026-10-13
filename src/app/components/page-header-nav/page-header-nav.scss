@@ -1,0 +1,99 @@
+// src/app/components/page-header-nav/page-header-nav.scss
+
+.page-nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-right: 4px;
+
+  .btn-nav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    user-select: none;
+    white-space: nowrap;
+
+    i {
+      font-size: 13.5px;
+      transition: transform 0.2s ease;
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
+
+    &.btn-menu {
+      background: #FFFFFF;
+      color: #520D2F;
+      border: 1.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+      &:hover {
+        background: #FFF5F2;
+        color: #7E1848;
+        border-color: #FF6B55;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+        transform: translateY(-1px);
+
+        i {
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    &.btn-mapa {
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 2px 8px rgba(29, 78, 216, 0.35);
+
+      &:hover {
+        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.45);
+        border-color: rgba(255, 255, 255, 0.6);
+        transform: translateY(-1px);
+
+        i {
+          transform: scale(1.1);
+        }
+      }
+    }
+  }
+
+  .nav-group-divider {
+    width: 1.5px;
+    height: 26px;
+    background: rgba(255, 255, 255, 0.35);
+    margin: 0 6px 0 2px;
+  }
+}
+
+// Adaptabilidad en tablets pequeñas y móviles
+@media (max-width: 680px) {
+  .page-nav-group {
+    gap: 6px;
+
+    .btn-nav-pill {
+      height: 34px;
+      padding: 0 10px;
+
+      .btn-nav-label {
+        display: none;
+      }
+    }
+
+    .nav-group-divider {
+      margin: 0 2px;
+    }
+  }
+}
+

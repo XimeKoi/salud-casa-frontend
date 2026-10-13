@@ -9,10 +9,12 @@ import { Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+
 @Component({
   selector: 'app-notificaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, PageHeaderNavComponent],
   templateUrl: './notificaciones.component.html',
   styleUrls: ['./notificaciones.component.scss']
 })

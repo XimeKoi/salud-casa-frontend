@@ -1,0 +1,30 @@
+<!-- src/app/components/page-header-nav/page-header-nav.html -->
+
+<nav class="page-nav-group" aria-label="Navegación rápida de módulos">
+  <!-- Botón Menú Hamburguesa -->
+  <button
+    *ngIf="showMenu"
+    type="button"
+    class="btn-nav-pill btn-menu"
+    (click)="abrirMenu()"
+    title="Abrir menú de módulos"
+    aria-label="Abrir menú de módulos">
+    <i class="fas fa-bars"></i>
+    <span class="btn-nav-label">{{ menuLabel }}</span>
+  </button>
+
+  <!-- Botón Volver al Mapa Operativo -->
+  <button
+    *ngIf="showMap"
+    type="button"
+    class="btn-nav-pill btn-mapa"
+    (click)="irAlMapa()"
+    title="Volver al Mapa Operativo"
+    aria-label="Volver al Mapa Operativo">
+    <i class="fas fa-map-location-dot"></i>
+    <span class="btn-nav-label">{{ mapLabel }}</span>
+  </button>
+
+  <div class="nav-group-divider" aria-hidden="true"></div>
+</nav>
+

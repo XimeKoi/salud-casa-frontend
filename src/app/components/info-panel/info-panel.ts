@@ -162,23 +162,25 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     const programa = (paciente.programa || '').toUpperCase();
     const estatus = (paciente.estatus || '').toUpperCase();
 
-    // ⭐ VERIFICAR SI ES ADULTO MAYOR
-    if (programa === 'PAM' || programa.includes('ADULTO')) return 'adulto';
+    // ⭐ 1. VERIFICAR SI ES FINADO
+    if (paciente.finado || estatus === 'FINADO' || Boolean(paciente.fechaFinado)) {
+      return 'finado';
+    }
 
-    // ⭐ VERIFICAR SI ES DISCAPACITADO (usando los campos extraídos)
+    // ⭐ 2. VERIFICAR SI ES DISCAPACITADO (PCD o discapacidades específicas)
     const tieneDiscapacidad = paciente.discapacidades?.motriz ||
       paciente.discapacidades?.visual ||
       paciente.discapacidades?.auditiva ||
       paciente.discapacidades?.intelectual ||
       paciente.discapacidades?.psicosocial;
 
-    if (tieneDiscapacidad || programa === 'DISCAPACIDAD' || programa.includes('DIS')) {
+    if (tieneDiscapacidad || programa === 'PCD' || programa.includes('PCD') || programa === 'DISCAPACIDAD' || programa.includes('DIS')) {
       return 'discapacitado';
     }
 
-    // ⭐ VERIFICAR SI ES FINADO
-    if (paciente.finado || estatus === 'FINADO') {
-      return 'finado';
+    // ⭐ 3. VERIFICAR SI ES ADULTO MAYOR (PAM)
+    if (programa === 'PAM' || programa.includes('ADULTO') || programa.includes('PAM')) {
+      return 'adulto';
     }
 
     return null;
@@ -238,22 +240,31 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
 
     const visitas = this.pacientes.filter(p => {
       const estatus = (p.estatus || '').toUpperCase();
-      return estatus === 'VISITADO' || estatus === 'COMPLETADA';
-    }).length;
-
-    const adultoMayor = this.pacientes.filter(p => {
-      const programa = (p.programa || '').toUpperCase();
-      return programa === 'PAM' || programa.includes('ADULTO');
-    }).length;
-
-    const discapacitado = this.pacientes.filter(p => {
-      const programa = (p.programa || '').toUpperCase();
-      return programa === 'DISCAPACIDAD' || programa.includes('DIS');
+      return estatus === 'VISITADO' || estatus === 'COMPLETADA' || estatus === 'COMPLETADO';
     }).length;
 
     const finado = this.pacientes.filter(p => {
       const estatus = (p.estatus || '').toUpperCase();
-      return estatus === 'FINADO';
+      return estatus === 'FINADO' || p.finado || Boolean(p.fechaFinado);
+    }).length;
+
+    const discapacitado = this.pacientes.filter(p => {
+      const estatus = (p.estatus || '').toUpperCase();
+      const esFin = estatus === 'FINADO' || p.finado || Boolean(p.fechaFinado);
+      if (esFin) return false;
+      const programa = (p.programa || '').toUpperCase();
+      const tieneDisc = p.discapacidades?.motriz || p.discapacidades?.visual ||
+        p.discapacidades?.auditiva || p.discapacidades?.intelectual ||
+        p.discapacidades?.psicosocial;
+      return tieneDisc || programa === 'PCD' || programa.includes('PCD') || programa === 'DISCAPACIDAD' || programa.includes('DIS');
+    }).length;
+
+    const adultoMayor = this.pacientes.filter(p => {
+      const estatus = (p.estatus || '').toUpperCase();
+      const esFin = estatus === 'FINADO' || p.finado || Boolean(p.fechaFinado);
+      if (esFin) return false;
+      const programa = (p.programa || '').toUpperCase();
+      return programa === 'PAM' || programa.includes('ADULTO') || programa.includes('PAM');
     }).length;
 
     const pAdulto = total > 0 ? Math.round((adultoMayor / total) * 100) : 0;
@@ -584,22 +595,31 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     const total = this.pacientesFiltrados.length;
     const visitas = this.pacientesFiltrados.filter(p => {
       const estatus = (p.estatus || '').toUpperCase();
-      return estatus === 'VISITADO' || estatus === 'COMPLETADA';
-    }).length;
-
-    const adultoMayor = this.pacientesFiltrados.filter(p => {
-      const programa = (p.programa || '').toUpperCase();
-      return programa === 'PAM' || programa.includes('ADULTO');
-    }).length;
-
-    const discapacitado = this.pacientesFiltrados.filter(p => {
-      const programa = (p.programa || '').toUpperCase();
-      return programa === 'DISCAPACIDAD' || programa.includes('DIS');
+      return estatus === 'VISITADO' || estatus === 'COMPLETADA' || estatus === 'COMPLETADO';
     }).length;
 
     const finado = this.pacientesFiltrados.filter(p => {
       const estatus = (p.estatus || '').toUpperCase();
-      return estatus === 'FINADO';
+      return estatus === 'FINADO' || p.finado || Boolean(p.fechaFinado);
+    }).length;
+
+    const discapacitado = this.pacientesFiltrados.filter(p => {
+      const estatus = (p.estatus || '').toUpperCase();
+      const esFin = estatus === 'FINADO' || p.finado || Boolean(p.fechaFinado);
+      if (esFin) return false;
+      const programa = (p.programa || '').toUpperCase();
+      const tieneDisc = p.discapacidades?.motriz || p.discapacidades?.visual ||
+        p.discapacidades?.auditiva || p.discapacidades?.intelectual ||
+        p.discapacidades?.psicosocial;
+      return tieneDisc || programa === 'PCD' || programa.includes('PCD') || programa === 'DISCAPACIDAD' || programa.includes('DIS');
+    }).length;
+
+    const adultoMayor = this.pacientesFiltrados.filter(p => {
+      const estatus = (p.estatus || '').toUpperCase();
+      const esFin = estatus === 'FINADO' || p.finado || Boolean(p.fechaFinado);
+      if (esFin) return false;
+      const programa = (p.programa || '').toUpperCase();
+      return programa === 'PAM' || programa.includes('PAM') || programa.includes('ADULTO') || programa.includes('MAYOR');
     }).length;
 
     const pAdulto = total > 0 ? Math.round((adultoMayor / total) * 100) : 0;

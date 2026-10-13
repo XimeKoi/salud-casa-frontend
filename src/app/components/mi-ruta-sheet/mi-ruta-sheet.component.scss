@@ -1,0 +1,1277 @@
+// src/app/components/mi-ruta-sheet/mi-ruta-sheet.component.scss
+
+$primary-plum: #520D2F;
+$primary-dark: #38061F;
+$accent-coral: #FF6B55;
+$accent-gold: #D4AF37;
+$success-emerald: #059669;
+$border-color: #E2E8F0;
+
+// ============================================
+// ⭐ PASTILLA FLOTANTE EN EL MAPA (TABLET ERGONÓMICO)
+// ============================================
+.floating-pill-container {
+  position: absolute;
+  bottom: 24px;
+  left: calc(50% - 180px); // Centrado sobre el área del mapa en desktop
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: auto;
+  user-select: none;
+}
+
+@media (max-width: 992px) {
+  .floating-pill-container {
+    left: 50%; // Centrado absoluto cuando el panel derecho está oculto
+    bottom: 22px;
+  }
+}
+
+.btn-floating-plan-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 2px solid rgba(82, 13, 47, 0.18);
+  border-radius: 9999px;
+  padding: 8px 20px 8px 12px;
+  box-shadow: 0 8px 26px rgba(82, 13, 47, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 52px;
+  outline: none;
+
+  &:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(82, 13, 47, 0.28);
+    border-color: $accent-coral;
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  &.has-patients {
+    background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+    border-color: $accent-gold;
+  }
+
+  .pill-left-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $primary-plum 0%, $primary-dark 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 2px 8px rgba(82, 13, 47, 0.3);
+    flex-shrink: 0;
+  }
+
+  .pill-text-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+
+    .pill-main-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .pill-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: $primary-plum;
+        letter-spacing: 0.3px;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      }
+
+      .pill-counter-badge {
+        background: #F1F5F9;
+        color: #0f172a;
+        font-size: 11.5px;
+        font-weight: 800;
+        padding: 2px 9px;
+        border-radius: 9999px;
+        border: 1px solid #CBD5E1;
+
+        &.optimal {
+          background: #DCFCE7;
+          color: #15803d;
+          border-color: #86EFAC;
+        }
+      }
+    }
+
+    .pill-sub-info {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+  }
+
+  .pill-chevron {
+    color: #94a3b8;
+    font-size: 13px;
+    margin-left: 6px;
+    transition: transform 0.2s ease;
+  }
+}
+
+// ============================================
+// ⭐ BACKDROP
+// ============================================
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(5px);
+  z-index: 1990;
+  animation: fadeIn 0.25s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ============================================
+// ⭐ MODAL FLOTANTE CENTRADO (TABLET & DESKTOP)
+// ============================================
+.ruta-modal-centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: 92vw;
+  max-width: 980px;
+  height: 84vh;
+  max-height: 840px;
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid rgba(82, 13, 47, 0.12);
+  box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.24s;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  // CABECERA
+  .modal-header-top {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border-bottom: 1px solid #F1F5F9;
+    flex-shrink: 0;
+
+    .header-info-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      .header-icon-wrap {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, $primary-plum 0%, $primary-dark 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 4px 12px rgba(82, 13, 47, 0.25);
+        flex-shrink: 0;
+      }
+
+      .title-with-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+
+        h2 {
+          font-size: 20px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0;
+        }
+
+        .badge-status-jornada {
+          background: #EFF6FF;
+          color: #1D4ED8;
+          font-size: 11.5px;
+          font-weight: 700;
+          padding: 3px 10px;
+          border-radius: 9999px;
+          border: 1px solid #BFDBFE;
+
+          &.badge-meta {
+            background: #DCFCE7;
+            color: #15803d;
+            border-color: #86EFAC;
+          }
+        }
+
+        .badge-meta-rango {
+          background: #FFFBEB;
+          color: #B45309;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 9px;
+          border-radius: 9999px;
+          border: 1px solid #FDE68A;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+        }
+      }
+
+      .modal-date-subtitle {
+        margin: 3px 0 0 0;
+        font-size: 12.5px;
+        color: #64748b;
+
+        i {
+          color: $accent-coral;
+        }
+      }
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .btn-modal-quick {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 10px;
+        font-size: 12.5px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+
+        &.btn-sugerir {
+          background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+          color: #ffffff;
+          box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+
+          &:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+          }
+        }
+
+        &.btn-historial-save {
+          background: #EEF2FF;
+          color: #4338CA;
+          border-color: #C7D2FE;
+
+          &:hover {
+            background: #E0E7FF;
+            transform: translateY(-1px);
+          }
+        }
+
+        &.btn-limpiar {
+          background: #F1F5F9;
+          color: #475569;
+          border-color: #CBD5E1;
+
+          &:hover {
+            background: #FEE2E2;
+            color: #DC2626;
+            border-color: #FCA5A5;
+          }
+        }
+      }
+
+      .btn-close-modal {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #F1F5F9;
+        border: 1px solid #E2E8F0;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #E2E8F0;
+          color: #0f172a;
+        }
+      }
+    }
+  }
+
+  // PESTAÑAS DE NAVEGACIÓN
+  .modal-tabs-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    background: #F8FAFC;
+    border-bottom: 1.5px solid #E2E8F0;
+    flex-shrink: 0;
+
+    .modal-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1.5px solid transparent;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      i {
+        font-size: 13.5px;
+      }
+
+      &:hover {
+        background: #F1F5F9;
+        color: #1e293b;
+      }
+
+      &.active {
+        background: #ffffff;
+        color: $primary-plum;
+        border-color: rgba(82, 13, 47, 0.2);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+        i {
+          color: $accent-coral;
+        }
+      }
+
+      .tab-chip {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: #DCFCE7;
+        color: #15803d;
+      }
+    }
+  }
+
+  // CUERPO SCROLLABLE
+  .modal-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 24px 28px 24px;
+    background: #F8FAFC;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+  }
+}
+
+// ============================================
+// ⭐ BANNER DE META Y CAPACIDAD
+// ============================================
+.jornada-target-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #ffffff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+
+  .target-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    i {
+      font-size: 20px;
+      color: $primary-plum;
+    }
+
+    .target-title {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .target-sub {
+      font-size: 12px;
+      color: #64748b;
+
+      &.success {
+        color: #15803d;
+        font-weight: 600;
+      }
+
+      &.warning {
+        color: #b45309;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .btn-banner-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: #1e293b;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: $primary-plum;
+      color: #ffffff;
+      border-color: $primary-plum;
+    }
+  }
+}
+
+// ============================================
+// ⭐ ESTADO VACÍO
+// ============================================
+.empty-jornada-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1.5px dashed #CBD5E1;
+  margin-top: 10px;
+
+  .empty-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #EFF6FF;
+    color: #2563EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 14px;
+  }
+
+  h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+  }
+
+  p {
+    font-size: 13.5px;
+    color: #64748b;
+    max-width: 520px;
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+  }
+
+  .empty-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-cta-buscar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, $primary-plum 0%, $primary-dark 100%);
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 4px 14px rgba(82, 13, 47, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(82, 13, 47, 0.35);
+    }
+  }
+
+  .btn-cta-auto {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: 11px;
+    background: #FFFBEB;
+    color: #92400E;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: 1.5px solid #FDE68A;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #FEF3C7;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ============================================
+// ⭐ GRID Y TARJETAS DE PACIENTES PARA HOY
+// ============================================
+.jornada-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paciente-jornada-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1.5px solid #E2E8F0;
+  padding: 14px 16px;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+
+  &:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+
+  // Orden
+  .card-order-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    .order-number-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #F1F5F9;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid #CBD5E1;
+    }
+  }
+
+  // Detalles
+  .card-details-col {
+    flex: 1;
+    min-width: 0;
+
+    .card-top-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+
+      .paciente-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .card-badges-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .badge-risk {
+          font-size: 10.5px;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 6px;
+
+          &.badge-risk-g1 { background: #DCFCE7; color: #166534; }
+          &.badge-risk-g2 { background: #FEF3C7; color: #92400E; }
+          &.badge-risk-g3 { background: #FFEDD5; color: #9A3412; }
+          &.badge-risk-g4 { background: #FEE2E2; color: #991B1B; }
+        }
+
+        .badge-colonia {
+          font-size: 11px;
+          font-weight: 600;
+          background: #F1F5F9;
+          color: #475569;
+          padding: 2px 8px;
+          border-radius: 6px;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+
+    .paciente-address {
+      font-size: 12.5px;
+      color: #475569;
+      margin: 0 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      i {
+        color: $accent-coral;
+        font-size: 11px;
+      }
+    }
+
+    .paciente-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11.5px;
+      color: #64748b;
+      flex-wrap: wrap;
+
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .meta-curp {
+        font-family: monospace;
+        letter-spacing: 0.3px;
+      }
+    }
+  }
+
+  // Acciones en tarjeta
+  .card-actions-col {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+
+    .btn-card-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      white-space: nowrap;
+
+      &.btn-action-visita {
+        background: linear-gradient(135deg, $primary-plum 0%, $primary-dark 100%);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(82, 13, 47, 0.25);
+
+        &:hover {
+          filter: brightness(1.1);
+          transform: translateY(-1px);
+        }
+      }
+
+      &.btn-action-ruta {
+        background: #F1F5F9;
+        color: #1e293b;
+        border: 1px solid #CBD5E1;
+
+        &:hover {
+          background: #E2E8F0;
+          color: #0f172a;
+        }
+
+        i {
+          color: #2563EB;
+        }
+      }
+    }
+
+    .btn-remove-from-route {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #FEE2E2;
+        color: #DC2626;
+        border-color: #FCA5A5;
+      }
+    }
+  }
+}
+
+// ============================================
+// ⭐ PESTAÑA 2: BUSCAR Y AGREGAR PACIENTES
+// ============================================
+.search-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+
+  .search-input-wrap {
+    flex: 1;
+    min-width: 260px;
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    i {
+      position: absolute;
+      left: 14px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .input-buscar-modal {
+      width: 100%;
+      height: 42px;
+      padding: 0 40px 0 38px;
+      border-radius: 12px;
+      border: 1.5px solid #CBD5E1;
+      font-size: 13px;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:focus {
+        border-color: $primary-plum;
+        box-shadow: 0 0 0 3px rgba(82, 13, 47, 0.12);
+      }
+    }
+
+    .btn-clear-modal-search {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 4px;
+
+      &:hover {
+        color: #334155;
+      }
+    }
+  }
+
+  .search-results-count {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  i {
+    font-size: 26px;
+    color: $primary-plum;
+  }
+}
+
+.search-results-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-patient-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1.5px solid #E2E8F0;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  &.already-in-route {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+    opacity: 0.85;
+  }
+
+  .sp-info-col {
+    flex: 1;
+    min-width: 0;
+
+    .sp-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
+
+      h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+    }
+
+    .sp-address {
+      margin: 0 0 3px 0;
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      i {
+        color: $accent-coral;
+        font-size: 11px;
+      }
+    }
+
+    .sp-meta {
+      margin: 0;
+      font-size: 11px;
+      color: #94a3b8;
+      display: flex;
+      gap: 12px;
+    }
+  }
+
+  .sp-action-col {
+    flex-shrink: 0;
+
+    .btn-add-to-route {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, $primary-plum 0%, $primary-dark 100%);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+      }
+
+      &.btn-added {
+        background: #DCFCE7;
+        color: #15803d;
+        border: 1px solid #86EFAC;
+        cursor: default;
+
+        &:hover {
+          filter: none;
+          transform: none;
+        }
+      }
+    }
+  }
+}
+
+.empty-search-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+
+  i {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+// ============================================
+// ⭐ PESTAÑA 3: HISTORIAL DE JORNADAS
+// ============================================
+.historial-header-banner {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1.5px solid #E2E8F0;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+
+  .hh-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    i {
+      font-size: 22px;
+      color: #4338CA;
+    }
+
+    h3 {
+      margin: 0 0 2px 0;
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    p {
+      margin: 0;
+      font-size: 12px;
+      color: #64748b;
+    }
+  }
+}
+
+.historial-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.historial-day-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1.5px solid #E2E8F0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  overflow: hidden;
+
+  &.expanded {
+    border-color: #CBD5E1;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  }
+
+  .day-card-main-row {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    cursor: pointer;
+
+    &:hover {
+      background: #FAF5FF;
+    }
+
+    .day-icon-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #EEF2FF;
+      color: #4F46E5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    .day-info-col {
+      flex: 1;
+      min-width: 0;
+
+      .day-date {
+        margin: 0 0 4px 0;
+        font-size: 14.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .day-meta-tags {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 11px;
+        color: #64748b;
+
+        .tag-count {
+          font-weight: 800;
+          color: #1D4ED8;
+          background: #EFF6FF;
+          padding: 2px 7px;
+          border-radius: 6px;
+        }
+
+        .tag-colonias {
+          background: #F1F5F9;
+          padding: 2px 8px;
+          border-radius: 6px;
+        }
+
+        .tag-time {
+          color: #94a3b8;
+        }
+      }
+    }
+
+    .day-actions-col {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+
+      .btn-historial-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
+        font-size: 11.5px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &.btn-reuse-route {
+          background: linear-gradient(135deg, $primary-plum 0%, $primary-dark 100%);
+          color: #ffffff;
+          border: none;
+
+          &:hover {
+            filter: brightness(1.1);
+          }
+        }
+
+        &.btn-toggle-expand {
+          background: #F1F5F9;
+          color: #334155;
+          border: 1px solid #CBD5E1;
+
+          &:hover {
+            background: #E2E8F0;
+          }
+        }
+      }
+
+      .btn-historial-delete {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: transparent;
+        border: 1px solid transparent;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #FEE2E2;
+          color: #DC2626;
+          border-color: #FCA5A5;
+        }
+      }
+    }
+  }
+
+  .day-patients-dropdown {
+    padding: 12px 18px 16px 18px;
+    background: #F8FAFC;
+    border-top: 1px solid #E2E8F0;
+
+    h5 {
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .dropdown-patients-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      .dropdown-patient-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #ffffff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #E2E8F0;
+
+        .item-num {
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #64748b;
+          width: 20px;
+        }
+
+        .item-data {
+          flex: 1;
+          min-width: 0;
+
+          .item-name {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+
+          .item-dir {
+            display: block;
+            font-size: 11px;
+            color: #64748b;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Tablet and mobile
+@media (max-width: 768px) {
+  .ruta-modal-centered {
+    width: 95vw;
+    height: 86vh;
+    border-radius: 20px;
+
+    .modal-header-top {
+      padding: 12px 16px;
+    }
+
+    .modal-tabs-nav {
+      padding: 6px 12px;
+      overflow-x: auto;
+    }
+
+    .modal-body-scroll {
+      padding: 12px 14px 20px 14px;
+    }
+  }
+
+  .paciente-jornada-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    .card-top-title-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .card-actions-col {
+      width: 100%;
+      justify-content: flex-end;
+      border-top: 1px solid #F1F5F9;
+      padding-top: 8px;
+    }
+  }
+
+  .historial-day-card {
+    .day-card-main-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+
+      .day-actions-col {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  }
+}

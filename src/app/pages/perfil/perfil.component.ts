@@ -9,10 +9,12 @@ import { selectUserData } from '../../store/app.selectors';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+
 @Component({
   selector: 'app-perfil',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderNavComponent],
   templateUrl: './perfil.component.html',
   styleUrls: ['./perfil.component.scss'],
   host: {

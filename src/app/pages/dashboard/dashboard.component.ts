@@ -4,6 +4,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MapComponent } from '../../components/map/map';
 import { InfoPanelComponent } from '../../components/info-panel/info-panel';
+import { MiRutaSheetComponent } from '../../components/mi-ruta-sheet/mi-ruta-sheet.component';
 
 console.log('🔍 [dashboard] Cargando DashboardComponent...');
 
@@ -13,7 +14,8 @@ console.log('🔍 [dashboard] Cargando DashboardComponent...');
   imports: [
     CommonModule,
     MapComponent,
-    InfoPanelComponent
+    InfoPanelComponent,
+    MiRutaSheetComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']

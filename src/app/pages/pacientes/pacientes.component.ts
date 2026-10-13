@@ -26,7 +26,7 @@ interface Paciente {
   colonia: string;
   seccion: string;
   estadoVisita: 'completada' | 'pendiente' | 'incidencia';
-  fechaProgramada: Date;
+  fechaProgramada?: Date;
   tieneIncidencia: boolean;
   historialVisitas?: VisitaCompletada[];
   apellidoPaterno?: string;
@@ -59,10 +59,12 @@ interface DiaCalendario {
   completadas: number;
 }
 
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+
 @Component({
   selector: 'app-pacientes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderNavComponent],
   templateUrl: './pacientes.component.html',
   styleUrls: ['./pacientes.component.scss']
 })
@@ -311,12 +313,11 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
                 nombre: this.construirNombreCompleto(p),
                 direccion: p.direccion || '',
                 telefono: p.telefonoCelular || p.telefonoFijo || '',
-                colonia: p.zonaTrabajo || this.extraerColonia(p.direccion),
+                colonia: this.extraerColonia(p.direccion, p.zonaTrabajo),
                 seccion: p.zonaTrabajo?.split('-').pop() || '',
                 estadoVisita: this.mapearEstatus(p.estatus),
-                fechaProgramada: new Date(),
-                tieneIncidencia: p.estatus === 'RECHAZO' || p.estatus === 'incidencia',
-                historialVisitas: [],
+                fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
+                tieneIncidencia: ['RECHAZO', 'RECHAZADO', 'INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
                 apellidoPaterno: p.apellidoPaterno || '',
                 apellidoMaterno: p.apellidoMaterno || '',
                 nombres: p.nombre || '',
@@ -357,11 +358,11 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
               nombre: this.construirNombreCompleto(p),
               direccion: p.direccion || '',
               telefono: p.telefonoCelular || p.telefonoFijo || '',
-              colonia: p.zonaTrabajo || this.extraerColonia(p.direccion),
+              colonia: this.extraerColonia(p.direccion, p.zonaTrabajo),
               seccion: p.zonaTrabajo?.split('-').pop() || '',
               estadoVisita: this.mapearEstatus(p.estatus),
-              fechaProgramada: new Date(),
-              tieneIncidencia: p.estatus === 'RECHAZO' || p.estatus === 'incidencia',
+              fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
+              tieneIncidencia: ['RECHAZO', 'RECHAZADO', 'INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
               historialVisitas: [],
               apellidoPaterno: p.apellidoPaterno || '',
               apellidoMaterno: p.apellidoMaterno || '',
@@ -398,16 +399,79 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     return partes.join(' ').trim();
   }
 
-  private extraerColonia(direccion: string): string {
+  private extraerColonia(direccion: string, coloniaOriginal?: string): string {
+    if (coloniaOriginal && coloniaOriginal.length > 2) {
+      const cUpper = coloniaOriginal.toUpperCase().trim();
+      if (!cUpper.includes('DISPONIBLE') &&
+          !cUpper.includes('SIN COLONIA') &&
+          !/^#|^\d+$/i.test(coloniaOriginal.trim()) &&
+          !cUpper.startsWith('REFS')) {
+        let limpia = coloniaOriginal
+          .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return limpia || coloniaOriginal;
+      }
+    }
+
     if (!direccion) return '';
-    const partes = direccion.split(',');
-    if (partes.length >= 2) return partes[1].trim();
+
+    let dirSinRefs = direccion;
+    if (direccion.includes('|')) {
+      dirSinRefs = direccion.split('|')[0].trim();
+    } else if (/Refs\.?:/i.test(direccion)) {
+      const idx = direccion.search(/Refs\.?:/i);
+      dirSinRefs = direccion.substring(0, idx).trim();
+    }
+
+    const matchKeyword = dirSinRefs.match(/(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+([^,\|]+)/i);
+    if (matchKeyword && matchKeyword[1]) {
+      const candidata = matchKeyword[1].trim();
+      if (candidata.length > 2 && !/^#|^\d+$/i.test(candidata) && !/LEON|GTO/i.test(candidata)) {
+        return candidata.replace(/CP\s*\d{5}/gi, '').trim();
+      }
+    }
+
+    let limpiaDir = dirSinRefs
+      .replace(/,\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+      .replace(/,\s*LEON\s*,?\s*GTO.*$/i, '')
+      .replace(/,\s*LEON$/i, '')
+      .replace(/,\s*GTO$/i, '')
+      .trim();
+
+    const partes = limpiaDir.split(',').map(s => s.trim()).filter(Boolean);
+    const numIdx = partes.findIndex(p => /^#|^\d+$/i.test(p));
+    if (numIdx !== -1 && numIdx + 1 < partes.length) {
+      let postNum = partes.slice(numIdx + 1);
+      if (postNum.length > 1 && /^\d+$/.test(postNum[0])) {
+        postNum = postNum.slice(1);
+      }
+      let col = postNum.join(', ').trim()
+        .replace(/^[-\d]+,\s*/, '')
+        .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+        .trim();
+      if (col && col.length > 2 && !/^#|^\d+$/i.test(col) && !/LEON|GTO/i.test(col)) {
+        return col;
+      }
+    }
+
+    if (partes.length >= 2) {
+      const ultima = partes[partes.length - 1].trim()
+        .replace(/^[-\d]+,\s*/, '')
+        .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+        .trim();
+      if (ultima.length > 2 && !/^#|^\d+$/i.test(ultima) && !/LEON|GTO/i.test(ultima)) {
+        return ultima;
+      }
+    }
+
     return '';
   }
 
   private mapearEstatus(estatus: string): 'completada' | 'pendiente' | 'incidencia' {
-    if (estatus === 'VISITADO' || estatus === 'completada') return 'completada';
-    if (estatus === 'RECHAZO' || estatus === 'incidencia') return 'incidencia';
+    const s = (estatus || '').toUpperCase();
+    if (s === 'VISITADO' || s === 'COMPLETADA' || s === 'COMPLETADO') return 'completada';
+    if (s === 'RECHAZO' || s === 'RECHAZADO' || s === 'INCIDENCIA' || s === 'CAMBIO DE DOMICILIO') return 'incidencia';
     return 'pendiente';
   }
 
@@ -475,7 +539,15 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   limpiarDireccion(direccion: string): string {
     if (!direccion) return 'DIRECCIÓN NO DISPONIBLE';
 
-    let limpia = direccion.toUpperCase();
+    let dirSinRefs = direccion;
+    if (direccion.includes('|')) {
+      dirSinRefs = direccion.split('|')[0].trim();
+    } else if (/Refs\.?:/i.test(direccion)) {
+      const idx = direccion.search(/Refs\.?:/i);
+      dirSinRefs = direccion.substring(0, idx).trim();
+    }
+
+    let limpia = dirSinRefs.toUpperCase();
 
     const reemplazos: { [key: string]: string } = {
       '¢': 'O', '¡': 'I', '£': 'U', '¤': 'N', '¦': 'A',
@@ -621,9 +693,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private obtenerNivelRiesgoPorEstatus(estatus: string): 'g1' | 'g2' | 'g3' | 'g4' | null {
     const estatusUpper = (estatus || '').toUpperCase();
-    if (estatusUpper === 'VISITADO' || estatusUpper === 'COMPLETADA') return 'g1';
+    if (estatusUpper === 'VISITADO' || estatusUpper === 'COMPLETADA' || estatusUpper === 'COMPLETADO') return 'g1';
     if (estatusUpper === 'PENDIENTE' || estatusUpper === 'SIN VISITA') return 'g2';
-    if (estatusUpper === 'RECHAZO' || estatusUpper === 'INCIDENCIA') return 'g3';
+    if (estatusUpper === 'RECHAZO' || estatusUpper === 'RECHAZADO' || estatusUpper === 'INCIDENCIA' || estatusUpper === 'CAMBIO DE DOMICILIO') return 'g3';
     if (estatusUpper === 'FINADO') return 'g4';
     return null;
   }

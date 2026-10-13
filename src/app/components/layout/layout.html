@@ -9,135 +9,163 @@
 
     <!-- Botón flotante móvil para abrir filtros territoriales cuando estamos en el mapa -->
     <button *ngIf="mostrarSidebar" class="btn-colonias-floating-mobile" (click)="toggleSidebarMobile()"
-      title="Ver Colonias">
+      title="Ver Zonas">
       <i class="fas fa-layer-group"></i>
-      <span>Colonias</span>
+      <span>Zonas</span>
       <span class="colonias-badge-count">{{ coloniasFiltradas.length }}</span>
-      <span class="active-dot" *ngIf="coloniaSeleccionada"></span>
+      <span class="active-dot" *ngIf="coloniaSeleccionada || modoProximidad"></span>
     </button>
 
-    <!-- ⭐ SIDEBAR TERRITORIAL -->
-    <div *ngIf="mostrarSidebar" class="new-sidebar" [class.mobile-open]="sidebarMobileOpen">
+    <!-- Botón flotante para restaurar panel en tablet / escritorio cuando está minimizado -->
+    <button *ngIf="mostrarSidebar && sidebarCollapsed" class="btn-sidebar-restore-floating"
+      (click)="toggleSidebarCollapse()" title="Mostrar panel de zonas y filtros">
+      <i class="fas fa-layer-group"></i>
+      <span class="restore-title">Zonas</span>
+      <span class="restore-badge" *ngIf="coloniaSeleccionada && !modoProximidad">
+        {{ coloniaSeleccionadaNombre }}
+      </span>
+      <span class="restore-badge gps" *ngIf="modoProximidad">
+        🎯 {{ coloniaSeleccionadaNombre }}
+      </span>
+      <i class="fas fa-angles-right"></i>
+    </button>
+
+    <!-- ⭐ SIDEBAR TERRITORIAL LIMPIO Y ESPACIOSO -->
+    <div *ngIf="mostrarSidebar" class="new-sidebar" [class.mobile-open]="sidebarMobileOpen"
+      [class.sidebar-collapsed]="sidebarCollapsed">
 
       <!-- Fila superior para cerrar en móviles -->
       <div class="mobile-sidebar-close-row">
-        <span>Filtro Territorial</span>
+        <span>Filtro por Zonas</span>
         <button type="button" class="btn-close-side-mobile" (click)="closeSidebarMobile()"
-          aria-label="Cerrar panel de colonias">
+          aria-label="Cerrar panel de zonas">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
-      <!-- CABECERA INSTITUCIONAL ROJA -->
+      <!-- CABECERA INSTITUCIONAL ROJA CON BOTÓN MINIMIZAR -->
       <div class="header-red">
-        <i class="fas fa-layer-group"></i>
-        <h2>FILTROS TERRITORIALES</h2>
+        <div class="header-red-title">
+          <i class="fas fa-layer-group"></i>
+          <div>
+            <h2>FILTRO TERRITORIAL</h2>
+            <span class="header-sub-tag">ZONAS TERRITORIALES • LEÓN</span>
+          </div>
+        </div>
+        <button type="button" class="btn-collapse-sidebar" (click)="toggleSidebarCollapse()"
+          title="Ocultar panel / Ver mapa a pantalla completa">
+          <i class="fas fa-angles-left"></i>
+        </button>
       </div>
 
-      <!-- ============================================ -->
-      <!-- ⭐ ORGANIZACIÓN COMPACTA DE FILTROS FIJOS    -->
-      <!--    (DISTRITO, MUNICIPIO, ZONA 277)           -->
-      <!-- ============================================ -->
-      <div class="territorio-compact-card">
-        <div class="territorio-item">
-          <span class="territorio-label">DISTRITO</span>
-          <span class="territorio-val">DF 03</span>
-        </div>
-        <div class="territorio-divider"></div>
-        <div class="territorio-item">
-          <span class="territorio-label">MUNICIPIO</span>
-          <span class="territorio-val">LEÓN (20)</span>
-        </div>
-        <div class="territorio-divider"></div>
-        <div class="territorio-item">
-          <span class="territorio-label">ZONA</span>
-          <span class="territorio-val">277</span>
-        </div>
-      </div>
-
-      <!-- ============================================ -->
-      <!-- ⭐ SECCIÓN COLONIAS MEJORADA                 -->
-      <!-- ============================================ -->
-      <div class="colonias-section">
-
-        <!-- CABECERA DE COLONIAS -->
-        <div class="colonias-section-header">
-          <label>
-            <i class="fas fa-map-location-dot"></i> COLONIAS
-          </label>
-          <span class="colonias-count-pill" *ngIf="colonias && colonias.length > 0">
-            {{ coloniasFiltradas.length }} colonias
-          </span>
-        </div>
-
-        <!-- BUSCADOR RÁPIDO DE COLONIAS -->
-        <div class="colonias-search-wrap">
-          <i class="fas fa-search search-icon"></i>
-          <input type="text" [(ngModel)]="busquedaColonia" placeholder="Buscar colonia..."
-            class="colonias-search-input" />
-          <button *ngIf="busquedaColonia" (click)="busquedaColonia = ''" class="btn-clear" title="Limpiar búsqueda">
-            <i class="fas fa-times"></i>
+      <!-- ⭐ RADAR DE PROXIMIDAD GPS "CERCA DE MÍ" (ELEGANTE Y COMPACTO) -->
+      <div class="radar-card" [class.active]="modoProximidad">
+        <div class="radar-top">
+          <div class="radar-icon-box" [class.pulsing]="modoProximidad || cargandoProximidad">
+            <i class="fas fa-location-crosshairs"></i>
+          </div>
+          <div class="radar-info">
+            <span class="radar-title">PACIENTES CERCA DE MÍ</span>
+            <span class="radar-desc">
+              {{ modoProximidad ? pacientesCercanosCount + ' pacientes a menos de ' + radioProximidadKm + ' km' : 'Filtra pacientes por GPS en tiempo real' }}
+            </span>
+          </div>
+          <button type="button" class="btn-radar-action" (click)="toggleModoProximidad()" [disabled]="cargandoProximidad"
+            [title]="modoProximidad ? 'Desactivar filtro de proximidad' : 'Activar geocerca GPS'">
+            <i class="fas" [class.fa-location-dot]="!cargandoProximidad && !modoProximidad"
+              [class.fa-spinner]="cargandoProximidad" [class.fa-spin]="cargandoProximidad"
+              [class.fa-times]="!cargandoProximidad && modoProximidad"></i>
+            <span>{{ cargandoProximidad ? 'GPS...' : (modoProximidad ? 'Quitar' : 'Activar') }}</span>
           </button>
         </div>
 
-        <!-- SPINNER DE CARGA -->
-        <div *ngIf="!colonias || colonias.length === 0" class="loading-colonias">
-          <i class="fas fa-circle-notch fa-spin"></i>
-          <span>Cargando personas por colonias...</span>
+        <!-- Selector de distancia por radio cuando está activo -->
+        <div class="radar-radios-row" *ngIf="modoProximidad">
+          <span class="radios-lbl">Radio:</span>
+          <div class="radios-pills">
+            <button type="button" class="pill-radio" [class.active]="radioProximidadKm === 0.5" (click)="cambiarRadioProximidad(0.5)">500 m</button>
+            <button type="button" class="pill-radio" [class.active]="radioProximidadKm === 1" (click)="cambiarRadioProximidad(1)">1 km</button>
+            <button type="button" class="pill-radio" [class.active]="radioProximidadKm === 2" (click)="cambiarRadioProximidad(2)">2 km</button>
+          </div>
         </div>
+      </div>
 
-        <!-- LISTA ELEGANTE DE COLONIAS -->
-        <div class="colonias-list-viewport" *ngIf="coloniasFiltradas && coloniasFiltradas.length > 0">
+      <!-- ⭐ ACCESO RÁPIDO A MI RUTA DE HOY EN BARRA LATERAL ⭐ -->
+      <button type="button" class="btn-sidebar-plan-hoy" (click)="abrirMiRutaHoy()"
+        [class.has-patients]="totalPlanHoy > 0"
+        title="Ver mis visitas seleccionadas para hoy">
+        <div class="plan-hoy-icon">
+          <i class="fas" [class.fa-clipboard-check]="completadasPlanHoy > 0" [class.fa-route]="completadasPlanHoy === 0"></i>
+        </div>
+        <div class="plan-hoy-text">
+          <span class="plan-hoy-title">MI RUTA DE HOY</span>
+          <span class="plan-hoy-sub">
+            {{ totalPlanHoy === 0 ? 'Sin pacientes asignados' : (completadasPlanHoy + '/' + totalPlanHoy + ' completadas') }}
+          </span>
+        </div>
+        <span class="badge-plan-hoy-counter" *ngIf="totalPlanHoy > 0">{{ totalPlanHoy }}</span>
+        <i class="fas fa-angles-right plan-hoy-arrow" *ngIf="totalPlanHoy === 0"></i>
+      </button>
 
-          <!-- Opción: Todas las colonias -->
-          <div (click)="seleccionarColonia('')" class="colonia-card item-all" [class.active]="!coloniaSeleccionada">
-            <div class="colonia-left">
-              <span class="all-icon">
-                <i class="fas fa-globe-americas"></i>
-              </span>
-              <div class="colonia-meta">
-                <span class="colonia-name">Todas las colonias</span>
-                <span class="colonia-subtext">Padrón total territorial</span>
-              </div>
+      <!-- BUSCADOR RÁPIDO DE ZONAS -->
+      <div class="colonias-search-wrap">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" [(ngModel)]="busquedaColonia" placeholder="Buscar entre las {{ colonias.length }} zonas..."
+          class="colonias-search-input" />
+        <button *ngIf="busquedaColonia" (click)="busquedaColonia = ''" class="btn-clear" title="Limpiar búsqueda">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="colonias-cards-list">
+        <!-- Opción: Todas las zonas general -->
+        <div (click)="seleccionarColonia('')" class="clean-colonia-card card-all"
+          [class.selected]="!coloniaSeleccionada && !modoProximidad">
+          <div class="card-main-info">
+            <div class="card-title-col">
+              <span class="card-name">Todas las zonas</span>
+              <span class="card-totals">Padrón total territorial</span>
             </div>
-            <span class="colonia-badge-pill total-pill">
+            <span class="card-status-badge badge-all">
               {{ totalPacientes }} pac.
             </span>
           </div>
+          <div class="card-footer-stats">
+            <span><i class="fas fa-check" style="color:#16a34a"></i> {{ totalVisitados }} visitados</span>
+            <span><i class="fas fa-clock" style="color:#f59e0b"></i> {{ totalPendientes }} pendientes</span>
+          </div>
+        </div>
 
-          <!-- Tarjetas individuales de colonia -->
-          <div *ngFor="let col of coloniasFiltradas" (click)="seleccionarColonia(col.id)" class="colonia-card"
-            [class.active]="isColoniaSeleccionada(col.id)" [style.border-left-color]="col.color">
-            <div class="colonia-left">
-              <span class="colonia-pip" [style.background]="col.color"
-                [style.box-shadow]="'0 0 0 3px ' + col.color + '25'"></span>
-              <div class="colonia-meta">
-                <span class="colonia-name" [title]="col.nombre">
-                  {{ col.nombre }}
-                </span>
-                <span class="colonia-subtext">Colonia de trabajo</span>
-              </div>
+        <!-- Tarjetas individuales de cada colonia -->
+        <div *ngFor="let col of coloniasFiltradas" (click)="seleccionarColonia(col.id)" class="clean-colonia-card"
+          [class.selected]="isColoniaSeleccionada(col.id)" [style.border-left-color]="col.color">
+          <div class="card-main-info">
+            <div class="card-title-col">
+              <span class="card-name" [title]="col.nombre">{{ col.nombre }}</span>
+              <span class="card-totals">{{ col.totalPacientes }} pacientes</span>
             </div>
-            <span class="colonia-badge-pill" [class.active-pill]="isColoniaSeleccionada(col.id)"
-              [style.background]="isColoniaSeleccionada(col.id) ? col.color : ''">
-              {{ col.totalPacientes }} pac.
+            <span class="card-status-badge" [class.badge-alta]="col.pendientes >= 30"
+              [class.badge-media]="col.pendientes > 0 && col.pendientes < 30"
+              [class.badge-completada]="col.esCompletada || col.pendientes === 0">
+              {{ col.pendientes }} pend.
             </span>
           </div>
-
+          <div class="card-progress-bar">
+            <div class="progress-fill" [style.width.%]="col.progresoPct" [style.background]="col.color"></div>
+          </div>
         </div>
 
-        <!-- Mensaje sin resultados -->
+        <!-- Mensaje vacío -->
         <div class="empty-search" *ngIf="coloniasFiltradas.length === 0 && busquedaColonia">
           <i class="fas fa-search-minus"></i>
-          <span>No hay colonias con "{{ busquedaColonia }}"</span>
+          <span>No se encontró "{{ busquedaColonia }}"</span>
         </div>
-
       </div>
 
     </div>
 
     <!-- ÁREA DINÁMICA CON ROUTER-OUTLET -->
-    <div class="content-area" [class.full-width]="!mostrarSidebar">
+    <div class="content-area" [class.full-width]="!mostrarSidebar || sidebarCollapsed">
       <router-outlet></router-outlet>
     </div>
   </div>

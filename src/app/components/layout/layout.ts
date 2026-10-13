@@ -17,11 +17,16 @@ import { HeaderComponent } from '../header/header';
 import { AdminModalComponent } from '../admin-modal/admin-modal';
 import { FormsModule } from '@angular/forms';
 import { PacientesMapService, PacienteMap } from '../../services/pacientes-map.service';
+import { VisitasHoyService } from '../../services/visitas-hoy.service';
 
 export interface ColoniaInfo {
   id: string;
   nombre: string;
   totalPacientes: number;
+  visitados: number;
+  pendientes: number;
+  progresoPct: number;
+  esCompletada: boolean;
   pacientes: PacienteMap[];
   color: string;
 }
@@ -40,8 +45,17 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   mostrarSidebar: boolean = true;
   sidebarMobileOpen: boolean = false;
+  sidebarCollapsed: boolean = false;
   busquedaColonia: string = '';
   colonias: ColoniaInfo[] = [];
+  todosLosPacientes: PacienteMap[] = [];
+
+  // ⭐ ESTADO DE MODO PROXIMIDAD (GEOCERCA)
+  modoProximidad: boolean = false;
+  cargandoProximidad: boolean = false;
+  radioProximidadKm: number = 1;
+  pacientesCercanosCount: number = 0;
+  ultimaUbicacionUsuario: { lat: number; lng: number } | null = null;
 
   toggleSidebarMobile() {
     this.sidebarMobileOpen = !this.sidebarMobileOpen;
@@ -50,6 +64,14 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   closeSidebarMobile() {
     this.sidebarMobileOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  toggleSidebarCollapse() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 350);
     this.cdr.detectChanges();
   }
 
@@ -78,9 +100,22 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private store: Store<{ app: AppState }>,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private pacientesMapService: PacientesMapService
+    private pacientesMapService: PacientesMapService,
+    public visitasHoyService: VisitasHoyService
   ) {
     this.anioActivo$ = this.store.select(selectAnioActivo);
+  }
+
+  get totalPlanHoy(): number {
+    return this.visitasHoyService.totalCount;
+  }
+
+  get completadasPlanHoy(): number {
+    return this.visitasHoyService.completadasCount;
+  }
+
+  abrirMiRutaHoy() {
+    window.dispatchEvent(new CustomEvent('abrirMiRutaHoy'));
   }
 
   ngOnInit() {
@@ -137,14 +172,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   private agruparPacientesPorColonia(pacientes: PacienteMap[]) {
+    this.todosLosPacientes = [...pacientes];
     const mapa = new Map<string, PacienteMap[]>();
 
     pacientes.forEach(p => {
-      const nombreColonia = this.extraerColonia(p);
-      if (!mapa.has(nombreColonia)) {
-        mapa.set(nombreColonia, []);
+      const nombreZona = this.determinarZona(p);
+      if (!mapa.has(nombreZona)) {
+        mapa.set(nombreZona, []);
       }
-      mapa.get(nombreColonia)!.push(p);
+      mapa.get(nombreZona)!.push(p);
     });
 
     const listaColonias: ColoniaInfo[] = [];
@@ -155,10 +191,26 @@ export class LayoutComponent implements OnInit, OnDestroy {
       const color = this.coloresDisponibles[colorIdx % this.coloresDisponibles.length];
       colorIdx++;
 
+      const total = pacs.length;
+      const visitados = pacs.filter(p => {
+        const st = (p.estatus || '').toUpperCase();
+        return st === 'VISITADO' || st === 'COMPLETADA';
+      }).length;
+      const pendientes = pacs.filter(p => {
+        const st = (p.estatus || '').toUpperCase();
+        return st === 'PENDIENTE' || st === 'SIN VISITA' || !st;
+      }).length;
+      const progresoPct = total > 0 ? Math.round((visitados / total) * 100) : 0;
+      const esCompletada = visitados > 0 && visitados === total;
+
       listaColonias.push({
         id: nombre,
         nombre: nombre,
-        totalPacientes: pacs.length,
+        totalPacientes: total,
+        visitados: visitados,
+        pendientes: pendientes,
+        progresoPct: progresoPct,
+        esCompletada: esCompletada,
         pacientes: pacs,
         color: color
       });
@@ -181,25 +233,73 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  determinarZona(p: any): string {
+    const dir = (p.direccion || '').toUpperCase();
+    const col = (p.colonia || '').toUpperCase();
+    const texto = `${col} ${dir}`.toUpperCase();
+
+    // 1. ZONA SANTA ROSA DE LIMA
+    if (texto.includes('SANTA ROSA DE LIMA') || texto.includes('SAN LAZARO') || texto.includes('SAN BENIGNO')) {
+      return 'Zona Santa Rosa de Lima';
+    }
+
+    // 2. ZONA SAN JOSÉ DEL CONSUELO
+    if (texto.includes('SAN JOSE DEL CONSUELO') || texto.includes('CONSUELO') ||
+        texto.includes('CORRALES AYALA') || texto.includes('RAFAEL RANGEL') ||
+        texto.includes('MANUEL BARANDA') || texto.includes('MANUEL BRANDA') ||
+        texto.includes('OBREGON GONZALES') || texto.includes('OBREGON COLE') ||
+        texto.includes('SANTO TOMAS DE AQUINO') || texto.includes('TELLEZ CRUCES') ||
+        texto.includes('SAN JOSE DE CEMENTOS')) {
+      return 'Zona San José del Consuelo';
+    }
+
+    // 3. ZONA MISIÓN DE SAN JOSÉ
+    if (texto.includes('MISION DE SAN JOSE') || texto.includes('MIS CATEQUISTAS') ||
+        texto.includes('MISION CATEQUISTA') || texto.includes('MISION EVANGELICA') ||
+        texto.includes('MISION CRISTIANA') || texto.includes('MISION SANTA FE')) {
+      return 'Zona Misión de San José';
+    }
+
+    // 4. ZONA REAL DE SAN JOSÉ
+    if (texto.includes('REAL DE SAN JOSE') || texto.includes('VALLE DE SAN JOSE') ||
+        texto.includes('ARBOLEDAS DE SAN JOSE') || texto.includes('FRAY ') ||
+        texto.includes('FRAYLES') || texto.includes('VALLE CASTELLAL')) {
+      return 'Zona Real de San José';
+    }
+
+    // 5. ZONA RESIDENCIAL VICTORIA
+    if (texto.includes('VICTORIA') || texto.includes('RECIDENCIAL VICTORIA') ||
+        texto.includes('DE LA FAMA') || texto.includes('RENTERIA')) {
+      return 'Zona Residencial Victoria';
+    }
+
+    // 6. ZONA LOS NARANJOS
+    if (texto.includes('NARANJO') || texto.includes('AZAHARES') || texto.includes('AZARES')) {
+      return 'Zona Los Naranjos';
+    }
+
+    // 7. ZONA EL MANANTIAL
+    if (texto.includes('MANANTIAL') || texto.includes('MANANTIALES')) {
+      return 'Zona El Manantial';
+    }
+
+    // 8. ZONA VALLE DE SEÑORA
+    if (texto.includes('VALLE DE SEÑORA') || texto.includes('VALLE DE SENORA') ||
+        texto.includes('BISMUTO') || texto.includes('ACTINIO') || texto.includes('OSMIO')) {
+      return 'Zona Valle de Señora';
+    }
+
+    // 9. ZONA RESIDENCIAL TABACHINES
+    if (texto.includes('TABACHINES')) {
+      return 'Zona Tabachines';
+    }
+
+    // 10. ZONA COBERTURA METROPOLITANA
+    return 'Zona Cobertura Metropolitana';
+  }
+
   private extraerColonia(p: PacienteMap): string {
-    const colUpper = (p.colonia || '').toUpperCase().trim();
-    if (colUpper && colUpper.length > 2 && !colUpper.includes('DISPONIBLE') && !colUpper.includes('SIN COLONIA')) {
-      for (const conocida of this.coloniasConocidas) {
-        if (colUpper.includes(conocida) || conocida.includes(colUpper)) {
-          return this.formatearNombreColonia(conocida);
-        }
-      }
-      return this.formatearNombreColonia(p.colonia.trim());
-    }
-
-    const dirUpper = (p.direccion || '').toUpperCase();
-    for (const conocida of this.coloniasConocidas) {
-      if (dirUpper.includes(conocida)) {
-        return this.formatearNombreColonia(conocida);
-      }
-    }
-
-    return 'Santa Rosa de Lima';
+    return this.determinarZona(p);
   }
 
   private formatearNombreColonia(texto: string): string {
@@ -230,6 +330,35 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return this.colonias.reduce((acc, curr) => acc + curr.totalPacientes, 0);
   }
 
+  get totalVisitados(): number {
+    return this.colonias.reduce((acc, curr) => acc + curr.visitados, 0);
+  }
+
+  get totalPendientes(): number {
+    return this.colonias.reduce((acc, curr) => acc + curr.pendientes, 0);
+  }
+
+  get progresoGlobalPct(): number {
+    const total = this.totalPacientes;
+    return total > 0 ? Math.round((this.totalVisitados / total) * 100) : 0;
+  }
+
+  get topColonias(): ColoniaInfo[] {
+    return [...this.colonias]
+      .filter(c => c.totalPacientes > 0)
+      .sort((a, b) => b.pendientes - a.pendientes || b.totalPacientes - a.totalPacientes)
+      .slice(0, 4);
+  }
+
+  get coloniaSeleccionadaNombre(): string {
+    if (this.modoProximidad) {
+      return `Cerca (< ${this.radioProximidadKm} km)`;
+    }
+    if (!this.coloniaSeleccionada) return '';
+    const col = this.colonias.find(c => c.id === this.coloniaSeleccionada);
+    return col ? col.nombre : this.coloniaSeleccionada;
+  }
+
   getColorColonia(id: string): string {
     if (!id) return '#9F2241';
     if (this.coloresCache[id]) return this.coloresCache[id];
@@ -242,6 +371,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   seleccionarColonia(id: string) {
+    if (this.modoProximidad) {
+      this.modoProximidad = false;
+      window.dispatchEvent(new CustomEvent('limpiarProximidad'));
+    }
+
     if (this.coloniaSeleccionada === id || id === '') {
       // Deseleccionar o mostrar todas
       this.coloniaSeleccionada = '';
@@ -271,9 +405,108 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  // ⭐ MODOS DE PROXIMIDAD GPS
+  toggleModoProximidad() {
+    if (this.modoProximidad) {
+      this.desactivarModoProximidad();
+    } else {
+      this.activarModoProximidad(this.radioProximidadKm);
+    }
+  }
+
+  desactivarModoProximidad() {
+    this.modoProximidad = false;
+    this.coloniaSeleccionada = '';
+    this.store.dispatch(AppActions.setManzanaSeleccionada({ manzana: '' }));
+    window.dispatchEvent(new CustomEvent('limpiarProximidad'));
+    this.cdr.detectChanges();
+  }
+
+  activarModoProximidad(radioKm: number = 1) {
+    if (!navigator.geolocation) {
+      alert('Tu tableta o navegador no soporta geolocalización');
+      return;
+    }
+
+    this.radioProximidadKm = radioKm;
+    this.cargandoProximidad = true;
+    this.cdr.detectChanges();
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.cargandoProximidad = false;
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        this.ultimaUbicacionUsuario = { lat: userLat, lng: userLng };
+        this.aplicarProximidadConCoords(userLat, userLng, radioKm);
+      },
+      (error) => {
+        this.cargandoProximidad = false;
+        console.error('❌ Error GPS en proximidad:', error);
+        alert('No se pudo obtener la posición GPS. Asegúrate de habilitar los permisos de ubicación en tu tableta.');
+        this.cdr.detectChanges();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  cambiarRadioProximidad(radioKm: number) {
+    this.radioProximidadKm = radioKm;
+    if (this.ultimaUbicacionUsuario) {
+      this.aplicarProximidadConCoords(this.ultimaUbicacionUsuario.lat, this.ultimaUbicacionUsuario.lng, radioKm);
+    } else {
+      this.activarModoProximidad(radioKm);
+    }
+  }
+
+  private aplicarProximidadConCoords(userLat: number, userLng: number, radioKm: number) {
+    const radioMetros = radioKm * 1000;
+    const pacsCercanos: PacienteMap[] = [];
+
+    this.todosLosPacientes.forEach(p => {
+      if (p.lat && p.lng && p.lat !== 0 && p.lng !== 0) {
+        const distKm = this.calcularDistanciaKm(userLat, userLng, p.lat, p.lng);
+        if (distKm <= radioKm) {
+          pacsCercanos.push(p);
+        }
+      }
+    });
+
+    this.pacientesCercanosCount = pacsCercanos.length;
+    this.modoProximidad = true;
+    this.coloniaSeleccionada = '';
+
+    window.dispatchEvent(new CustomEvent('filtrarPorProximidad', {
+      detail: {
+        userLat,
+        userLng,
+        radioMetros,
+        pacientes: pacsCercanos,
+        count: pacsCercanos.length
+      }
+    }));
+
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      this.sidebarMobileOpen = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  calcularDistanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
   private actualizarVisibilidadSidebar() {
-    const url = this.router.url.split('?')[0];
-    this.mostrarSidebar = url === '/' || url === '' || url === '/dashboard';
+    const rawUrl = this.router.url.split('?')[0].replace(/\/+$/, '');
+    this.mostrarSidebar = rawUrl === '/dashboard' || rawUrl === '';
   }
 
   ngOnDestroy() {

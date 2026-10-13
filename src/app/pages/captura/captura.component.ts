@@ -4,16 +4,19 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import Swal from 'sweetalert2';
 
 declare const Toastify: any;
 
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+
 @Component({
     selector: 'app-captura',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, PageHeaderNavComponent],
     templateUrl: './captura.component.html',
     styleUrls: ['./captura.component.scss'],
     host: {
@@ -61,7 +64,9 @@ export class CapturaComponent implements OnInit {
 
     constructor(
         private http: HttpClient,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private route: ActivatedRoute,
+        private router: Router
     ) {
         console.log(' [Captura] API URL:', this.apiUrl);
     }
@@ -106,7 +111,7 @@ export class CapturaComponent implements OnInit {
                             curp: p.curp || '',
                             telefono: p.telefonoCelular || p.telefonoFijo || '',
                             direccion: p.direccion || '',
-                            colonia: this.extraerColonia(p.direccion),
+                            colonia: this.extraerColonia(p.direccion, p.zonaTrabajo || p.colonia),
                             seccion: p.zonaTrabajo?.split('-').pop() || '',
                             zonaTrabajo: p.zonaTrabajo || '',
                             estatus: p.estatus || 'PENDIENTE',
@@ -125,6 +130,7 @@ export class CapturaComponent implements OnInit {
 
                     this.pacientesFiltrados = [...this.pacientes];
                     this.loading = false;
+                    this.verificarPacientePreseleccionado();
                     this.cdr.detectChanges();
                 },
                 error: (err) => {
@@ -136,10 +142,96 @@ export class CapturaComponent implements OnInit {
             });
     }
 
-    extraerColonia(direccion: string): string {
+    verificarPacientePreseleccionado() {
+        const paramId = this.route.snapshot.queryParams['pacienteId'];
+        const guardado = localStorage.getItem('capturaPaciente');
+        let targetId = paramId;
+
+        if (!targetId && guardado) {
+            try {
+                const parsed = JSON.parse(guardado);
+                targetId = parsed.pacienteId || parsed.id;
+            } catch (e) { }
+        }
+
+        if (targetId && this.pacientes.length > 0) {
+            const encontrado = this.pacientes.find(p => String(p.id) === String(targetId));
+            if (encontrado) {
+                console.log('🎯 [Captura] Paciente preseleccionado encontrado:', encontrado.nombreCompleto);
+                this.seleccionarSugerencia(encontrado);
+                this.mostrarToast('Paciente seleccionado', `${encontrado.nombreCompleto} cargado para visita`, 'success');
+                localStorage.removeItem('capturaPaciente');
+            }
+        }
+    }
+
+    extraerColonia(direccion: string, coloniaOriginal?: string): string {
+        if (coloniaOriginal && coloniaOriginal.length > 2) {
+            const cUpper = coloniaOriginal.toUpperCase().trim();
+            if (!cUpper.includes('DISPONIBLE') &&
+                !cUpper.includes('SIN COLONIA') &&
+                !/^#|^\d+$/i.test(coloniaOriginal.trim()) &&
+                !cUpper.startsWith('REFS')) {
+                let limpia = coloniaOriginal
+                    .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                return limpia || coloniaOriginal;
+            }
+        }
+
         if (!direccion) return '';
-        const partes = direccion.split(',');
-        return partes.length >= 2 ? partes[1].trim() : '';
+
+        let dirSinRefs = direccion;
+        if (direccion.includes('|')) {
+            dirSinRefs = direccion.split('|')[0].trim();
+        } else if (/Refs\.?:/i.test(direccion)) {
+            const idx = direccion.search(/Refs\.?:/i);
+            dirSinRefs = direccion.substring(0, idx).trim();
+        }
+
+        const matchKeyword = dirSinRefs.match(/(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+([^,\|]+)/i);
+        if (matchKeyword && matchKeyword[1]) {
+            const cand = matchKeyword[1].trim();
+            if (cand.length > 2 && !/^#|^\d+$/i.test(cand) && !/LEON|GTO/i.test(cand)) {
+                return cand.replace(/CP\s*\d{5}/gi, '').trim();
+            }
+        }
+
+        let limpiaDir = dirSinRefs
+            .replace(/,\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+            .replace(/,\s*LEON\s*,?\s*GTO.*$/i, '')
+            .replace(/,\s*LEON$/i, '')
+            .replace(/,\s*GTO$/i, '')
+            .trim();
+
+        const partes = limpiaDir.split(',').map(s => s.trim()).filter(Boolean);
+        const numIdx = partes.findIndex(p => /^#|^\d+$/i.test(p));
+        if (numIdx !== -1 && numIdx + 1 < partes.length) {
+            let postNum = partes.slice(numIdx + 1);
+            if (postNum.length > 1 && /^\d+$/.test(postNum[0])) {
+                postNum = postNum.slice(1);
+            }
+            let col = postNum.join(', ').trim()
+                .replace(/^[-\d]+,\s*/, '')
+                .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                .trim();
+            if (col && col.length > 2 && !/^#|^\d+$/i.test(col) && !/LEON|GTO/i.test(col)) {
+                return col;
+            }
+        }
+
+        if (partes.length >= 2) {
+            const ultima = partes[partes.length - 1].trim()
+                .replace(/^[-\d]+,\s*/, '')
+                .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                .trim();
+            if (ultima.length > 2 && !/^#|^\d+$/i.test(ultima) && !/LEON|GTO/i.test(ultima)) {
+                return ultima;
+            }
+        }
+
+        return '';
     }
 
     cargarPacientesLocal() {
@@ -177,6 +269,7 @@ export class CapturaComponent implements OnInit {
             }
         ];
         this.pacientesFiltrados = [...this.pacientes];
+        this.verificarPacientePreseleccionado();
     }
 
     cargarFinados() {
@@ -665,6 +758,12 @@ export class CapturaComponent implements OnInit {
 
         this.guardarVisitaEnLocalStorage(datosVisita);
         this.enviarNotificacionVisitaGuardada(this.numVisita);
+
+        if (this.pacienteId) {
+            window.dispatchEvent(new CustomEvent('marcarVisitaHoyCompletada', {
+                detail: { pacienteId: this.pacienteId }
+            }));
+        }
 
         let mensajeExito = 'Los datos se han registrado correctamente';
         if (tieneDiscapacidad) {

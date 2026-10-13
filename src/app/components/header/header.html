@@ -1,6 +1,6 @@
 <!-- src/app/components/header/header.html -->
 
-<header class="main-header">
+<header class="main-header" *ngIf="esRutaMapa">
   <div class="header-left-area">
     <button class="hamburger" (click)="toggleSidebar()" title="Menú de módulos">
       <i class="fas fa-bars"></i>
@@ -17,10 +17,10 @@
         </div>
       </div>
 
-      <div class="brand-divider"></div>
+      <div class="brand-divider" *ngIf="esRutaMapa"></div>
 
-      <!-- Información Operativa de la Plataforma -->
-      <div class="program-text">
+      <!-- Información Operativa de la Plataforma (solo visible en el mapa) -->
+      <div class="program-text" *ngIf="esRutaMapa">
         <div class="title-main">Tablero de Control Operativo</div>
         <div class="subtitle-main">
           <span class="location-label">

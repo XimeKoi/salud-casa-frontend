@@ -41,6 +41,15 @@
         <i class="fas fa-times"></i>
         <span class="btn-tooltip">Limpiar</span>
       </button>
+
+      <!-- ⭐ BOTÓN RÁPIDO MI RUTA DE HOY -->
+      <button class="btn-action btn-ruta-hoy" (click)="abrirMiRutaHoy()"
+        [class.has-patients]="visitasHoyService.totalCount > 0"
+        title="Ver Mi Lista de Visitas de Hoy ({{ visitasHoyService.totalCount }})">
+        <i class="fas fa-route"></i>
+        <span class="btn-badge-count" *ngIf="visitasHoyService.totalCount > 0">{{ visitasHoyService.totalCount }}</span>
+        <span class="btn-tooltip">Mi Ruta ({{ visitasHoyService.totalCount }})</span>
+      </button>
     </div>
 
   </div>

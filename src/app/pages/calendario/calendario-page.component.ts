@@ -40,10 +40,12 @@ interface PacienteSeleccionado {
     estaFinado: boolean;
 }
 
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+
 @Component({
     selector: 'app-calendario-page',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, PageHeaderNavComponent],
     templateUrl: './calendario-page.component.html',
     styleUrls: ['./calendario-page.component.scss']
 })
@@ -141,7 +143,7 @@ export class CalendarioPageComponent implements OnInit {
                         nombreCompleto: this.construirNombreCompleto(p),
                         nombre: p.nombre || '',
                         curp: p.curp || '',
-                        colonia: this.extraerColonia(p.direccion),
+                        colonia: this.extraerColonia(p.direccion, p.zonaTrabajo || p.colonia),
                         direccion: p.direccion || '',
                         telefono: p.telefonoCelular || p.telefonoFijo || '',
                         estatus: p.estatus || 'PENDIENTE',
@@ -209,12 +211,72 @@ export class CalendarioPageComponent implements OnInit {
         return uniqueTokens.join(' ');
     }
 
-    private extraerColonia(direccion: string): string {
+    private extraerColonia(direccion: string, coloniaOriginal?: string): string {
+        if (coloniaOriginal && coloniaOriginal.length > 2) {
+            const cUpper = coloniaOriginal.toUpperCase().trim();
+            if (!cUpper.includes('DISPONIBLE') &&
+                !cUpper.includes('SIN COLONIA') &&
+                !/^#|^\d+$/i.test(coloniaOriginal.trim()) &&
+                !cUpper.startsWith('REFS')) {
+                let limpia = coloniaOriginal
+                    .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                return limpia || coloniaOriginal;
+            }
+        }
+
         if (!direccion) return '';
-        const partes = direccion.split('|');
-        if (partes.length >= 2) return partes[1].trim();
-        const partesComa = direccion.split(',');
-        if (partesComa.length >= 2) return partesComa[1].trim();
+
+        let dirSinRefs = direccion;
+        if (direccion.includes('|')) {
+            dirSinRefs = direccion.split('|')[0].trim();
+        } else if (/Refs\.?:/i.test(direccion)) {
+            const idx = direccion.search(/Refs\.?:/i);
+            dirSinRefs = direccion.substring(0, idx).trim();
+        }
+
+        const matchKeyword = dirSinRefs.match(/(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+([^,\|]+)/i);
+        if (matchKeyword && matchKeyword[1]) {
+            const cand = matchKeyword[1].trim();
+            if (cand.length > 2 && !/^#|^\d+$/i.test(cand) && !/LEON|GTO/i.test(cand)) {
+                return cand.replace(/CP\s*\d{5}/gi, '').trim();
+            }
+        }
+
+        let limpiaDir = dirSinRefs
+            .replace(/,\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+            .replace(/,\s*LEON\s*,?\s*GTO.*$/i, '')
+            .replace(/,\s*LEON$/i, '')
+            .replace(/,\s*GTO$/i, '')
+            .trim();
+
+        const partes = limpiaDir.split(',').map(s => s.trim()).filter(Boolean);
+        const numIdx = partes.findIndex(p => /^#|^\d+$/i.test(p));
+        if (numIdx !== -1 && numIdx + 1 < partes.length) {
+            let postNum = partes.slice(numIdx + 1);
+            if (postNum.length > 1 && /^\d+$/.test(postNum[0])) {
+                postNum = postNum.slice(1);
+            }
+            let col = postNum.join(', ').trim()
+                .replace(/^[-\d]+,\s*/, '')
+                .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                .trim();
+            if (col && col.length > 2 && !/^#|^\d+$/i.test(col) && !/LEON|GTO/i.test(col)) {
+                return col;
+            }
+        }
+
+        if (partes.length >= 2) {
+            const ultima = partes[partes.length - 1].trim()
+                .replace(/^[-\d]+,\s*/, '')
+                .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                .trim();
+            if (ultima.length > 2 && !/^#|^\d+$/i.test(ultima) && !/LEON|GTO/i.test(ultima)) {
+                return ultima;
+            }
+        }
+
         return '';
     }
 
@@ -462,7 +524,7 @@ export class CalendarioPageComponent implements OnInit {
     onBusquedaPacienteChange() {
         const busqueda = this.busquedaPaciente?.trim() || '';
 
-        if (busqueda.length < 2) {
+        if (busqueda.length === 0) {
             this.sugerenciasPacientes = [];
             this.mostrarSugerencias = false;
             this.cdr.detectChanges();
@@ -475,14 +537,16 @@ export class CalendarioPageComponent implements OnInit {
             const nombre = (p.nombreCompleto || p.nombre || '').toLowerCase();
             const id = String(p.id || '');
             const curp = (p.curp || '').toLowerCase();
-            return nombre.includes(busquedaLower) || id.includes(busqueda) || curp.includes(busquedaLower);
+            const col = (p.colonia || '').toLowerCase();
+            const dir = (p.direccion || '').toLowerCase();
+            return nombre.includes(busquedaLower) || id.includes(busqueda) || curp.includes(busquedaLower) || col.includes(busquedaLower) || dir.includes(busquedaLower);
         });
 
-        if (this.sugerenciasPacientes.length > 10) {
-            this.sugerenciasPacientes = this.sugerenciasPacientes.slice(0, 10);
+        if (this.sugerenciasPacientes.length > 15) {
+            this.sugerenciasPacientes = this.sugerenciasPacientes.slice(0, 15);
         }
 
-        this.mostrarSugerencias = this.sugerenciasPacientes.length > 0;
+        this.mostrarSugerencias = true;
         this.cdr.detectChanges();
     }
 

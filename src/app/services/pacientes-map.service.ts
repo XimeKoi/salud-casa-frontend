@@ -32,6 +32,7 @@ export interface PacienteMap {
     };
     finado: boolean;
     fechaFinado: string;
+    zona?: string;
 }
 
 @Injectable({
@@ -114,23 +115,34 @@ export class PacientesMapService {
     }
 
     public extraerColonia(direccion: string, coloniaOriginal?: string): string {
-        if (coloniaOriginal && coloniaOriginal.length > 2 && !coloniaOriginal.toUpperCase().includes('DISPONIBLE') && !coloniaOriginal.toUpperCase().includes('SIN COLONIA')) {
-            const c = coloniaOriginal.toUpperCase().trim();
-            if (c.includes('ROSA')) return 'Santa Rosa de Lima';
-            if (c.includes('NARANJO')) return 'Los Naranjos';
-            if (c.includes('MANANTIAL')) return 'Los Manantiales';
-            if (c.includes('MISION') && (c.includes('JOSE') || c.includes('JESUITA'))) return 'Misión de San José';
-            if (c.includes('REAL') && c.includes('JOSE')) return 'Real San José';
-            if (c.includes('CONSUELO')) return 'San José del Consuelo';
-            if (c.includes('VICTORIA')) return 'Residencial Victoria';
-            if (c.includes('SANTA FE')) return 'Misión de Santa Fe';
-            if (c.includes('CENTRO') || c.includes('OBREGON') || c.includes('HIDALGO')) return 'Zona Centro';
-            return coloniaOriginal.trim();
+        const origen = (coloniaOriginal || '').trim();
+        if (origen && origen.length > 2) {
+            const c = origen.toUpperCase();
+            if (!c.includes('DISPONIBLE') && !c.includes('SIN COLONIA') && !/^#|^\d+$/i.test(origen) && !c.startsWith('REFS')) {
+                if (c.includes('ROSA')) return 'Santa Rosa de Lima';
+                if (c.includes('NARANJO')) return 'Los Naranjos';
+                if (c.includes('MANANTIAL')) return 'Los Manantiales';
+                if (c.includes('MISION') && (c.includes('JOSE') || c.includes('JESUITA'))) return 'Misión de San José';
+                if (c.includes('REAL') && c.includes('JOSE')) return 'Real San José';
+                if (c.includes('CONSUELO')) return 'San José del Consuelo';
+                if (c.includes('VICTORIA')) return 'Residencial Victoria';
+                if (c.includes('SANTA FE')) return 'Misión de Santa Fe';
+                if (c.includes('CENTRO') || c.includes('OBREGON') || c.includes('HIDALGO')) return 'Zona Centro';
+                return origen.replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '').trim();
+            }
         }
 
         if (!direccion) return 'Santa Rosa de Lima';
 
-        const d = direccion.toUpperCase().trim();
+        let dirSinRefs = direccion;
+        if (direccion.includes('|')) {
+            dirSinRefs = direccion.split('|')[0].trim();
+        } else if (/Refs\.?:/i.test(direccion)) {
+            const idx = direccion.search(/Refs\.?:/i);
+            dirSinRefs = direccion.substring(0, idx).trim();
+        }
+
+        const d = dirSinRefs.toUpperCase().trim();
         if (d.includes('ROSA')) return 'Santa Rosa de Lima';
         if (d.includes('NARANJO')) return 'Los Naranjos';
         if (d.includes('MANANTIAL')) return 'Los Manantiales';
@@ -153,11 +165,44 @@ export class PacientesMapService {
         if (d.includes('SAN MIGUEL')) return 'San Miguel';
         if (d.includes('BEETHOVEN') || d.includes('CHOPIN') || d.includes('MOZART') || d.includes('WAGNER') || d.includes('LEON MODERNO')) return 'León Moderno';
 
-        const parts = d.split(/[|,]/);
-        if (parts.length > 1) {
-            let p = parts[1].replace(/COL(?:ONIA)?\.?/g, '').replace(/FRACC(?:IONAMIENTO)?\.?/g, '').replace(/CP\s*\d+/g, '').trim();
-            if (p.length > 3 && !p.includes('LEON') && !p.includes('GTO') && !p.includes('MEXICO')) {
-                return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+        const matchCol = dirSinRefs.match(/(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+([^,\|]+)/i);
+        if (matchCol && matchCol[1]) {
+            const cand = matchCol[1].trim();
+            if (cand.length > 2 && !/^#|^\d+$/i.test(cand) && !/LEON|GTO/i.test(cand)) {
+                return cand.replace(/CP\s*\d{5}/gi, '').trim();
+            }
+        }
+
+        let limpiaDir = dirSinRefs
+            .replace(/,\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+            .replace(/,\s*LEON\s*,?\s*GTO.*$/i, '')
+            .replace(/,\s*LEON$/i, '')
+            .replace(/,\s*GTO$/i, '')
+            .trim();
+
+        const parts = limpiaDir.split(',').map(s => s.trim()).filter(Boolean);
+        const numIdx = parts.findIndex(p => /^#|^\d+$/i.test(p));
+        if (numIdx !== -1 && numIdx + 1 < parts.length) {
+            let postNum = parts.slice(numIdx + 1);
+            if (postNum.length > 1 && /^\d+$/.test(postNum[0])) {
+                postNum = postNum.slice(1);
+            }
+            let col = postNum.join(', ').trim()
+                .replace(/^[-\d]+,\s*/, '')
+                .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                .trim();
+            if (col && col.length > 2 && !/^#|^\d+$/i.test(col) && !/LEON|GTO/i.test(col)) {
+                return col;
+            }
+        }
+
+        if (parts.length >= 2) {
+            const ultima = parts[parts.length - 1].trim()
+                .replace(/^[-\d]+,\s*/, '')
+                .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+                .trim();
+            if (ultima.length > 2 && !/^#|^\d+$/i.test(ultima) && !/LEON|GTO/i.test(ultima)) {
+                return ultima;
             }
         }
 
@@ -197,6 +242,71 @@ export class PacientesMapService {
         };
     }
 
+    determinarZona(p: any): string {
+        const dir = (p.direccion || '').toUpperCase();
+        const col = (p.colonia || '').toUpperCase();
+        const texto = `${col} ${dir}`.toUpperCase();
+
+        // 1. ZONA SANTA ROSA DE LIMA
+        if (texto.includes('SANTA ROSA DE LIMA') || texto.includes('SAN LAZARO') || texto.includes('SAN BENIGNO')) {
+            return 'Zona Santa Rosa de Lima';
+        }
+
+        // 2. ZONA SAN JOSÉ DEL CONSUELO
+        if (texto.includes('SAN JOSE DEL CONSUELO') || texto.includes('CONSUELO') ||
+            texto.includes('CORRALES AYALA') || texto.includes('RAFAEL RANGEL') ||
+            texto.includes('MANUEL BARANDA') || texto.includes('MANUEL BRANDA') ||
+            texto.includes('OBREGON GONZALES') || texto.includes('OBREGON COLE') ||
+            texto.includes('SANTO TOMAS DE AQUINO') || texto.includes('TELLEZ CRUCES') ||
+            texto.includes('SAN JOSE DE CEMENTOS')) {
+            return 'Zona San José del Consuelo';
+        }
+
+        // 3. ZONA MISIÓN DE SAN JOSÉ
+        if (texto.includes('MISION DE SAN JOSE') || texto.includes('MIS CATEQUISTAS') ||
+            texto.includes('MISION CATEQUISTA') || texto.includes('MISION EVANGELICA') ||
+            texto.includes('MISION CRISTIANA') || texto.includes('MISION SANTA FE')) {
+            return 'Zona Misión de San José';
+        }
+
+        // 4. ZONA REAL DE SAN JOSÉ
+        if (texto.includes('REAL DE SAN JOSE') || texto.includes('VALLE DE SAN JOSE') ||
+            texto.includes('ARBOLEDAS DE SAN JOSE') || texto.includes('FRAY ') ||
+            texto.includes('FRAYLES') || texto.includes('VALLE CASTELLAL')) {
+            return 'Zona Real de San José';
+        }
+
+        // 5. ZONA RESIDENCIAL VICTORIA
+        if (texto.includes('VICTORIA') || texto.includes('RECIDENCIAL VICTORIA') ||
+            texto.includes('DE LA FAMA') || texto.includes('RENTERIA')) {
+            return 'Zona Residencial Victoria';
+        }
+
+        // 6. ZONA LOS NARANJOS
+        if (texto.includes('NARANJO') || texto.includes('AZAHARES') || texto.includes('AZARES')) {
+            return 'Zona Los Naranjos';
+        }
+
+        // 7. ZONA EL MANANTIAL
+        if (texto.includes('MANANTIAL') || texto.includes('MANANTIALES')) {
+            return 'Zona El Manantial';
+        }
+
+        // 8. ZONA VALLE DE SEÑORA
+        if (texto.includes('VALLE DE SEÑORA') || texto.includes('VALLE DE SENORA') ||
+            texto.includes('BISMUTO') || texto.includes('ACTINIO') || texto.includes('OSMIO')) {
+            return 'Zona Valle de Señora';
+        }
+
+        // 9. ZONA RESIDENCIAL TABACHINES
+        if (texto.includes('TABACHINES')) {
+            return 'Zona Tabachines';
+        }
+
+        // 10. ZONA COBERTURA METROPOLITANA
+        return 'Zona Cobertura Metropolitana';
+    }
+
     private procesarPacientes(pacientesBD: any[]): PacienteMap[] {
         const pacientesConCoords: PacienteMap[] = [];
         let conTelefono = 0;
@@ -212,19 +322,23 @@ export class PacientesMapService {
             const coloniaValida = p.colonia && p.colonia.length > 2 &&
                 !p.colonia.toUpperCase().includes('DISPONIBLE') &&
                 !p.colonia.toUpperCase().includes('SIN COLONIA') &&
-                !p.colonia.toUpperCase().includes('NO DISPONIBLE');
-            const colonia = coloniaValida ? p.colonia : this.extraerColonia(direccion);
+                !p.colonia.toUpperCase().includes('NO DISPONIBLE') &&
+                !/^#|^\d+$/i.test(p.colonia.trim()) &&
+                !p.colonia.toUpperCase().startsWith('REFS');
+            const colonia = coloniaValida ? p.colonia : this.extraerColonia(direccion, p.zonaTrabajo);
             const seccion = this.extraerSeccion(p.zonaTrabajo || p.seccion || '') || '277';
 
             let lat = p.lat ? parseFloat(p.lat) : null;
             let lng = p.lng ? parseFloat(p.lng) : null;
 
             let estatus = p.estatus || 'pendiente';
-            if (estatus === 'RECHAZO') estatus = 'rechazo';
-            else if (estatus === 'VISITADO') estatus = 'visitado';
-            else if (estatus === 'PENDIENTE DE VISITA' || estatus === 'SIN VISITA') estatus = 'pendiente';
-            else if (estatus === 'INCIDENCIA') estatus = 'incidencia';
-            else if (estatus === 'FINADO') estatus = 'finado';
+            const estatusUpper = estatus.toUpperCase();
+            if (estatusUpper === 'RECHAZO' || estatusUpper === 'RECHAZADO') estatus = 'rechazo';
+            else if (estatusUpper === 'VISITADO' || estatusUpper === 'COMPLETADO' || estatusUpper === 'COMPLETADA') estatus = 'visitado';
+            else if (estatusUpper === 'PENDIENTE DE VISITA' || estatusUpper === 'SIN VISITA' || estatusUpper === 'PENDIENTE') estatus = 'pendiente';
+            else if (estatusUpper === 'INCIDENCIA') estatus = 'incidencia';
+            else if (estatusUpper === 'CAMBIO DE DOMICILIO') estatus = 'cambio_domicilio';
+            else if (estatusUpper === 'FINADO') estatus = 'finado';
 
             const telefonoFijo = p.telefonoFijo || '';
             const telefonoCelular = p.telefonoCelular || '';
@@ -249,6 +363,7 @@ export class PacientesMapService {
 
             const discapacidades = this.extraerDiscapacidades(p);
             const finadoInfo = this.esFinado(p);
+            const zona = this.determinarZona(p);
 
             pacientesConCoords.push({
                 id: p.id || 0,
@@ -269,7 +384,8 @@ export class PacientesMapService {
                 genero: genero,
                 discapacidades: discapacidades,
                 finado: finadoInfo.finado,
-                fechaFinado: finadoInfo.fechaFinado
+                fechaFinado: finadoInfo.fechaFinado,
+                zona: zona
             });
         }
 
@@ -330,11 +446,13 @@ export class PacientesMapService {
         let resultado = [...pacientes];
 
         if (filtros.zona && filtros.zona.trim() !== '' && filtros.zona.toUpperCase() !== 'TODAS LAS ZONAS' && filtros.zona.toUpperCase() !== 'TODAS') {
-            const zona = filtros.zona.toUpperCase().trim();
+            const zonaFiltro = filtros.zona.toUpperCase().trim();
             resultado = resultado.filter(p => {
+                const z = (p.zona || this.determinarZona(p)).toUpperCase();
                 const direccion = (p.direccion || '').toUpperCase();
                 const colonia = (p.colonia || '').toUpperCase();
-                return direccion.includes(zona) || colonia.includes(zona) || (colonia.length > 2 && zona.includes(colonia));
+                return z === zonaFiltro || z.includes(zonaFiltro) || zonaFiltro.includes(z) ||
+                       direccion.includes(zonaFiltro) || colonia.includes(zonaFiltro);
             });
         }
 
@@ -344,16 +462,20 @@ export class PacientesMapService {
         if (hayFiltrosPerfil) {
             resultado = resultado.filter(p => {
                 const programa = (p.programa || '').toUpperCase();
-                const esAdulto = programa === 'PAM' || programa.includes('ADULTO');
-                const esDiscapacitado = p.discapacidades?.motriz || p.discapacidades?.visual ||
+                const estatus = (p.estatus || '').toUpperCase();
+                const esFinado = Boolean(p.finado || estatus === 'FINADO' || (p as any).fechaFinado);
+                const esDiscapacitado = Boolean(
+                    programa === 'PCD' || programa.includes('PCD') ||
+                    programa === 'DISCAPACIDAD' || programa.includes('DIS') ||
+                    p.discapacidades?.motriz || p.discapacidades?.visual ||
                     p.discapacidades?.auditiva || p.discapacidades?.intelectual ||
-                    p.discapacidades?.psicosocial ||
-                    programa === 'DISCAPACIDAD' || programa.includes('DIS');
-                const esFinado = p.finado || (p.estatus || '').toUpperCase() === 'FINADO';
+                    p.discapacidades?.psicosocial
+                );
+                const esAdulto = Boolean(programa === 'PAM' || programa.includes('ADULTO') || programa.includes('PAM'));
 
-                if (perfiles.adulto && esAdulto) return true;
-                if (perfiles.discapacitado && esDiscapacitado) return true;
                 if (perfiles.finado && esFinado) return true;
+                if (perfiles.discapacitado && esDiscapacitado && !esFinado) return true;
+                if (perfiles.adulto && esAdulto && !esFinado) return true;
                 return false;
             });
         }

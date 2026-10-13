@@ -1014,80 +1014,173 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 .suggestions-flyout {
   position: relative;
   width: 100%;
-  max-height: 360px;
+  max-height: 380px;
   overflow-y: auto;
-  background: #ffffff;
-  border: 1.5px solid $border-color;
-  border-radius: $radius-md;
-  box-shadow: $shadow-md;
-  z-index: 10;
-  margin-top: 8px;
+  -webkit-overflow-scrolling: touch;
+  background: #FAF8F6;
+  border: 1.5px solid #E2D9D2;
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(82, 13, 47, 0.08);
+  margin-top: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
 }
 
 .suggestion-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid $border-subtle;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1.5px solid #EAE2DB;
+  border-left: 5px solid #520D2F;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 12px;
 
   &:hover {
-    background: #fbf8f5;
-  }
-
-  &:last-child {
-    border-bottom: none;
+    background: #FFFBF8;
+    border-color: #FF6B55;
+    border-left-color: #FF6B55;
+    transform: translateX(4px);
+    box-shadow: 0 6px 16px rgba(82, 13, 47, 0.1);
   }
 
   .suggestion-avatar {
-    font-size: 20px;
-    color: $primary;
-    margin-right: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #520D2F 0%, #7E101F 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(82, 13, 47, 0.25);
+
+    &.finado {
+      background: #64748B;
+    }
   }
 
   .suggestion-info {
     flex: 1;
+    min-width: 0;
 
-    .patient-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: $text-main;
+    .patient-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .patient-name {
+        font-size: 14.5px;
+        font-weight: 800;
+        color: #1E293B;
+        letter-spacing: -0.2px;
+      }
+
+      .badge-finado-pill {
+        background: #FEE2E2;
+        color: #991B1B;
+        font-size: 10.5px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 6px;
+        border: 1px solid #FCA5A5;
+      }
     }
 
-    .patient-meta {
+    .patient-meta-badges {
       display: flex;
-      gap: 8px;
-      font-size: 11px;
-      color: $text-muted;
-      margin-top: 2px;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 5px;
+
+      .meta-pill {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        &.pill-id {
+          background: #F1F5F9;
+          color: #475569;
+          border: 1px solid #CBD5E1;
+        }
+
+        &.pill-curp {
+          background: #EFF6FF;
+          color: #1D4ED8;
+          border: 1px solid #BFDBFE;
+        }
+
+        &.pill-colonia {
+          background: #FEF3C7;
+          color: #92400E;
+          border: 1px solid #FDE68A;
+        }
+      }
     }
   }
 
   .suggestion-add-btn {
-    font-size: 16px;
-    color: $primary;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff;
+    border: none;
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.28);
+    transition: all 0.15s ease;
+
+    i {
+      font-size: 12px;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      transform: scale(1.05);
+      box-shadow: 0 5px 14px rgba(5, 150, 105, 0.38);
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
   }
 }
 
-.finado-tag-small {
-  background: #fee2e2;
-  color: #dc2626;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
 .suggestion-empty-state {
-  padding: 16px;
+  padding: 26px;
   text-align: center;
-  font-size: 12px;
-  color: $text-muted;
+  color: #64748B;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+
+  i {
+    font-size: 26px;
+    color: #94A3B8;
+  }
 }
 
 .summary-status-strip {
@@ -1190,38 +1283,95 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
   &.dialog-schedule-wide {
     max-width: 980px;
     width: 95vw;
+    height: 88vh;
+    max-height: 92vh;
+    min-height: 600px;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(82, 13, 47, 0.28);
+    border: 1.5px solid rgba(255, 107, 85, 0.3);
 
     .dialog-header {
       padding: 18px 26px;
+      background: linear-gradient(135deg, #520D2F 0%, #38081F 100%);
+      border-bottom: 2px solid rgba(255, 107, 85, 0.4);
+
+      .dialog-icon-badge {
+        background: rgba(255, 107, 85, 0.2);
+        color: #FF6B55;
+      }
 
       h3 {
-        font-size: 18px;
+        font-size: 19px;
         font-weight: 800;
-        color: #38081F;
+        color: #ffffff;
       }
 
       .dialog-subtitle {
         font-size: 13px;
-        color: #7D6974;
+        color: #FCD34D;
         margin-top: 3px;
+      }
+
+      .dialog-close-btn {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #DC2626;
+          color: #ffffff;
+          transform: scale(1.08);
+        }
       }
     }
 
     .dialog-body {
       padding: 22px 26px;
-      max-height: 78vh;
+      flex: 1;
+      height: calc(100% - 78px);
+      max-height: none;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #FAF8F6;
     }
 
     .patient-search-section {
-      margin-bottom: 16px;
+      margin-bottom: 8px;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1.5px solid #EAE2DB;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
     .search-input-wrap {
       .search-text-input {
-        height: 46px;
-        font-size: 14px;
-        padding-left: 14px;
+        height: 48px;
+        font-size: 14.5px;
+        padding-left: 16px;
+        background: #FDFBF9;
+        border: 2px solid #E2D8CF;
+        border-radius: 12px;
+        color: #1E293B;
+        font-weight: 600;
+        transition: all 0.2s ease;
+
+        &:focus {
+          border-color: #520D2F;
+          background: #ffffff;
+          box-shadow: 0 0 0 4px rgba(82, 13, 47, 0.12);
+        }
       }
     }
 
@@ -1229,6 +1379,10 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
       padding: 16px 18px;
       border-radius: 14px;
       margin-bottom: 14px;
+      background: #ffffff;
+      border: 1.5px solid #E8DFD7;
+      border-left: 5px solid #520D2F;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
     }
 
     .patient-config-grid {
@@ -1352,84 +1506,6 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
   }
 }
 
-.suggestions-flyout {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: #ffffff;
-  border: 1.5px solid $border-color;
-  border-radius: $radius-md;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-  z-index: 100;
-  max-height: 220px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
-  .suggestion-row {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    gap: 10px;
-    border-bottom: 1px solid #f1f5f9;
-    cursor: pointer;
-    transition: background 0.15s ease;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    &:hover {
-      background: #fdf6f0;
-    }
-
-    .suggestion-avatar {
-      font-size: 20px;
-      color: $primary;
-    }
-
-    .suggestion-info {
-      flex: 1;
-
-      .patient-name {
-        font-size: 12.5px;
-        font-weight: 700;
-        color: $text-main;
-      }
-
-      .patient-meta {
-        font-size: 11px;
-        color: $text-muted;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-    }
-
-    .suggestion-add-btn {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: $primary;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-    }
-  }
-
-  .suggestion-empty-state {
-    padding: 14px;
-    text-align: center;
-    font-size: 12px;
-    color: $text-muted;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-}
 
 .confirmacion-detalle-box {
   background: #f8fafc;

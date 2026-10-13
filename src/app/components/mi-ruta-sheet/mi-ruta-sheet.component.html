@@ -1,0 +1,502 @@
+<!-- src/app/components/mi-ruta-sheet/mi-ruta-sheet.component.html -->
+
+
+<!-- ⭐ BACKDROP OSCURO CUANDO EL MODAL ESTÁ ABIERTO -->
+<div class="sheet-backdrop" *ngIf="sheetAbierto" (click)="cerrarSheet()"></div>
+
+<!-- ⭐ MODAL FLOTANTE CENTRADO DE JORNADA DEL DÍA -->
+<section class="ruta-modal-centered" [class.open]="sheetAbierto" role="dialog" aria-modal="true" aria-label="Mi Jornada de Hoy">
+
+  <!-- CABECERA INSTITUCIONAL DEL MODAL -->
+  <header class="modal-header-top">
+    <div class="header-info-box">
+      <div class="header-icon-wrap">
+        <i class="fas fa-route"></i>
+      </div>
+      <div>
+        <div class="title-with-badge">
+          <h2>Mi Jornada de Hoy</h2>
+          <span class="badge-status-jornada" [class.badge-meta]="totalCount >= 12 && totalCount <= 15">
+            {{ totalCount }} pacientes programados
+          </span>
+          <span class="badge-meta-rango" title="Meta estándar de 12 a 15 visitas diarias en campo">
+            <i class="fas fa-bullseye"></i> Meta: 12-15 visitas
+          </span>
+        </div>
+        <p class="modal-date-subtitle">
+          <i class="fas fa-calendar-day"></i> {{ fechaHoyTexto }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Acciones de cabecera -->
+    <div class="modal-header-actions">
+      <!-- Sugerir 12 prioritarios -->
+      <button
+        type="button"
+        class="btn-modal-quick btn-sugerir"
+        (click)="sugerirPrioritarios(12)"
+        title="Sugerir automáticamente 12 pacientes prioritarios de tu zona para hoy">
+        <i class="fas fa-bolt"></i>
+        <span>Sugerir 12 prioritarios</span>
+      </button>
+
+      <!-- Guardar en Historial -->
+      <button
+        type="button"
+        class="btn-modal-quick btn-historial-save"
+        *ngIf="totalCount > 0"
+        (click)="guardarHistorialManual()"
+        title="Guardar una copia de esta jornada en tu historial">
+        <i class="fas fa-bookmark"></i>
+        <span>Guardar en Historial</span>
+      </button>
+
+      <!-- Limpiar -->
+      <button
+        type="button"
+        class="btn-modal-quick btn-limpiar"
+        *ngIf="totalCount > 0"
+        (click)="limpiarPlanConfirm()"
+        title="Reiniciar lista de hoy">
+        <i class="fas fa-trash-can"></i>
+        <span>Reiniciar</span>
+      </button>
+
+      <!-- Botón cerrar -->
+      <button
+        type="button"
+        class="btn-close-modal"
+        (click)="cerrarSheet()"
+        aria-label="Cerrar ventana">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ⭐ PESTAÑAS DE NAVEGACIÓN DENTRO DEL MODAL -->
+  <nav class="modal-tabs-nav">
+    <button
+      type="button"
+      class="modal-tab-btn"
+      [class.active]="tabActiva === 'ruta'"
+      (click)="setTab('ruta')">
+      <i class="fas fa-clipboard-list"></i>
+      <span>Mi Lista de Visitas ({{ totalCount }})</span>
+      <span class="tab-chip" *ngIf="totalCount >= 12 && totalCount <= 15">✓ Meta 12-15</span>
+    </button>
+
+    <button
+      type="button"
+      class="modal-tab-btn"
+      [class.active]="tabActiva === 'buscar'"
+      (click)="setTab('buscar')">
+      <i class="fas fa-map-location-dot"></i>
+      <span>Buscar por Zonas y Pacientes</span>
+    </button>
+
+    <button
+      type="button"
+      class="modal-tab-btn"
+      [class.active]="tabActiva === 'historial'"
+      (click)="setTab('historial')">
+      <i class="fas fa-clock-rotate-left"></i>
+      <span>Historial por Día ({{ historialJornadas.length }})</span>
+    </button>
+  </nav>
+
+  <!-- ======================================================== -->
+  <!-- ⭐ CONTENIDO PESTAÑA 1: MI LISTA DE HOY                  -->
+  <!-- ======================================================== -->
+  <div class="modal-body-scroll" *ngIf="tabActiva === 'ruta'">
+
+    <!-- BANNER DE META DE JORNADA (12 A 15 VISITAS) -->
+    <div class="jornada-target-banner" *ngIf="totalCount > 0">
+      <div class="target-left">
+        <i class="fas fa-user-nurse"></i>
+        <div>
+          <span class="target-title">Plan de Atención en Campo</span>
+          <span class="target-sub" *ngIf="totalCount < 12">
+            Tienes <strong>{{ totalCount }}</strong> pacientes en lista. (Te faltan <strong>{{ 12 - totalCount }}</strong> para tu meta diaria de 12 a 15)
+          </span>
+          <span class="target-sub success" *ngIf="totalCount >= 12 && totalCount <= 15">
+            ✓ ¡Excelente! Tu lista está en el rango óptimo de <strong>{{ totalCount }}</strong> visitas para hoy.
+          </span>
+          <span class="target-sub warning" *ngIf="totalCount > 15">
+            Llevas <strong>{{ totalCount }}</strong> pacientes programados hoy (por encima del promedio habitual de 15).
+          </span>
+        </div>
+      </div>
+      <button type="button" class="btn-banner-add" (click)="setTab('buscar')">
+        <i class="fas fa-plus"></i>
+        <span>Agregar por Zonas</span>
+      </button>
+    </div>
+
+    <!-- ESTADO VACÍO (CUANDO AÚN NO HA AGREGADO PACIENTES) -->
+    <div class="empty-jornada-card" *ngIf="totalCount === 0">
+      <div class="empty-icon-circle">
+        <i class="fas fa-calendar-check"></i>
+      </div>
+      <h3>Lista vacía para hoy</h3>
+      <p>
+        Cada día comienza con tu lista en blanco para que tú decidas a quién visitar en tu turno.
+        Puedes seleccionar por <strong>Zonas / Colonias</strong>, buscar por nombre, o cargar los prioritarios:
+      </p>
+      <div class="empty-actions-row">
+        <button
+          type="button"
+          class="btn-cta-buscar"
+          (click)="setTab('buscar')">
+          <i class="fas fa-map-location-dot"></i>
+          <span>Buscar por Zonas y Pacientes</span>
+        </button>
+        <button
+          type="button"
+          class="btn-cta-auto"
+          (click)="sugerirPrioritarios(12)">
+          <i class="fas fa-bolt"></i>
+          <span>Cargar 12 pacientes prioritarios</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LISTA DE PACIENTES PARA HOY -->
+    <div class="jornada-cards-grid" *ngIf="totalCount > 0">
+      <div
+        *ngFor="let p of planHoy; let i = index"
+        class="paciente-jornada-card"
+        (click)="enfocarEnMapa(p)">
+
+        <!-- Columna de número / orden -->
+        <div class="card-order-col">
+          <div class="order-number-circle">
+            <span>{{ i + 1 }}</span>
+          </div>
+        </div>
+
+        <!-- Columna de datos del paciente -->
+        <div class="card-details-col">
+          <div class="card-top-title-row">
+            <h4 class="paciente-name" [title]="p.nombre">{{ p.nombre }}</h4>
+            <div class="card-badges-row">
+              <span class="badge-risk badge-risk-{{ (p.riesgo || 'g1').toLowerCase() }}">
+                {{ (p.riesgo || 'G1') | uppercase }}
+              </span>
+              <span class="badge-colonia" *ngIf="p.colonia">
+                <i class="fas fa-map-pin"></i> {{ p.colonia }}
+              </span>
+            </div>
+          </div>
+
+          <p class="paciente-address">
+            <i class="fas fa-location-dot"></i>
+            <span>{{ p.direccion || 'Dirección registrada en padrón' }}</span>
+          </p>
+
+          <div class="paciente-meta-row">
+            <span *ngIf="p.telefono" class="meta-item">
+              <i class="fas fa-phone"></i> {{ p.telefono }}
+            </span>
+            <span *ngIf="p.curp" class="meta-item meta-curp">
+              <i class="fas fa-id-card"></i> {{ p.curp }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Columna de acciones para tableta -->
+        <div class="card-actions-col">
+          <!-- Botón Registrar Visita Médica -->
+          <button
+            type="button"
+            class="btn-card-action btn-action-visita"
+            (click)="capturarVisita(p, $event)"
+            title="Registrar visita clínica domiciliaria">
+            <i class="fas fa-stethoscope"></i>
+            <span>Registrar Visita</span>
+          </button>
+
+          <!-- Botón Navegación GPS (Google Maps) -->
+          <button
+            type="button"
+            class="btn-card-action btn-action-ruta"
+            (click)="irAGoogleMaps(p, $event)"
+            title="Abrir cómo llegar en Google Maps">
+            <i class="fas fa-location-arrow"></i>
+            <span>Ruta GPS</span>
+          </button>
+
+          <!-- Botón Eliminar de la ruta -->
+          <button
+            type="button"
+            class="btn-remove-from-route"
+            (click)="removerPaciente(p.id, $event)"
+            title="Quitar de mi lista de hoy">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ⭐ CONTENIDO PESTAÑA 2: BUSCAR Y AGREGAR POR ZONAS        -->
+  <!-- ======================================================== -->
+  <div class="modal-body-scroll" *ngIf="tabActiva === 'buscar'">
+
+    <!-- ⭐ SECCIÓN DE FILTRADO POR ZONA / COLONIA ⭐ -->
+    <div class="zonas-filter-card">
+      <div class="zonas-header-row">
+        <div class="zonas-title">
+          <i class="fas fa-map-location-dot"></i>
+          <span>Seleccionar por Zona o Colonia</span>
+        </div>
+        <span class="zonas-badge-total">{{ coloniasDisponibles.length }} colonias disponibles</span>
+      </div>
+
+      <div class="zonas-controls-row">
+        <!-- Selector desplegable de colonia -->
+        <div class="select-colonia-wrap">
+          <i class="fas fa-city select-icon"></i>
+          <select
+            class="select-colonia-input"
+            [(ngModel)]="coloniaSeleccionada"
+            (change)="onColoniaChange()">
+            <option value="">🏙️ Todas las Zonas / Colonias (Ver padrón general)</option>
+            <option *ngFor="let c of coloniasDisponibles" [value]="c.nombre">
+              {{ c.nombre }} ({{ c.total }} pacientes)
+            </option>
+          </select>
+        </div>
+
+        <!-- Buscador de texto libre -->
+        <div class="search-input-wrap">
+          <i class="fas fa-search"></i>
+          <input
+            type="text"
+            class="input-buscar-modal"
+            [(ngModel)]="busquedaQuery"
+            (input)="onBusquedaChange()"
+            placeholder="Buscar por nombre, CURP o calle..." />
+          <button
+            type="button"
+            class="btn-clear-modal-search"
+            *ngIf="busquedaQuery"
+            (click)="busquedaQuery = ''; onBusquedaChange()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chips rápidos de las colonias principales -->
+      <div class="zonas-quick-chips" *ngIf="coloniasDisponibles.length > 0">
+        <span class="chips-label">Acceso rápido:</span>
+        <button
+          type="button"
+          class="chip-zona"
+          [class.active]="!coloniaSeleccionada"
+          (click)="seleccionarColonia('')">
+          <span>Todas</span>
+        </button>
+        <button
+          type="button"
+          *ngFor="let c of coloniasDisponibles.slice(0, 6)"
+          class="chip-zona"
+          [class.active]="coloniaSeleccionada === c.nombre"
+          (click)="seleccionarColonia(c.nombre)">
+          <span>{{ c.nombre }}</span>
+          <span class="chip-count">({{ c.total }})</span>
+        </button>
+      </div>
+
+      <!-- Banner de zona seleccionada con botón de carga masiva -->
+      <div class="zona-activa-banner" *ngIf="coloniaSeleccionada">
+        <div class="zab-left">
+          <i class="fas fa-map-pin"></i>
+          <div>
+            <strong>Zona seleccionada: {{ coloniaSeleccionada }}</strong>
+            <span>{{ pacientesEncontrados.length }} pacientes disponibles en esta colonia</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-cargar-zona"
+          (click)="agregarZonaCompleta(coloniaSeleccionada, 12)"
+          title="Sumar automáticamente pacientes de esta zona a tu jornada de hoy">
+          <i class="fas fa-bolt"></i>
+          <span>+ Cargar hasta 12 de esta zona</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div class="loading-state" *ngIf="cargandoPacientesBusqueda">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Cargando padrón de pacientes...</span>
+    </div>
+
+    <!-- Lista de resultados de la zona -->
+    <div class="search-results-grid" *ngIf="!cargandoPacientesBusqueda">
+      <div class="results-header-info">
+        <span>Mostrando <strong>{{ pacientesEncontrados.length }}</strong> pacientes</span>
+        <span *ngIf="coloniaSeleccionada">en <strong>{{ coloniaSeleccionada }}</strong></span>
+      </div>
+
+      <div
+        *ngFor="let p of pacientesEncontrados"
+        class="search-patient-card"
+        [class.already-in-route]="estaEnPlan(p.id)">
+
+        <div class="sp-info-col">
+          <div class="sp-name-row">
+            <h4>{{ p.nombre }}</h4>
+            <span class="badge-risk badge-risk-{{ (p.riesgo || p.nivelRiesgo || 'g1').toLowerCase() }}">
+              {{ (p.riesgo || p.nivelRiesgo || 'G1') | uppercase }}
+            </span>
+            <span class="badge-colonia-sm" *ngIf="p.colonia">
+              {{ p.colonia }}
+            </span>
+          </div>
+
+          <p class="sp-address">
+            <i class="fas fa-location-dot"></i>
+            <span>{{ p.direccion || 'Sin dirección registrada' }}</span>
+          </p>
+
+          <p class="sp-meta" *ngIf="p.telefono || p.curp">
+            <span *ngIf="p.telefono"><i class="fas fa-phone"></i> {{ p.telefono }}</span>
+            <span *ngIf="p.curp"><i class="fas fa-id-card"></i> {{ p.curp }}</span>
+          </p>
+        </div>
+
+        <div class="sp-action-col">
+          <button
+            type="button"
+            class="btn-add-to-route"
+            [class.btn-added]="estaEnPlan(p.id)"
+            (click)="agregarPacienteDirecto(p, $event)">
+            <i class="fas" [class.fa-plus]="!estaEnPlan(p.id)" [class.fa-check]="estaEnPlan(p.id)"></i>
+            <span>{{ estaEnPlan(p.id) ? 'En tu lista' : '+ Agregar a hoy' }}</span>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="empty-search-state" *ngIf="pacientesEncontrados.length === 0">
+        <i class="fas fa-search-minus"></i>
+        <p>No se encontraron pacientes para este filtro o zona.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- ⭐ CONTENIDO PESTAÑA 3: HISTORIAL DE JORNADAS POR DÍA    -->
+  <!-- ======================================================== -->
+  <div class="modal-body-scroll" *ngIf="tabActiva === 'historial'">
+
+    <div class="historial-header-banner">
+      <div class="hh-info">
+        <i class="fas fa-history"></i>
+        <div>
+          <h3>Historial Diario de Recorridos</h3>
+          <p>Tus jornadas anteriores se archivan aquí automáticamente para consulta o para reutilizar rutas.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado vacío historial -->
+    <div class="empty-jornada-card" *ngIf="historialJornadas.length === 0">
+      <div class="empty-icon-circle">
+        <i class="fas fa-clock-rotate-left"></i>
+      </div>
+      <h3>Aún no tienes jornadas en el historial</h3>
+      <p>
+        Cada día al concluir tu jornada o al iniciar un día nuevo, se guardará aquí el registro completo de pacientes y colonias atendidas.
+        También puedes pulsar <strong>"Guardar en Historial"</strong> arriba para archivar la jornada actual.
+      </p>
+    </div>
+
+    <!-- Lista de jornadas archivadas -->
+    <div class="historial-cards-grid" *ngIf="historialJornadas.length > 0">
+      <div
+        *ngFor="let h of historialJornadas"
+        class="historial-day-card"
+        [class.expanded]="jornadaExpandidaId === h.id">
+
+        <!-- Fila principal de la jornada -->
+        <div class="day-card-main-row" (click)="toggleExpandirJornada(h.id)">
+          <div class="day-icon-circle">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+
+          <div class="day-info-col">
+            <h4 class="day-date">{{ h.fechaTexto }}</h4>
+            <div class="day-meta-tags">
+              <span class="tag-count">
+                <i class="fas fa-users"></i> {{ h.totalPacientes }} pacientes
+              </span>
+              <span class="tag-colonias" *ngIf="h.colonias && h.colonias.length > 0">
+                <i class="fas fa-map-pin"></i> {{ h.colonias.slice(0, 3).join(', ') }}{{ h.colonias.length > 3 ? '...' : '' }}
+              </span>
+              <span class="tag-time" *ngIf="h.horaGuardado">
+                <i class="fas fa-clock"></i> Guardado: {{ h.horaGuardado }}
+              </span>
+            </div>
+          </div>
+
+          <div class="day-actions-col">
+            <!-- Botón Reutilizar esta ruta -->
+            <button
+              type="button"
+              class="btn-historial-action btn-reuse-route"
+              (click)="cargarDesdeHistorial(h); $event.stopPropagation()"
+              title="Cargar esta lista de pacientes para hoy">
+              <i class="fas fa-copy"></i>
+              <span>Cargar para hoy</span>
+            </button>
+
+            <!-- Botón Ver Pacientes (desplegar) -->
+            <button
+              type="button"
+              class="btn-historial-action btn-toggle-expand">
+              <i class="fas" [class.fa-chevron-down]="jornadaExpandidaId !== h.id" [class.fa-chevron-up]="jornadaExpandidaId === h.id"></i>
+              <span>{{ jornadaExpandidaId === h.id ? 'Ocultar' : 'Ver detalle' }}</span>
+            </button>
+
+            <!-- Botón Eliminar del historial -->
+            <button
+              type="button"
+              class="btn-historial-delete"
+              (click)="eliminarDeHistorial(h.id, $event)"
+              title="Eliminar este día del historial">
+              <i class="fas fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Desglose de pacientes si está expandido -->
+        <div class="day-patients-dropdown" *ngIf="jornadaExpandidaId === h.id">
+          <h5>Pacientes de esta jornada ({{ h.pacientes.length }}):</h5>
+          <div class="dropdown-patients-list">
+            <div *ngFor="let hp of h.pacientes; let idx = index" class="dropdown-patient-item">
+              <span class="item-num">{{ idx + 1 }}</span>
+              <div class="item-data">
+                <span class="item-name">{{ hp.nombre }}</span>
+                <span class="item-dir">{{ hp.direccion }} • <strong>{{ hp.colonia }}</strong></span>
+              </div>
+              <span class="badge-risk badge-risk-{{ (hp.riesgo || 'g1').toLowerCase() }}">
+                {{ (hp.riesgo || 'G1') | uppercase }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</section>

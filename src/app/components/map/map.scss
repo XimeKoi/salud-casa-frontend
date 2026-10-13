@@ -262,6 +262,50 @@
   box-shadow: 0 8px 28px rgba(198, 40, 40, 0.25);
 }
 
+.btn-ruta-hoy {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(82, 13, 47, 0.25);
+  color: #7E101F;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  position: relative;
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: #7E101F;
+    color: white;
+    border-color: #7E101F;
+    box-shadow: 0 8px 24px rgba(126, 16, 31, 0.35);
+  }
+
+  &.has-patients {
+    background: linear-gradient(135deg, #7E101F 0%, #520D2F 100%);
+    color: #ffffff;
+    border-color: #FF6B55;
+    box-shadow: 0 4px 14px rgba(82, 13, 47, 0.35);
+  }
+
+  .btn-badge-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #10B981;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: 1.5px solid #ffffff;
+  }
+}
+
 /* ⭐ MAPA */
 .map {
   width: 100%;
@@ -270,7 +314,7 @@
   background: #e8e0d6;
 }
 
-/* ⭐ COORDENADAS */
+/* ⭐ COORDENADAS (Centradas abajo del mapa como estaban originalmente) */
 .map-info-coords {
   position: absolute;
   bottom: 24px;
@@ -1823,4 +1867,38 @@
     border-radius: 20px;
     border: 1px solid #bbf7d0;
   }
+}
+
+/* ============================================ */
+/* ⭐ SUPER RESALTADO PARA FILTROS (ADULTO, PCD, FINADO) */
+/* ============================================ */
+
+@keyframes pulseFiltroGlow {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--pulse-color, rgba(147, 51, 234, 0.7)), 0 4px 18px rgba(0, 0, 0, 0.45);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 16px rgba(0, 0, 0, 0), 0 6px 26px rgba(0, 0, 0, 0.55);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0), 0 4px 18px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.marker-super-resaltado {
+  z-index: 10000 !important;
+  animation: pulseFiltroGlow 1.8s infinite ease-in-out;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.marker-super-resaltado:hover {
+  transform: scale(1.18) !important;
+  z-index: 10001 !important;
+}
+
+.custom-marker.marker-highlight-active {
+  z-index: 10000 !important;
 }

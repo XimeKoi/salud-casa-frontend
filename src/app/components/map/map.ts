@@ -21,6 +21,7 @@ import 'leaflet.markercluster';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { CalendarioService, VisitaData } from '../../services/calendario.service';
+import { VisitasHoyService } from '../../services/visitas-hoy.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -63,6 +64,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   obteniendoUbicacion: boolean = false;
   accuracyCircle: L.Circle | null = null;
   capaManzanaSeleccionada: L.Circle | null = null;
+  capaProximidad: L.Circle | null = null;
   ultimaManzanaSeleccionada: any = null;
   coordsPacientesFiltrados: L.LatLng[] = [];
   nuevoPaciente: any = {
@@ -101,10 +103,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private coloresEstatus: { [key: string]: string } = {
     'VISITADO': '#2e7d32',
     'COMPLETADA': '#2e7d32',
+    'COMPLETADO': '#2e7d32',
     'PENDIENTE': '#FFC107',
     'SIN VISITA': '#FFC107',
     'RECHAZO': '#D32F2F',
-    'INCIDENCIA': '#D32F2F',
+    'RECHAZADO': '#D32F2F',
+    'INCIDENCIA': '#E65100',
+    'CAMBIO DE DOMICILIO': '#8E24AA',
     'FINADO': '#6c757d'
   };
 
@@ -112,6 +117,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private pacientesOriginal: any[] = [];
   private _eventListener: ((event: any) => void) | null = null;
   private _incidenciaListener: ((event: any) => void) | null = null;
+  private _capturaListener: ((event: any) => void) | null = null;
+  private _toggleVisitaHoyListener: ((event: any) => void) | null = null;
+  private _planHoyActualizadoListener: ((event: any) => void) | null = null;
+  private _enfocarPacienteListener: ((event: any) => void) | null = null;
   private _resizeListener: (() => void) | null = null;
 
   private apiUrl = environment.apiUrl;
@@ -133,7 +142,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     private ngZone: NgZone,
     private router: Router,
     private calendarioService: CalendarioService,
-    private http: HttpClient
+    private http: HttpClient,
+    public visitasHoyService: VisitasHoyService
   ) {
     console.log('🏗️ [MapComponent] Constructor ejecutado');
     console.log('🌍 [MapComponent] API URL:', this.apiUrl);
@@ -179,10 +189,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const zonasSet = new Set<string>();
         data.forEach((p: any) => {
-          let colonia = p.colonia || this.extraerColonia(p.direccion);
-          if (colonia && colonia.length > 2) {
-            colonia = colonia.toUpperCase().trim();
-            zonasSet.add(colonia);
+          let zona = this.determinarZona(p);
+          if (zona) {
+            zonasSet.add(zona);
           }
         });
 
@@ -254,6 +263,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.limpiarCapaManzana();
     });
 
+    window.addEventListener('filtrarPorProximidad', (event: any) => {
+      if (event.detail) {
+        this.activarFiltroProximidadEnMapa(event.detail);
+      }
+    });
+
+    window.addEventListener('limpiarProximidad', () => {
+      this.limpiarCapaProximidad();
+    });
+
     this.subscriptions.push(
       this.store.select(state => state.app.filtrosPerfiles).subscribe(filtros => {
         if (filtros) {
@@ -314,6 +333,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this._incidenciaListener) {
       window.removeEventListener('reportarIncidencia', this._incidenciaListener);
       this._incidenciaListener = null;
+    }
+    if (this._capturaListener) {
+      window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
+      this._capturaListener = null;
     }
     if (this.map) {
       this.map.remove();
@@ -459,18 +482,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private extraerColonia(direccion: string): string {
-    if (!direccion) return '';
-    let partes = direccion.split('|');
-    if (partes.length >= 2) {
-      let colonia = partes[1].trim();
-      if (colonia.length > 2) return colonia;
-    }
-    partes = direccion.split(',');
-    if (partes.length >= 2) {
-      let colonia = partes[1].trim();
-      if (colonia.length > 2) return colonia;
-    }
-    return '';
+    return this.obtenerColonia(direccion);
   }
 
   recargarPacientes() {
@@ -509,6 +521,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       console.warn(`⚠️ La colonia "${nombre}" no tiene coordenadas válidas`);
       return;
     }
+
+    this.limpiarCapaProximidad();
 
     if (this.capaManzanaSeleccionada) {
       try {
@@ -578,7 +592,80 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       } catch (e) { }
       this.capaManzanaSeleccionada = null;
     }
+    this.limpiarCapaProximidad();
     this.ultimaManzanaSeleccionada = null;
+    this.pacientes = [...this.pacientesOriginal];
+    this.aplicarFiltrosYEnfocar();
+  }
+
+  // ⭐ ACTIVAR FILTRO POR PROXIMIDAD GPS (GEOCERCA)
+  activarFiltroProximidadEnMapa(detail: any) {
+    if (!this.map || !this.mapInicializado) {
+      console.warn('⚠️ Mapa no disponible para activar proximidad');
+      return;
+    }
+
+    const { userLat, userLng, radioMetros, pacientes, count } = detail;
+
+    // Limpiar capas de colonias y proximidad previas
+    if (this.capaManzanaSeleccionada) {
+      try { this.map?.removeLayer(this.capaManzanaSeleccionada); } catch (e) { }
+      this.capaManzanaSeleccionada = null;
+    }
+    this.limpiarCapaProximidad();
+
+    const pacsConCoords = (pacientes || []).filter((p: any) =>
+      p.lat && p.lng && p.lat !== 0 && p.lng !== 0
+    );
+
+    this.pacientes = pacsConCoords;
+    this.agregarMarcadoresPacientes(false);
+
+    if (userLat && userLng) {
+      this.mostrarMarcadorUbicacionActual(userLat, userLng);
+
+      const r = radioMetros || 1000;
+      this.capaProximidad = L.circle([userLat, userLng], {
+        radius: r,
+        color: '#0284c7',
+        fillColor: '#38bdf8',
+        fillOpacity: 0.12,
+        weight: 2,
+        dashArray: '6, 6'
+      });
+
+      const kmTxt = (r / 1000).toFixed(1);
+      this.capaProximidad.bindTooltip(`<b>🎯 Radio de Proximidad (${kmTxt} km)</b><br>${pacsConCoords.length} pacientes dentro`, {
+        permanent: false,
+        direction: 'top'
+      });
+
+      this.capaProximidad.addTo(this.map);
+
+      if (typeof (this.capaProximidad as any).bringToBack === 'function') {
+        (this.capaProximidad as any).bringToBack();
+      }
+
+      if (pacsConCoords.length > 0) {
+        const latLngs = pacsConCoords.map((p: any) => L.latLng(p.lat, p.lng));
+        latLngs.push(L.latLng(userLat, userLng));
+        const bounds = L.latLngBounds(latLngs);
+        this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
+      } else {
+        this.map.setView([userLat, userLng], 15, { animate: true });
+      }
+    }
+
+    this.mostrarToast('🎯 Modo Proximidad', `${count ?? pacsConCoords.length} pacientes encontrados en el radio de atención.`, 'info', 3000);
+  }
+
+  limpiarCapaProximidad() {
+    if (this.capaProximidad) {
+      try {
+        this.map?.removeLayer(this.capaProximidad);
+      } catch (e) { }
+      this.capaProximidad = null;
+    }
   }
 
   aplicarFiltrosYEnfocar() {
@@ -609,9 +696,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       } else if (this.coordsPacientesFiltrados.length > 1) {
         const bounds = L.latLngBounds(this.coordsPacientesFiltrados);
         if (bounds.isValid()) {
-          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: true });
+          this.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17, animate: true });
         }
       } else {
+        this.mostrarToast('Sin pacientes', 'No se encontraron pacientes con este filtro en la zona seleccionada.', 'info', 2200);
         if (this.capaManzanaSeleccionada) {
           const circleBounds = this.capaManzanaSeleccionada.getBounds();
           if (circleBounds && circleBounds.isValid()) {
@@ -1059,10 +1147,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private limpiarDireccion(direccion: string): string {
     if (!direccion) return 'Dirección no disponible';
 
-    let limpia = direccion.replace(/\|/g, ', ');
+    // Separar referencias si existen con pipe o Refs.:
+    let dirSinRefs = direccion;
+    if (direccion.includes('|')) {
+      dirSinRefs = direccion.split('|')[0].trim();
+    } else if (/Refs\.?:/i.test(direccion)) {
+      const idx = direccion.search(/Refs\.?:/i);
+      dirSinRefs = direccion.substring(0, idx).trim();
+    }
 
-    limpia = limpia
-      .replace(/,?\s*LEON\s*,?\s*GTO\.?$/i, '')
+    let limpia = dirSinRefs
+      .replace(/,?\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+      .replace(/,?\s*LEON\s*,?\s*GTO.*$/i, '')
       .replace(/,?\s*LEON\s*\|?\s*GTO\.?$/i, '')
       .replace(/\|?\s*GTO\.?$/i, '')
       .replace(/LEON\s*\|?\s*GTO\.?$/i, '')
@@ -1080,6 +1176,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     limpia = limpia.replace(/CP\s*\d{5}/gi, '');
 
     limpia = limpia
+      .replace(/\s+,/g, ',')
+      .replace(/,\s*-[0-9]*\s*,/g, ',')
+      .replace(/,\s*-[0-9]*\s*$/g, '')
+      .replace(/,\s*-\s*\d*$/g, '')
+      .replace(/,\s*-$/g, '')
       .replace(/\s+/g, ' ')
       .replace(/,\s*,/g, ',')
       .replace(/,\s*,\s*/g, ', ')
@@ -1087,66 +1188,179 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     limpia = limpia
       .replace(/^FRAC\.?\s*/i, '')
-      .replace(/^COL\.?\s*/i, '');
+      .replace(/^COL\.?\s*/i, '')
+      .replace(/,\s*$/, '');
 
     if (limpia.length < 3) {
-      return direccion;
+      return dirSinRefs || direccion;
     }
 
     return limpia;
   }
 
-  private obtenerColonia(direccion: string, coloniaOriginal: string): string {
-    if (coloniaOriginal && coloniaOriginal.length > 2 && coloniaOriginal !== 'Colonia no disponible') {
-      return coloniaOriginal;
+  private extraerReferencias(direccion: string): string {
+    if (!direccion) return '';
+    let refs = '';
+    if (direccion.includes('|')) {
+      refs = direccion.split('|').slice(1).join(' | ').trim();
+    } else if (/Refs\.?:/i.test(direccion)) {
+      const idx = direccion.search(/Refs\.?:/i);
+      refs = direccion.substring(idx).trim();
+    }
+    return refs.replace(/^Refs\.?:\s*/i, '').replace(/^Refs:\s*/i, '').trim();
+  }
+
+  private obtenerColonia(direccion: string, coloniaOriginal?: string): string {
+    if (coloniaOriginal && coloniaOriginal.length > 2) {
+      const cUpper = coloniaOriginal.toUpperCase().trim();
+      if (!cUpper.includes('DISPONIBLE') &&
+          !cUpper.includes('SIN COLONIA') &&
+          !/^#|^\d+$/i.test(coloniaOriginal.trim()) &&
+          !cUpper.startsWith('REFS')) {
+        let limpia = coloniaOriginal
+          .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (limpia.length > 30) limpia = limpia.substring(0, 28) + '…';
+        return limpia || coloniaOriginal;
+      }
     }
 
     if (!direccion) return 'Sin colonia';
 
-    let colonia = '';
-
-    const partesPipe = direccion.split('|');
-    if (partesPipe.length >= 2) {
-      colonia = partesPipe[1].trim();
+    let dirSinRefs = direccion;
+    if (direccion.includes('|')) {
+      dirSinRefs = direccion.split('|')[0].trim();
+    } else if (/Refs\.?:/i.test(direccion)) {
+      const idx = direccion.search(/Refs\.?:/i);
+      dirSinRefs = direccion.substring(0, idx).trim();
     }
 
-    if (!colonia || colonia.length < 2) {
-      const partesComa = direccion.split(',');
-      if (partesComa.length >= 2) {
-        colonia = partesComa[1].trim();
+    // 1. Buscar coincidencias con palabras clave COLONIA, FRACC, etc.
+    const matchCol = dirSinRefs.match(/(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+([^,\|]+)/i);
+    if (matchCol && matchCol[1]) {
+      const cand = matchCol[1].trim().replace(/CP\s*\d{5}/gi, '').trim();
+      if (cand.length > 2 && !/^#|^\d+$/i.test(cand) && !/^(?:LEON|GTO|GUANAJUATO|LEON\s*,\s*GTO)$/i.test(cand) && cand !== '-') {
+        let limpia = cand;
+        if (limpia.length > 30) limpia = limpia.substring(0, 28) + '…';
+        return limpia;
       }
     }
 
-    if (!colonia || colonia.length < 2) {
-      const matchCol = direccion.match(/COL\.?\s*([^,|]+)/i);
-      if (matchCol && matchCol[1]) {
-        colonia = matchCol[1].trim();
-      }
-    }
-    if (!colonia || colonia.length < 2) {
-      const matchFrac = direccion.match(/FRACC\.?\s*([^,|]+)/i);
-      if (matchFrac && matchFrac[1]) {
-        colonia = matchFrac[1].trim();
-      }
-    }
-
-    colonia = colonia
-      .replace(/COL\.\s*/gi, '')
-      .replace(/FRACC\.\s*/gi, '')
-      .replace(/FRACCIONAMIENTO\s*/gi, '')
-      .replace(/CP\s*\d{5}/gi, '')
-      .replace(/\s+/g, ' ')
+    // 2. Limpiar sufijos
+    let limpiaDir = dirSinRefs
+      .replace(/,\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+      .replace(/,\s*LEON\s*,?\s*GTO.*$/i, '')
+      .replace(/,\s*LEON$/i, '')
+      .replace(/,\s*GTO$/i, '')
       .trim();
 
-    if (colonia.length > 30) {
-      colonia = colonia.substring(0, 28) + '…';
+    const partes = limpiaDir.split(',').map(s => s.trim()).filter(Boolean);
+    const numIdx = partes.findIndex(p => /^#|^\d+$/i.test(p));
+
+    if (numIdx !== -1 && numIdx + 1 < partes.length) {
+      let postNum = partes.slice(numIdx + 1);
+      if (postNum.length > 1 && /^[-]?\d+$/.test(postNum[0])) {
+        postNum = postNum.slice(1);
+      }
+      let col = postNum.join(', ').trim();
+      col = col
+        .replace(/^[-\d]+,\s*/, '')
+        .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+        .trim();
+      if (col && col.length > 2 && !/^#|^\d+$/i.test(col) && !/^(?:LEON|GTO|GUANAJUATO|LEON\s*,\s*GTO)$/i.test(col) && col !== '-') {
+        if (col.length > 30) col = col.substring(0, 28) + '…';
+        return col;
+      }
     }
 
-    if (!colonia || colonia.length < 2) {
-      colonia = 'Sin colonia';
+    if (partes.length >= 2) {
+      const ultima = partes[partes.length - 1].trim()
+        .replace(/^[-\d]+,\s*/, '')
+        .replace(/^(?:COLONIA|COL\.|FRACCIONAMIENTO|FRACC\.|RESIDENCIAL|BARRIO|LOCALIDAD)\s+/i, '')
+        .trim();
+      if (ultima.length > 2 && !/^#|^\d+$/i.test(ultima) && !/^(?:LEON|GTO|GUANAJUATO|LEON\s*,\s*GTO)$/i.test(ultima) && ultima !== '-') {
+        if (ultima.length > 30) return ultima.substring(0, 28) + '…';
+        return ultima;
+      }
     }
 
-    return colonia;
+    // 3. Inferencia inteligente por calle o referencias
+    const dUpper = (direccion || '').toUpperCase();
+    if (dUpper.includes('MANANTIAL')) return 'EL MANANTIAL';
+    if (dUpper.includes('VICTORIA')) return 'RESIDENCIAL VICTORIA';
+    if (dUpper.includes('CONSUELO') || dUpper.includes('OBREGON GONZALES') || dUpper.includes('TELLEZ CRUCES') || dUpper.includes('CORRALES AYALA')) return 'SAN JOSE DEL CONSUELO';
+    if (dUpper.includes('VALLE DE SAN JOSE')) return 'REAL DE SAN JOSE';
+    if (dUpper.includes('AZAHARES') || dUpper.includes('NARANJO')) return 'LOS NARANJOS';
+    if (dUpper.includes('SAN LAZARO') || dUpper.includes('SAN BENIGNO') || dUpper.includes('SANTA ROSA')) return 'SANTA ROSA DE LIMA';
+    if (dUpper.includes('VALLE DE SEÑORA') || dUpper.includes('BISMUTO') || dUpper.includes('OSMIO') || dUpper.includes('ACTINIO')) return 'VALLE DE SEÑORA';
+
+    return 'Sin colonia';
+  }
+
+  determinarZona(p: any): string {
+    const dir = (p.direccion || '').toUpperCase();
+    const col = (p.colonia || '').toUpperCase();
+    const texto = `${col} ${dir}`.toUpperCase();
+
+    // 1. ZONA SANTA ROSA DE LIMA
+    if (texto.includes('SANTA ROSA DE LIMA') || texto.includes('SAN LAZARO') || texto.includes('SAN BENIGNO')) {
+      return 'Zona Santa Rosa de Lima';
+    }
+
+    // 2. ZONA SAN JOSÉ DEL CONSUELO
+    if (texto.includes('SAN JOSE DEL CONSUELO') || texto.includes('CONSUELO') ||
+        texto.includes('CORRALES AYALA') || texto.includes('RAFAEL RANGEL') ||
+        texto.includes('MANUEL BARANDA') || texto.includes('MANUEL BRANDA') ||
+        texto.includes('OBREGON GONZALES') || texto.includes('OBREGON COLE') ||
+        texto.includes('SANTO TOMAS DE AQUINO') || texto.includes('TELLEZ CRUCES') ||
+        texto.includes('SAN JOSE DE CEMENTOS')) {
+      return 'Zona San José del Consuelo';
+    }
+
+    // 3. ZONA MISIÓN DE SAN JOSÉ
+    if (texto.includes('MISION DE SAN JOSE') || texto.includes('MIS CATEQUISTAS') ||
+        texto.includes('MISION CATEQUISTA') || texto.includes('MISION EVANGELICA') ||
+        texto.includes('MISION CRISTIANA') || texto.includes('MISION SANTA FE')) {
+      return 'Zona Misión de San José';
+    }
+
+    // 4. ZONA REAL DE SAN JOSÉ
+    if (texto.includes('REAL DE SAN JOSE') || texto.includes('VALLE DE SAN JOSE') ||
+        texto.includes('ARBOLEDAS DE SAN JOSE') || texto.includes('FRAY ') ||
+        texto.includes('FRAYLES') || texto.includes('VALLE CASTELLAL')) {
+      return 'Zona Real de San José';
+    }
+
+    // 5. ZONA RESIDENCIAL VICTORIA
+    if (texto.includes('VICTORIA') || texto.includes('RECIDENCIAL VICTORIA') ||
+        texto.includes('DE LA FAMA') || texto.includes('RENTERIA')) {
+      return 'Zona Residencial Victoria';
+    }
+
+    // 6. ZONA LOS NARANJOS
+    if (texto.includes('NARANJO') || texto.includes('AZAHARES') || texto.includes('AZARES')) {
+      return 'Zona Los Naranjos';
+    }
+
+    // 7. ZONA EL MANANTIAL
+    if (texto.includes('MANANTIAL') || texto.includes('MANANTIALES')) {
+      return 'Zona El Manantial';
+    }
+
+    // 8. ZONA VALLE DE SEÑORA
+    if (texto.includes('VALLE DE SEÑORA') || texto.includes('VALLE DE SENORA') ||
+        texto.includes('BISMUTO') || texto.includes('ACTINIO') || texto.includes('OSMIO')) {
+      return 'Zona Valle de Señora';
+    }
+
+    // 9. ZONA RESIDENCIAL TABACHINES
+    if (texto.includes('TABACHINES')) {
+      return 'Zona Tabachines';
+    }
+
+    // 10. ZONA COBERTURA METROPOLITANA
+    return 'Zona Cobertura Metropolitana';
   }
 
   limpiarNombreDuplicado(nombre: string, apP?: string, apM?: string): string {
@@ -1186,8 +1400,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ⭐⭐⭐ POPUP - GENERAR HTML CON DISEÑO PREMIUM ⭐⭐⭐
   private generarPopupHTML(paciente: any, color: string, estatusLower: string, nombreCompleto: string, direccionLimpia: string, coloniaMostrar: string): string {
-    const esDiscapacidad = paciente.programa === 'DISCAPACIDAD' || paciente.programa?.includes('DIS');
-    const esReferido = paciente.programa === 'REFERIDO' || paciente.programa?.includes('REF');
+    const programaUpper = (paciente.programa || '').toUpperCase();
+    const esDiscapacidad = programaUpper === 'PCD' || programaUpper.includes('PCD') ||
+      programaUpper === 'DISCAPACIDAD' || programaUpper.includes('DIS') ||
+      Boolean(paciente.discapacidades?.motriz || paciente.discapacidades?.visual ||
+        paciente.discapacidades?.auditiva || paciente.discapacidades?.intelectual ||
+        paciente.discapacidades?.psicosocial);
+    const esReferido = programaUpper === 'REFERIDO' || programaUpper.includes('REF');
 
     let p = {
       main: '#7A192B',
@@ -1235,11 +1454,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const curpEscapado = curpMostrar.replace(/'/g, "\\'");
     const coloniaEscapada = coloniaMostrar.replace(/'/g, "\\'");
     const seccionEscapada = (paciente.seccion || '').replace(/'/g, "\\'");
+    const referenciasMostrar = this.extraerReferencias(paciente.direccion || '');
+    const referenciasEscapada = referenciasMostrar.replace(/'/g, "\\'");
+    const zonaMostrar = this.determinarZona(paciente);
+    const zonaEscapada = zonaMostrar.replace(/'/g, "\\'");
 
     const tieneCoords = paciente.lat && paciente.lng && paciente.lat !== 0 && paciente.lng !== 0;
     const urlRuta = tieneCoords
       ? `https://www.google.com/maps/dir/?api=1&destination=${paciente.lat},${paciente.lng}`
       : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
+
+    const estaEnPlan = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
     return `
     <div class="cuidalia-pop">
@@ -1281,19 +1506,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span class="cp-card-label">UBICACIÓN</span>
             <span class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</span>
             <span class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</span>
-          </div>
-        </div>
-
-        <!-- Tarjeta CURP -->
-        <div class="cp-card">
-          <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
-            <i class="fas fa-id-card"></i>
-          </div>
-          <div class="cp-card-details">
-            <span class="cp-card-label">CURP</span>
-            <span class="cp-curp" style="font-family: monospace; font-weight: 800; color: #1e293b; font-size: 12.5px; letter-spacing: 0.5px;">
-              ${curpMostrar ? curpMostrar : '<em style="color:#94a3b8; font-style:normal; font-family: inherit; font-size: 11.5px;">Sin CURP registrada</em>'}
+            <span class="cp-zona" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #7c3aed; margin-top: 2px;">
+              <i class="fas fa-layer-group" style="font-size: 10px;"></i> ${zonaEscapada}
             </span>
+            ${referenciasMostrar ? `
+            <div class="cp-referencias" style="margin-top: 5px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.08); font-size: 11.5px; color: #475569; line-height: 1.35;" title="${referenciasEscapada}">
+              <span style="font-weight: 700; color: #0284c7; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas fa-signs-post"></i> Refs:
+              </span>
+              <span style="display: block; margin-top: 2px; color: #334155;">${referenciasEscapada}</span>
+            </div>` : ''}
           </div>
         </div>
 
@@ -1319,29 +1541,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       <!-- FOOTER ACTIONS -->
       <div class="cp-footer">
-        <a class="cp-btn cp-btn-ruta"
-           href="${urlRuta}"
-           target="_blank" rel="noopener noreferrer"
-           title="Cómo llegar con Google Maps">
-          <i class="fas fa-location-arrow"></i>
-          <span>Ruta</span>
-        </a>
-
-        <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
-          onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
-            pacienteId: ${paciente.id},
-            nombre: '${nombreEscapado}',
-            telefono: '${telefonoEscapado}',
-            direccion: '${direccionEscapada}',
-            curp: '${curpEscapado}',
-            colonia: '${coloniaEscapada}'
-          } }))">
-          <i class="fas fa-calendar-plus"></i>
-          <span>Agendar</span>
+        <!-- ⭐ BOTÓN DIRECTO: MI RUTA DE HOY ⭐ -->
+        <button class="cp-btn cp-btn-ruta-hoy ${estaEnPlan ? 'en-ruta' : ''}"
+          id="btn-pop-ruta-${paciente.id}"
+          onclick="window.__togglePacienteRuta(${paciente.id})"
+          title="${estaEnPlan ? 'Quitar de mis visitas de hoy' : 'Agregar a mis visitas de hoy'}">
+          <i class="fas ${estaEnPlan ? 'fa-check-circle' : 'fa-star'}"></i>
+          <span>${estaEnPlan ? '✓ En Mi Ruta de Hoy' : '+ Agregar a Ruta de Hoy'}</span>
         </button>
 
-        <button class="cp-btn cp-btn-reporte" style="color: ${p.main}; border-color: ${p.main};"
-          onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { detail: {
+        <button class="cp-btn cp-btn-visita"
+          onclick="window.dispatchEvent(new CustomEvent('capturarVisitaPaciente', { detail: {
             pacienteId: ${paciente.id},
             nombre: '${nombreEscapado}',
             telefono: '${telefonoEscapado}',
@@ -1349,10 +1559,47 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             curp: '${curpEscapado}',
             colonia: '${coloniaEscapada}',
             seccion: '${seccionEscapada}'
-          } }))">
-          <i class="fas fa-flag"></i>
-          <span>Reporte</span>
+          } }))" title="Capturar visita clínica domiciliaria de hoy">
+          <i class="fas fa-stethoscope"></i>
+          <span>Registrar Visita Médica</span>
         </button>
+
+        <div class="cp-footer-secondary">
+          <a class="cp-btn cp-btn-ruta"
+             href="${urlRuta}"
+             target="_blank" rel="noopener noreferrer"
+             title="Cómo llegar con Google Maps">
+            <i class="fas fa-location-arrow"></i>
+            <span>Ruta</span>
+          </a>
+
+          <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
+            onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
+              pacienteId: ${paciente.id},
+              nombre: '${nombreEscapado}',
+              telefono: '${telefonoEscapado}',
+              direccion: '${direccionEscapada}',
+              curp: '${curpEscapado}',
+              colonia: '${coloniaEscapada}'
+            } }))">
+            <i class="fas fa-calendar-plus"></i>
+            <span>Agendar</span>
+          </button>
+
+          <button class="cp-btn cp-btn-reporte" style="color: ${p.main}; border-color: ${p.main};"
+            onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { detail: {
+              pacienteId: ${paciente.id},
+              nombre: '${nombreEscapado}',
+              telefono: '${telefonoEscapado}',
+              direccion: '${direccionEscapada}',
+              curp: '${curpEscapado}',
+              colonia: '${coloniaEscapada}',
+              seccion: '${seccionEscapada}'
+            } }))">
+            <i class="fas fa-flag"></i>
+            <span>Reporte</span>
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -1529,23 +1776,46 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
-      const color = this.obtenerColorPaciente(paciente);
+      const programa = (paciente.programa || '').toUpperCase();
+      const estatusUpper = (paciente.estatus || '').toUpperCase();
+      const estatusLower = (paciente.estatus || '').toLowerCase();
+      const esFinado = estatusUpper === 'FINADO' || Boolean(paciente.finado) || Boolean(paciente.fechaFinado);
+
+      const tieneDiscapacidad = Boolean(
+        paciente.discapacidades?.motriz ||
+        paciente.discapacidades?.visual ||
+        paciente.discapacidades?.auditiva ||
+        paciente.discapacidades?.intelectual ||
+        paciente.discapacidades?.psicosocial
+      );
+      const esDiscapacitado = !esFinado && (
+        tieneDiscapacidad ||
+        programa === 'PCD' ||
+        programa.includes('PCD') ||
+        programa === 'DISCAPACIDAD' ||
+        programa.includes('DIS')
+      );
+
+      const esAdulto = !esFinado && !esDiscapacitado && (
+        programa === 'PAM' ||
+        programa.includes('PAM') ||
+        programa.includes('ADULTO') ||
+        programa.includes('MAYOR')
+      );
+
+      const esReferido = !esFinado && (
+        programa === 'REFERIDO' ||
+        programa.includes('REF')
+      );
 
       let cumpleFiltros = true;
 
       if (hayFiltrosPerfil) {
-        const programa = (paciente.programa || '').toUpperCase();
-        const estatusUpper = (paciente.estatus || '').toUpperCase();
-        const esAdulto = programa === 'PAM' || programa.includes('ADULTO');
-        const esDiscapacitado = programa === 'DISCAPACIDAD' || programa.includes('DIS');
-        const esReferido = programa === 'REFERIDO' || programa.includes('REF');
-        const esFinado = estatusUpper === 'FINADO' || Boolean(paciente.finado);
-
         const cumplePerfil =
           (this.filtrosPerfiles.adulto && esAdulto) ||
           (this.filtrosPerfiles.discapacitado && esDiscapacitado) ||
           (this.filtrosPerfiles.referido && esReferido) ||
-          ((this.filtrosPerfiles as any).finado && esFinado);
+          (Boolean((this.filtrosPerfiles as any).finado) && esFinado);
 
         if (!cumplePerfil) {
           cumpleFiltros = false;
@@ -1553,8 +1823,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       if (hayFiltrosRiesgo && cumpleFiltros) {
-        const estatus = (paciente.estatus || '').toUpperCase();
-        const riesgo = this.asignarRiesgo(estatus);
+        const riesgo = this.asignarRiesgo(estatusUpper);
         const cumpleRiesgo =
           (this.filtrosRiesgos.g1 && riesgo === 'g1') ||
           (this.filtrosRiesgos.g2 && riesgo === 'g2') ||
@@ -1570,57 +1839,178 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.coordsPacientesFiltrados.push(L.latLng(paciente.lat, paciente.lng));
       }
 
-      const size = esBusqueda ? 38 : 28;
-      const fontSize = esBusqueda ? 18 : 12;
-      const borderWidth = esBusqueda ? 4 : 3;
+      const estaEnPlanHoy = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
-      let icon = 'fa-user';
-      const estatusLower = (paciente.estatus || '').toLowerCase();
+      // ⭐ DEFINICIÓN VISUAL DEL MARCADOR
+      let markerIcon: L.DivIcon;
+      let zIndexOffset = 0;
 
-      if (estatusLower === 'pendiente' || estatusLower === 'sin visita') {
-        icon = 'fa-clock';
-      } else if (estatusLower === 'visitado' || estatusLower === 'completada') {
-        icon = 'fa-check-circle';
-      } else if (estatusLower === 'rechazo' || estatusLower === 'incidencia') {
-        icon = 'fa-exclamation-triangle';
-      } else if (estatusLower === 'finado') {
-        icon = 'fa-skull';
+      if (hayFiltros && cumpleFiltros) {
+        // ⭐⭐⭐ SUPER RESALTADO PARA PACIENTES QUE CUMPLEN EL FILTRO ⭐⭐⭐
+        const size = 46;
+        const fontSize = 18;
+        let bgGradient = 'linear-gradient(135deg, #3B82F6, #1D4ED8)';
+        let glowColor = 'rgba(59, 130, 246, 0.75)';
+        let iconFinal = 'fa-user';
+        let badgeText = '';
+        let badgeBg = '#2563EB';
+
+        if (esFinado) {
+          bgGradient = 'linear-gradient(135deg, #1E293B, #0F172A)';
+          glowColor = 'rgba(239, 68, 68, 0.85)';
+          iconFinal = 'fa-skull';
+          badgeText = 'FINADO';
+          badgeBg = '#DC2626';
+        } else if (esDiscapacitado) {
+          bgGradient = 'linear-gradient(135deg, #8B5CF6, #6D28D9)';
+          glowColor = 'rgba(139, 92, 246, 0.85)';
+          iconFinal = 'fa-wheelchair';
+          badgeText = 'PCD';
+          badgeBg = '#7C3AED';
+        } else if (esAdulto) {
+          bgGradient = 'linear-gradient(135deg, #06B6D4, #0284C7)';
+          glowColor = 'rgba(6, 182, 212, 0.85)';
+          iconFinal = 'fa-person-cane';
+          badgeText = 'ADULTO';
+          badgeBg = '#0284C7';
+        } else if (esReferido) {
+          bgGradient = 'linear-gradient(135deg, #3B82F6, #1D4ED8)';
+          glowColor = 'rgba(59, 130, 246, 0.85)';
+          iconFinal = 'fa-share-nodes';
+          badgeText = 'REFERIDO';
+          badgeBg = '#2563EB';
+        } else if (estatusLower === 'visitado' || estatusLower === 'completada' || estatusLower === 'completado') {
+          bgGradient = 'linear-gradient(135deg, #10B981, #059669)';
+          glowColor = 'rgba(16, 185, 129, 0.8)';
+          iconFinal = 'fa-check-circle';
+        } else if (estatusLower === 'rechazo' || estatusLower === 'incidencia') {
+          bgGradient = 'linear-gradient(135deg, #EF4444, #B91C1C)';
+          glowColor = 'rgba(239, 68, 68, 0.8)';
+          iconFinal = 'fa-exclamation-triangle';
+        } else {
+          bgGradient = 'linear-gradient(135deg, #F59E0B, #D97706)';
+          glowColor = 'rgba(245, 158, 11, 0.8)';
+          iconFinal = 'fa-clock';
+        }
+
+        if (estaEnPlanHoy) {
+          iconFinal = 'fa-star';
+        }
+
+        const badgeHtml = badgeText
+          ? `<div style="position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: ${badgeBg}; color: #ffffff; font-size: 9px; font-weight: 800; padding: 1.5px 7px; border-radius: 9px; border: 1.5px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.35); white-space: nowrap; letter-spacing: 0.6px;">${badgeText}</div>`
+          : '';
+
+        markerIcon = L.divIcon({
+          html: `<div class="marker-super-resaltado" style="
+                position: relative;
+                background: ${bgGradient};
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #ffffff;
+                font-size: ${fontSize}px;
+                border: 3.5px solid #ffffff;
+                --pulse-color: ${glowColor};
+                box-shadow: 0 0 0 6px ${glowColor}, 0 6px 20px rgba(0, 0, 0, 0.45);
+                cursor: pointer;
+            ">
+                ${badgeHtml}
+                <i class="fas ${iconFinal}"></i>
+            </div>`,
+          className: 'custom-marker filter-active marker-highlight-active',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -(size / 2)]
+        });
+
+        zIndexOffset = estaEnPlanHoy ? 10100 : 10000;
+
+      } else if (hayFiltros && !cumpleFiltros) {
+        // ⭐ ATENUADO MÍNIMO PARA NO FILTRADOS CUANDO HAY FILTRO ACTIVO ⭐
+        markerIcon = L.divIcon({
+          html: `<div style="
+                background: #94a3b8;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                opacity: 0.12;
+                border: 1px solid #cbd5e1;
+                cursor: pointer;
+            "></div>`,
+          className: 'custom-marker filter-inactive',
+          iconSize: [12, 12],
+          iconAnchor: [6, 6],
+          popupAnchor: [0, -6]
+        });
+
+        zIndexOffset = 0;
+
+      } else {
+        // ⭐ MODO NORMAL SIN FILTROS ACTIVOS ⭐
+        const color = this.obtenerColorPaciente(paciente);
+        const size = esBusqueda ? 38 : 28;
+        const fontSize = esBusqueda ? 18 : 12;
+        const borderWidth = esBusqueda ? 4 : 3;
+
+        let icon = 'fa-user';
+        if (estatusLower === 'pendiente' || estatusLower === 'sin visita') {
+          icon = 'fa-clock';
+        } else if (estatusLower === 'visitado' || estatusLower === 'completada' || estatusLower === 'completado') {
+          icon = 'fa-check-circle';
+        } else if (estatusLower === 'rechazo' || estatusLower === 'incidencia') {
+          icon = 'fa-exclamation-triangle';
+        } else if (estatusLower === 'finado') {
+          icon = 'fa-skull';
+        }
+
+        const glowBorder = estaEnPlanHoy
+          ? '3.5px solid #F59E0B'
+          : `${borderWidth}px solid white`;
+        const glowShadow = estaEnPlanHoy
+          ? 'box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.5), 0 3px 14px rgba(0,0,0,0.35);'
+          : 'box-shadow: 0 2px 12px rgba(0,0,0,0.3);';
+        const iconFinal = estaEnPlanHoy ? 'fa-star' : icon;
+
+        markerIcon = L.divIcon({
+          html: `<div style="
+                background: ${color};
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: ${fontSize}px;
+                border: ${glowBorder};
+                ${glowShadow}
+                cursor: pointer;
+            ">
+                <i class="fas ${iconFinal}"></i>
+            </div>`,
+          className: `custom-marker ${estaEnPlanHoy ? 'marker-en-ruta-hoy' : ''}`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -(size / 2)]
+        });
+
+        zIndexOffset = estaEnPlanHoy ? 600 : 50;
       }
 
-      const markerIcon = L.divIcon({
-        html: `<div style="
-              background: ${cumpleFiltros ? color : '#cccccc'};
-              width: ${size}px;
-              height: ${size}px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: ${fontSize}px;
-              border: ${borderWidth}px solid ${cumpleFiltros ? 'white' : '#999'};
-              box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-              cursor: pointer;
-              opacity: ${cumpleFiltros ? 1 : 0.25};
-              ${!cumpleFiltros && hayFiltros ? 'filter: grayscale(0.8);' : ''}
-          ">
-              <i class="fas ${icon}"></i>
-          </div>`,
-        className: `custom-marker ${cumpleFiltros ? 'filter-active' : 'filter-inactive'}`,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-        popupAnchor: [0, -(size / 2)]
-      });
-
+      const colorForPopup = this.obtenerColorPaciente(paciente);
       const nombreCompleto = paciente.nombre || 'Nombre no disponible';
       const direccionLimpia = this.limpiarDireccion(paciente.direccion || '');
       const coloniaMostrar = this.obtenerColonia(paciente.direccion || '', paciente.colonia || '');
 
-      const popupContent = this.generarPopupHTML(paciente, color, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
+      const popupContent = this.generarPopupHTML(paciente, colorForPopup, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
 
       const marker = L.marker([paciente.lat, paciente.lng], {
         icon: markerIcon,
-        zIndexOffset: cumpleFiltros ? 100 : 0
+        zIndexOffset: zIndexOffset
       })
         .bindPopup(popupContent, {
           maxWidth: 380,
@@ -1630,7 +2020,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           autoPanPadding: [20, 20]
         });
 
-      if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
+      (marker as any)._pacienteId = paciente.id;
+
+      // ⭐ CRUCIAL: SI CUMPLE EL FILTRO ACTIVO, AGREGAR DIRECTO AL MAPA PARA QUE NUNCA SE ENCAPSULE EN CLÚSTERES
+      if (hayFiltros && cumpleFiltros) {
+        this.map?.addLayer(marker);
+      } else if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
         this.clusterGroup.addLayer(marker);
       } else {
         this.map?.addLayer(marker);
@@ -1719,6 +2114,98 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     window.addEventListener('reportarIncidencia', this._incidenciaListener);
+
+    if (this._capturaListener) {
+      window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
+    }
+
+    this._capturaListener = (event: any) => {
+      this.ngZone.run(() => {
+        const data = event.detail;
+        const pacienteData = {
+          id: data.pacienteId,
+          nombre: data.nombre,
+          telefono: data.telefono,
+          direccion: data.direccion,
+          curp: data.curp || '',
+          colonia: data.colonia || '',
+          seccion: data.seccion || ''
+        };
+        localStorage.setItem('capturaPaciente', JSON.stringify(pacienteData));
+        this.router.navigate(['/captura'], {
+          queryParams: {
+            pacienteId: data.pacienteId
+          }
+        });
+      });
+    };
+
+    window.addEventListener('capturarVisitaPaciente', this._capturaListener);
+
+    // ⭐ EXPONER TOGGLE RÁPIDO Y SEGURO A NIVEL GLOBAL
+    (window as any).__togglePacienteRuta = (pacienteId: number) => {
+      this.ngZone.run(() => {
+        const idNum = Number(pacienteId);
+        let p = this.pacientes.find((x: any) => Number(x.id) === idNum);
+        if (!p && this.pacientesOriginal) {
+          p = this.pacientesOriginal.find((x: any) => Number(x.id) === idNum);
+        }
+        if (p) {
+          this.togglePacienteRutaHoy(p);
+        } else {
+          this.togglePacienteRutaHoy({ id: idNum, nombre: 'Paciente #' + idNum });
+        }
+      });
+    };
+
+    // ⭐ ESCUCHAR ACCIONES DE "MI RUTA DE HOY" ⭐
+    if (this._toggleVisitaHoyListener) {
+      window.removeEventListener('toggleVisitaHoy', this._toggleVisitaHoyListener);
+    }
+
+    this._toggleVisitaHoyListener = (event: any) => {
+      this.ngZone.run(() => {
+        const p = event.detail;
+        if (p) {
+          this.togglePacienteRutaHoy(p);
+        }
+      });
+    };
+
+    window.addEventListener('toggleVisitaHoy', this._toggleVisitaHoyListener);
+
+    if (this._planHoyActualizadoListener) {
+      window.removeEventListener('planHoyActualizado', this._planHoyActualizadoListener);
+    }
+
+    this._planHoyActualizadoListener = () => {
+      this.ngZone.run(() => {
+        this.actualizarEstilosMarcadoresRutaHoy();
+      });
+    };
+
+    window.addEventListener('planHoyActualizado', this._planHoyActualizadoListener);
+
+    if (this._enfocarPacienteListener) {
+      window.removeEventListener('enfocarPacienteMapa', this._enfocarPacienteListener);
+    }
+
+    this._enfocarPacienteListener = (event: any) => {
+      this.ngZone.run(() => {
+        const { pacienteId, lat, lng } = event.detail;
+        if (lat && lng && this.map) {
+          this.map.flyTo([lat, lng], 18, { animate: true, duration: 1.2 });
+          setTimeout(() => {
+            const m = this.marcadoresPacientes.find((marker: any) => marker._pacienteId === pacienteId);
+            if (m) {
+              m.openPopup();
+            }
+          }, 1300);
+        }
+      });
+    };
+
+    window.addEventListener('enfocarPacienteMapa', this._enfocarPacienteListener);
   }
 
   limpiarMarcadoresPacientes() {
@@ -1762,20 +2249,184 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       window.removeEventListener('reportarIncidencia', this._incidenciaListener);
       this._incidenciaListener = null;
     }
+    if (this._capturaListener) {
+      window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
+      this._capturaListener = null;
+    }
+    if (this._toggleVisitaHoyListener) {
+      window.removeEventListener('toggleVisitaHoy', this._toggleVisitaHoyListener);
+      this._toggleVisitaHoyListener = null;
+    }
+    if (this._planHoyActualizadoListener) {
+      window.removeEventListener('planHoyActualizado', this._planHoyActualizadoListener);
+      this._planHoyActualizadoListener = null;
+    }
+    if (this._enfocarPacienteListener) {
+      window.removeEventListener('enfocarPacienteMapa', this._enfocarPacienteListener);
+      this._enfocarPacienteListener = null;
+    }
+    delete (window as any).__togglePacienteRuta;
+  }
+
+  // ⭐ ABRIR MODAL DE MI RUTA DE HOY
+  abrirMiRutaHoy() {
+    window.dispatchEvent(new CustomEvent('abrirMiRutaHoy'));
+  }
+
+  // ⭐ ACCIÓN CENTRALIZADA PARA AGREGAR/QUITAR PACIENTES DE LA RUTA DE HOY
+  togglePacienteRutaHoy(p: any) {
+    if (!p) return;
+    const pacId = Number(p.id || p.pacienteId);
+    const agregado = this.visitasHoyService.togglePaciente(p);
+
+    if (agregado) {
+      this.mostrarToast('⭐ Agregado a tu Ruta', `${p.nombre || 'Paciente'} fue sumado a tu lista de visitas.`, 'success', 2200);
+    } else {
+      this.mostrarToast('Ruta Actualizada', `${p.nombre || 'Paciente'} fue removido de tu lista.`, 'info', 2000);
+    }
+
+    // 1. Actualizar el botón en el popup abierto dinámicamente sin cerrarlo
+    const popBtn = (document.getElementById(`btn-pop-ruta-${pacId}`) || document.querySelector('.paciente-popup .cp-btn-ruta-hoy')) as HTMLElement;
+    if (popBtn) {
+      if (agregado) {
+        popBtn.classList.add('en-ruta');
+        popBtn.setAttribute('title', 'Quitar de mis visitas de hoy');
+        popBtn.innerHTML = '<i class="fas fa-check-circle"></i><span>✓ En Mi Ruta de Hoy</span>';
+      } else {
+        popBtn.classList.remove('en-ruta');
+        popBtn.setAttribute('title', 'Agregar a mis visitas de hoy');
+        popBtn.innerHTML = '<i class="fas fa-star"></i><span>+ Agregar a Ruta de Hoy</span>';
+      }
+    }
+
+    // 2. Actualizar marcador individual en el mapa (estrella y halo) sin cerrar popup
+    this.actualizarMarcadorIndividualRutaHoy(pacId, agregado, p);
+  }
+
+  // ⭐ ACTUALIZAR MARCADOR INDIVIDUAL AL AGREGAR/QUITAR DE LA RUTA DE HOY
+  actualizarMarcadorIndividualRutaHoy(pacId: number, estaEnPlan: boolean, fallbackPaciente?: any) {
+    if (!this.marcadoresPacientes || this.marcadoresPacientes.length === 0) return;
+    const marker = this.marcadoresPacientes.find((m: any) => Number(m._pacienteId) === pacId);
+    if (!marker) return;
+
+    const pacienteObj = this.pacientes.find((x: any) => Number(x.id) === pacId) || fallbackPaciente;
+    if (!pacienteObj) return;
+
+    const color = this.obtenerColorPaciente(pacienteObj);
+    const size = this.pacientes.length < 50 ? 38 : 28;
+    const fontSize = this.pacientes.length < 50 ? 18 : 12;
+    const iconFinal = estaEnPlan ? 'fa-star' : 'fa-user';
+    const glowBorder = estaEnPlan ? '3.5px solid #F59E0B' : '3px solid white';
+    const glowShadow = estaEnPlan
+      ? 'box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.5), 0 3px 14px rgba(0,0,0,0.35);'
+      : 'box-shadow: 0 2px 12px rgba(0,0,0,0.3);';
+
+    const newIcon = L.divIcon({
+      html: `<div style="
+            background: ${color};
+            width: ${size}px;
+            height: ${size}px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: ${fontSize}px;
+            border: ${glowBorder};
+            ${glowShadow}
+            cursor: pointer;
+        ">
+            <i class="fas ${iconFinal}"></i>
+        </div>`,
+      className: `custom-marker filter-active ${estaEnPlan ? 'marker-en-ruta-hoy' : ''}`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -(size / 2)]
+    });
+
+    marker.setIcon(newIcon);
+    marker.setZIndexOffset(estaEnPlan ? 600 : 100);
+
+    const nombreCompleto = pacienteObj.nombre || 'Nombre no disponible';
+    const direccionLimpia = this.limpiarDireccion(pacienteObj.direccion || '');
+    const coloniaMostrar = this.obtenerColonia(pacienteObj.direccion || '', pacienteObj.colonia || '');
+    const estatusLower = (pacienteObj.estatus || '').toLowerCase();
+    const popupContent = this.generarPopupHTML(pacienteObj, color, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
+    marker.setPopupContent(popupContent);
+  }
+
+  // ⭐ SINCRONIZAR VISUALMENTE TODOS LOS MARCADORES CUANDO CAMBIA EL PLAN DE HOY
+  actualizarEstilosMarcadoresRutaHoy() {
+    if (!this.marcadoresPacientes || this.marcadoresPacientes.length === 0) return;
+    const size = this.pacientes.length < 50 ? 38 : 28;
+    const fontSize = this.pacientes.length < 50 ? 18 : 12;
+
+    this.marcadoresPacientes.forEach((marker: any) => {
+      const pacId = Number(marker._pacienteId);
+      if (!pacId) return;
+      const estaEnPlan = this.visitasHoyService.estaEnPlanHoy(pacId);
+      const pacienteObj = this.pacientes.find((x: any) => Number(x.id) === pacId);
+      if (!pacienteObj) return;
+
+      const color = this.obtenerColorPaciente(pacienteObj);
+      const iconFinal = estaEnPlan ? 'fa-star' : 'fa-user';
+      const glowBorder = estaEnPlan ? '3.5px solid #F59E0B' : '3px solid white';
+      const glowShadow = estaEnPlan
+        ? 'box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.5), 0 3px 14px rgba(0,0,0,0.35);'
+        : 'box-shadow: 0 2px 12px rgba(0,0,0,0.3);';
+
+      const newIcon = L.divIcon({
+        html: `<div style="
+              background: ${color};
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: ${fontSize}px;
+              border: ${glowBorder};
+              ${glowShadow}
+              cursor: pointer;
+          ">
+              <i class="fas ${iconFinal}"></i>
+          </div>`,
+        className: `custom-marker filter-active ${estaEnPlan ? 'marker-en-ruta-hoy' : ''}`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -(size / 2)]
+      });
+
+      marker.setIcon(newIcon);
+      marker.setZIndexOffset(estaEnPlan ? 600 : 100);
+
+      const nombreCompleto = pacienteObj.nombre || 'Nombre no disponible';
+      const direccionLimpia = this.limpiarDireccion(pacienteObj.direccion || '');
+      const coloniaMostrar = this.obtenerColonia(pacienteObj.direccion || '', pacienteObj.colonia || '');
+      const estatusLower = (pacienteObj.estatus || '').toLowerCase();
+      const popupContent = this.generarPopupHTML(pacienteObj, color, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
+      marker.setPopupContent(popupContent);
+    });
   }
 
   private obtenerColorPaciente(paciente: any): string {
-    const hayFiltrosPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido;
+    const hayFiltrosPerfil = this.filtrosPerfiles.adulto || this.filtrosPerfiles.discapacitado || this.filtrosPerfiles.referido || (this.filtrosPerfiles as any).finado;
     const hayFiltrosRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 ||
       this.filtrosRiesgos.g3 || this.filtrosRiesgos.g4;
 
+    const programa = (paciente.programa || '').toUpperCase();
+    const estatusUpper = (paciente.estatus || '').toUpperCase();
+
     if (hayFiltrosPerfil) {
-      const programa = (paciente.programa || '').toUpperCase();
-      if (this.filtrosPerfiles.adulto && (programa === 'PAM' || programa.includes('ADULTO'))) {
-        return '#00b894';
+      if ((this.filtrosPerfiles as any).finado && (estatusUpper === 'FINADO' || paciente.finado || Boolean(paciente.fechaFinado))) {
+        return '#dc2626';
       }
-      if (this.filtrosPerfiles.discapacitado && (programa === 'DISCAPACIDAD' || programa.includes('DIS'))) {
-        return '#6c5ce7';
+      if (this.filtrosPerfiles.discapacitado && (programa === 'PCD' || programa.includes('PCD') || programa === 'DISCAPACIDAD' || programa.includes('DIS') || Boolean(paciente.discapacidades?.motriz || paciente.discapacidades?.visual || paciente.discapacidades?.auditiva || paciente.discapacidades?.intelectual || paciente.discapacidades?.psicosocial))) {
+        return '#7c3aed';
+      }
+      if (this.filtrosPerfiles.adulto && (programa === 'PAM' || programa.includes('PAM') || programa.includes('ADULTO') || programa.includes('MAYOR'))) {
+        return '#0284c7';
       }
       if (this.filtrosPerfiles.referido && (programa === 'REFERIDO' || programa.includes('REF'))) {
         return '#0984e3';

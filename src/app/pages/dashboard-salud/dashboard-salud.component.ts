@@ -4,11 +4,12 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
+import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
 
 @Component({
     selector: 'app-dashboard-salud',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, PageHeaderNavComponent],
     templateUrl: './dashboard-salud.component.html',
     styleUrls: ['./dashboard-salud.component.scss']
 })
