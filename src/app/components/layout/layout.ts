@@ -18,6 +18,7 @@ import { AdminModalComponent } from '../admin-modal/admin-modal';
 import { FormsModule } from '@angular/forms';
 import { PacientesMapService, PacienteMap } from '../../services/pacientes-map.service';
 import { VisitasHoyService } from '../../services/visitas-hoy.service';
+import Swal from 'sweetalert2';
 
 export interface ColoniaInfo {
   id: string;
@@ -294,7 +295,17 @@ export class LayoutComponent implements OnInit, OnDestroy {
       return 'Zona Tabachines';
     }
 
-    // 10. ZONA COBERTURA METROPOLITANA
+    // 10. ZONA SAN JUAN DE DIOS
+    if (texto.includes('SAN JUAN DE DIOS') || texto.includes('JUAN DE DIOS')) {
+      return 'Zona San Juan de Dios';
+    }
+
+    // 11. ZONA CENTRO
+    if (texto.includes('ZONA CENTRO') || texto.includes('CENTRO') || texto.includes('BARRIO DE SANTIAGO') || texto.includes('COECILLO')) {
+      return 'Zona Centro';
+    }
+
+    // 12. ZONA COBERTURA METROPOLITANA
     return 'Zona Cobertura Metropolitana';
   }
 
@@ -424,7 +435,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   activarModoProximidad(radioKm: number = 1) {
     if (!navigator.geolocation) {
-      alert('Tu tableta o navegador no soporta geolocalización');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Geolocalización no soportada',
+        text: 'Tu tableta o navegador no soporta geolocalización GPS.',
+        confirmButtonColor: '#701f2f'
+      });
       return;
     }
 
@@ -443,7 +459,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
       (error) => {
         this.cargandoProximidad = false;
         console.error('❌ Error GPS en proximidad:', error);
-        alert('No se pudo obtener la posición GPS. Asegúrate de habilitar los permisos de ubicación en tu tableta.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Sin acceso a GPS',
+          text: 'No se pudo obtener la posición GPS. Asegúrate de habilitar los permisos de ubicación en tu tableta o navegador.',
+          confirmButtonColor: '#701f2f'
+        });
         this.cdr.detectChanges();
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }

@@ -8,7 +8,6 @@
       "resources": {
         "files": [
           "/favicon.ico",
-          "/index.csr.html",
           "/index.html",
           "/manifest.webmanifest",
           "/*.css",
@@ -23,7 +22,41 @@
       "resources": {
         "files": [
           "/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
+        ],
+        "urls": [
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css",
+          "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+          "https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css",
+          "https://fonts.googleapis.com/**",
+          "https://fonts.gstatic.com/**"
         ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "cuidalia-api-pacientes",
+      "urls": [
+        "https://salud-casa-backend-production.up.railway.app/pacientes/**",
+        "https://salud-casa-backend-production.up.railway.app/auth/**"
+      ],
+      "cacheConfig": {
+        "maxSize": 200,
+        "maxAge": "14d",
+        "timeout": "3s",
+        "strategy": "freshness"
+      }
+    },
+    {
+      "name": "cuidalia-map-tiles",
+      "urls": [
+        "https://*.tile.openstreetmap.org/**",
+        "https://*.basemaps.cartocdn.com/**"
+      ],
+      "cacheConfig": {
+        "maxSize": 1500,
+        "maxAge": "30d",
+        "strategy": "performance"
       }
     }
   ]

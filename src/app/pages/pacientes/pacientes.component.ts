@@ -25,7 +25,7 @@ interface Paciente {
   telefono: string;
   colonia: string;
   seccion: string;
-  estadoVisita: 'completada' | 'pendiente' | 'incidencia';
+  estadoVisita: 'completada' | 'pendiente' | 'incidencia' | 'rechazo';
   fechaProgramada?: Date;
   tieneIncidencia: boolean;
   historialVisitas?: VisitaCompletada[];
@@ -77,7 +77,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   filtroBusqueda = '';
   filtroEstado = 'todos';
   filtroRiesgo = 'todos';
-  tabActivo: 'todos' | 'pendientes' | 'en_espera' | 'vencidos' | 'completadas' | 'incidencias' = 'todos';
+  tabActivo: 'todos' | 'pendientes' | 'en_espera' | 'vencidos' | 'completadas' | 'incidencias' | 'rechazos' = 'todos';
   vistaModo: 'tabla' | 'tarjetas' = 'tabla';
 
   selectedPaciente: Paciente | null = null;
@@ -193,11 +193,15 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get pacientesIncidenciasCount(): number {
-    return this.pacientes.filter(p => p.estadoVisita === 'incidencia' || p.tieneIncidencia).length;
+    return this.pacientes.filter(p => p.estadoVisita === 'incidencia').length;
+  }
+
+  get pacientesRechazosCount(): number {
+    return this.pacientes.filter(p => p.estadoVisita === 'rechazo').length;
   }
 
   // ⭐ CAMBIAR TAB
-  cambiarTab(tab: 'todos' | 'pendientes' | 'en_espera' | 'vencidos' | 'completadas' | 'incidencias') {
+  cambiarTab(tab: 'todos' | 'pendientes' | 'en_espera' | 'vencidos' | 'completadas' | 'incidencias' | 'rechazos') {
     this.tabActivo = tab;
     this.paginaActual = 1;
     this.aplicarFiltros();
@@ -222,6 +226,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'completada': return 'estado-completada';
       case 'pendiente': return 'estado-pendiente';
       case 'incidencia': return 'estado-incidencia';
+      case 'rechazo': return 'estado-rechazo';
       default: return 'estado-pendiente';
     }
   }
@@ -230,7 +235,8 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     switch (estado) {
       case 'completada': return 'fas fa-circle-check';
       case 'pendiente': return 'fas fa-clock';
-      case 'incidencia': return 'fas fa-circle-exclamation';
+      case 'incidencia': return 'fas fa-triangle-exclamation';
+      case 'rechazo': return 'fas fa-ban';
       default: return 'fas fa-question-circle';
     }
   }
@@ -240,6 +246,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'completada': return 'Completada';
       case 'pendiente': return 'Pendiente';
       case 'incidencia': return 'Incidencia';
+      case 'rechazo': return 'Rechazado';
       default: return estado || 'Pendiente';
     }
   }
@@ -299,9 +306,20 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   // ⭐ CARGAR PACIENTES
   // ⭐ ============================================
 
+  private obtenerIdEnfermeraActual(): number {
+    try {
+      const userStr = localStorage.getItem('userData');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        return userObj.id_personal_enfermeria || userObj.id || 1;
+      }
+    } catch (e) { }
+    return 1;
+  }
+
   cargarPacientes() {
     this.loading = true;
-    const idEnfermera = 1;
+    const idEnfermera = this.obtenerIdEnfermeraActual();
 
     this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}/con-riesgo`)
       .subscribe({
@@ -317,7 +335,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
                 seccion: p.zonaTrabajo?.split('-').pop() || '',
                 estadoVisita: this.mapearEstatus(p.estatus),
                 fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
-                tieneIncidencia: ['RECHAZO', 'RECHAZADO', 'INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
+                tieneIncidencia: ['INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
                 apellidoPaterno: p.apellidoPaterno || '',
                 apellidoMaterno: p.apellidoMaterno || '',
                 nombres: p.nombre || '',
@@ -333,6 +351,11 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
           } else {
             this.cargarPacientesSinNiveles();
           }
+          try {
+            if (this.pacientes && this.pacientes.length > 0) {
+              localStorage.setItem('cuidalia_pacientes_list_' + idEnfermera, JSON.stringify(this.pacientes));
+            }
+          } catch (e) {}
           this.cargarHistorialDesdeLocalStorage();
           this.cargarPendientesDesdeLocalStorage();
           this.aplicarFiltros();
@@ -348,7 +371,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   cargarPacientesSinNiveles() {
-    const idEnfermera = 1;
+    const idEnfermera = this.obtenerIdEnfermeraActual();
     this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`)
       .subscribe({
         next: (data: any[]) => {
@@ -362,7 +385,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
               seccion: p.zonaTrabajo?.split('-').pop() || '',
               estadoVisita: this.mapearEstatus(p.estatus),
               fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
-              tieneIncidencia: ['RECHAZO', 'RECHAZADO', 'INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
+              tieneIncidencia: ['INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
               historialVisitas: [],
               apellidoPaterno: p.apellidoPaterno || '',
               apellidoMaterno: p.apellidoMaterno || '',
@@ -468,10 +491,11 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     return '';
   }
 
-  private mapearEstatus(estatus: string): 'completada' | 'pendiente' | 'incidencia' {
+  private mapearEstatus(estatus: string): 'completada' | 'pendiente' | 'incidencia' | 'rechazo' {
     const s = (estatus || '').toUpperCase();
     if (s === 'VISITADO' || s === 'COMPLETADA' || s === 'COMPLETADO') return 'completada';
-    if (s === 'RECHAZO' || s === 'RECHAZADO' || s === 'INCIDENCIA' || s === 'CAMBIO DE DOMICILIO') return 'incidencia';
+    if (s === 'RECHAZO' || s === 'RECHAZADO') return 'rechazo';
+    if (s === 'INCIDENCIA' || s === 'CAMBIO DE DOMICILIO') return 'incidencia';
     return 'pendiente';
   }
 
@@ -725,7 +749,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (this.tabActivo === 'completadas') {
       base = base.filter(p => p.estadoVisita === 'completada');
     } else if (this.tabActivo === 'incidencias') {
-      base = base.filter(p => p.estadoVisita === 'incidencia' || p.tieneIncidencia);
+      base = base.filter(p => p.estadoVisita === 'incidencia' || (p.tieneIncidencia && p.estadoVisita !== 'rechazo'));
+    } else if (this.tabActivo === 'rechazos') {
+      base = base.filter(p => p.estadoVisita === 'rechazo');
     }
 
     // ⭐ FILTRO DE BÚSQUEDA
@@ -766,29 +792,73 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   // ⭐ ============================================
 
   cargarPacientesLocal() {
+    const idEnfermera = this.obtenerIdEnfermeraActual();
     this.pacientes = [];
-    for (let i = 1; i <= 30; i++) {
-      this.pacientes.push({
-        id: i,
-        nombre: `Paciente ${i} Apellido${i}`,
-        direccion: `Calle ${i} #${i * 100}`,
-        telefono: `477${1000000 + i}`,
-        colonia: `Colonia ${i}`,
-        seccion: `${1000 + i}`,
-        estadoVisita: i % 3 === 0 ? 'completada' : (i % 3 === 1 ? 'pendiente' : 'incidencia'),
-        fechaProgramada: new Date(),
-        tieneIncidencia: i % 3 === 2,
-        historialVisitas: [],
-        nivelRiesgo: i % 4 === 0 ? 'g1' : (i % 4 === 1 ? 'g2' : (i % 4 === 2 ? 'g3' : 'g4')),
-        fechaPendiente: i % 3 === 1 ? new Date(Date.now() - (i * 86400000)) : null,
-        diasPendiente: i % 3 === 1 ? i : null,
-        visitasCompletadas: 0
-      });
+
+    // ⭐ 1. PRIMERO INTENTAR CARGAR LA LISTA COMPLETA REAL GUARDADA EN CACHÉ
+    try {
+      const listCache = localStorage.getItem('cuidalia_pacientes_list_' + idEnfermera);
+      if (listCache) {
+        const parsed = JSON.parse(listCache);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log(`📶 [Offline Pacientes] Cargados ${parsed.length} pacientes reales desde caché local para enfermera ${idEnfermera}`);
+          this.pacientes = parsed.map((p: any) => ({
+            ...p,
+            fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
+            fechaPendiente: p.fechaPendiente ? new Date(p.fechaPendiente) : null
+          }));
+          this.cargarHistorialDesdeLocalStorage();
+          this.cargarPendientesDesdeLocalStorage();
+          this.aplicarFiltros();
+          this.loading = false;
+          this.cdr.detectChanges();
+          return;
+        }
+      }
+
+      // ⭐ 2. SI NO EXISTE LA LISTA FORMATEADA, BUSCAR EL RAW DE LA BD
+      const rawCache = localStorage.getItem('cuidalia_pacientes_raw_' + idEnfermera);
+      if (rawCache) {
+        const raw = JSON.parse(rawCache);
+        if (Array.isArray(raw) && raw.length > 0) {
+          console.log(`📶 [Offline Pacientes] Mapeando ${raw.length} pacientes desde raw caché local`);
+          this.pacientes = raw.map((p: any) => ({
+            id: p.id,
+            nombre: this.construirNombreCompleto(p),
+            direccion: p.direccion || '',
+            telefono: p.telefonoCelular || p.telefonoFijo || '',
+            colonia: this.extraerColonia(p.direccion, p.zonaTrabajo),
+            seccion: p.zonaTrabajo?.split('-').pop() || '',
+            estadoVisita: this.mapearEstatus(p.estatus),
+            fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
+            tieneIncidencia: ['INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
+            historialVisitas: [],
+            apellidoPaterno: p.apellidoPaterno || '',
+            apellidoMaterno: p.apellidoMaterno || '',
+            nombres: p.nombre || '',
+            programa: p.programa,
+            curp: p.curp,
+            nivelRiesgo: this.obtenerNivelRiesgoPorEstatus(p.estatus),
+            fechaPendiente: null,
+            diasPendiente: null,
+            visitasCompletadas: 0
+          }));
+          this.cargarHistorialDesdeLocalStorage();
+          this.cargarPendientesDesdeLocalStorage();
+          this.aplicarFiltros();
+          this.loading = false;
+          this.cdr.detectChanges();
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error recuperando pacientes offline:', e);
     }
-    localStorage.setItem('pacientesCache', JSON.stringify(this.pacientes));
-    this.cargarHistorialDesdeLocalStorage();
-    this.cargarPendientesDesdeLocalStorage();
+
+    console.warn('⚠️ No hay pacientes en caché local para mostrar offline.');
+    this.loading = false;
     this.aplicarFiltros();
+    this.cdr.detectChanges();
   }
 
   cargarHistorialDesdeLocalStorage() {
@@ -1089,8 +1159,14 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // ⭐ SI ESTÁ EN INCIDENCIA, USAR SWEETALERT2
-    if (paciente.estadoVisita === 'incidencia') {
+    // ⭐ SI ESTÁ EN INCIDENCIA O RECHAZO, USAR SWEETALERT2
+    if (paciente.estadoVisita === 'incidencia' || paciente.estadoVisita === 'rechazo') {
+      const esRechazo = paciente.estadoVisita === 'rechazo';
+      const alertaTitulo = esRechazo ? 'Este paciente rechazó la atención previamente' : 'Este paciente tiene una incidencia registrada';
+      const alertaColor = esRechazo ? '#b91c1c' : '#c2410c';
+      const alertaBg = esRechazo ? '#fee2e2' : '#fff7ed';
+      const alertaIcon = esRechazo ? 'fa-ban' : 'fa-triangle-exclamation';
+
       Swal.fire({
         title: '¿Marcar como pendiente?',
         html: `
@@ -1104,9 +1180,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
           <p style="font-size: 15px; margin-bottom: 8px;">
             Estás a punto de marcar al paciente como <strong style="color: #e67e22;">PENDIENTE</strong>.
           </p>
-          <div style="background: #ffebee; padding: 12px; border-radius: 10px; border-left: 4px solid #c62828; margin: 10px 0;">
-            <i class="fas fa-exclamation-circle" style="color: #c62828; margin-right: 8px;"></i>
-            <span style="color: #c62828; font-weight: 600;">Este paciente tiene una incidencia registrada</span>
+          <div style="background: ${alertaBg}; padding: 12px; border-radius: 10px; border-left: 4px solid ${alertaColor}; margin: 10px 0;">
+            <i class="fas ${alertaIcon}" style="color: ${alertaColor}; margin-right: 8px;"></i>
+            <span style="color: ${alertaColor}; font-weight: 600;">${alertaTitulo}</span>
           </div>
           <p style="font-size: 13px; color: #888; margin-top: 8px;">
             <i class="fas fa-calendar-day"></i> Se podrá visitar nuevamente en <strong>20 días</strong>.
@@ -1166,27 +1242,74 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  marcarFinado(paciente: Paciente) {
-    if (confirm(`⚠️ ¿Estás seguro de marcar como FINADO a ${paciente.nombre}?`)) {
-      this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/estatus`, {
-        estatus: 'finado',
-        usuarioId: 1
-      }).subscribe({
-        next: () => {
-          paciente.estadoVisita = 'completada';
-          paciente.fechaPendiente = null;
-          paciente.diasPendiente = null;
-          this.guardarPendientesEnLocalStorage();
-          this.crearNotificacion('Finado', `${paciente.nombre} marcado como finado`, 'error');
-          this.aplicarFiltros();
-          this.cdr.detectChanges();
-        },
-        error: (err: any) => {
-          console.error('Error:', err);
-          this.crearNotificacion('Error', 'No se pudo marcar como finado', 'error');
-        }
-      });
+  async marcarFinado(paciente: Paciente) {
+    const result = await Swal.fire({
+      title: '¿Confirmar Finado?',
+      html: `
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px; background: #fdf2f4; padding: 14px; border-radius: 12px; border: 1px solid #fce7eb;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0;">
+            <i class="fas fa-skull"></i>
+          </div>
+          <div style="text-align: left; overflow: hidden;">
+            <div style="font-weight: 700; font-size: 15px; color: #701f2f;">${paciente.nombre}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${paciente.direccion || 'Sin dirección'}</div>
+          </div>
+        </div>
+        <div style="background: #fee2e2; padding: 12px 14px; border-radius: 10px; border-left: 4px solid #ef4444; margin-bottom: 10px; text-align: left;">
+          <div style="color: #991b1b; font-weight: 700; font-size: 13px; margin-bottom: 3px;">
+            <i class="fas fa-exclamation-triangle"></i> Acción irreversible
+          </div>
+          <p style="font-size: 12.5px; color: #7f1d1d; margin: 0; line-height: 1.4;">
+            El paciente será registrado con estatus <strong>FINADO</strong> y se actualizará su expediente en el sistema.
+          </p>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: '<i class="fas fa-skull" style="margin-right: 6px;"></i> Sí, marcar como Finado',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      customClass: {
+        popup: 'swal-pendiente-popup',
+        confirmButton: 'swal-confirm-btn',
+        cancelButton: 'swal-cancel-btn'
+      }
+    });
+
+    if (!result.isConfirmed) {
+      return;
     }
+
+    this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/estatus`, {
+      estatus: 'finado',
+      usuarioId: 1
+    }).subscribe({
+      next: () => {
+        paciente.estadoVisita = 'completada';
+        paciente.fechaPendiente = null;
+        paciente.diasPendiente = null;
+        this.guardarPendientesEnLocalStorage();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Registrado como Finado',
+          text: `${paciente.nombre} ha sido marcado como finado.`,
+          confirmButtonColor: '#701f2f',
+          timer: 2500,
+          timerProgressBar: true
+        });
+
+        this.crearNotificacion('Finado', `${paciente.nombre} marcado como finado`, 'error');
+        this.aplicarFiltros();
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Error:', err);
+        this.crearNotificacion('Error', 'No se pudo marcar como finado', 'error');
+      }
+    });
   }
 
   // ⭐ ABRIR MODAL COMPLETADA - CON VALIDACIÓN DE 20 DÍAS
@@ -1194,11 +1317,32 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     if (paciente.estadoVisita === 'pendiente' &&
       paciente.diasPendiente !== null &&
       (paciente.diasPendiente ?? 0) < 20) {
-      this.crearNotificacion(
-        'Visita bloqueada',
-        `Deben pasar ${20 - (paciente.diasPendiente ?? 0)} días más para poder completar esta visita.`,
-        'warning'
-      );
+      const diasFaltantes = 20 - (paciente.diasPendiente ?? 0);
+      Swal.fire({
+        title: 'Visita Bloqueada',
+        html: `
+          <div style="text-align: center; padding: 8px 0;">
+            <div style="width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: #fff3e0; display: flex; align-items: center; justify-content: center; color: #e67e22; font-size: 26px;">
+              <i class="fas fa-lock"></i>
+            </div>
+            <p style="font-size: 15px; color: #333; margin-bottom: 10px;">
+              El paciente <strong style="color: #701f2f;">${paciente.nombre}</strong> se encuentra en período de espera reglamentario.
+            </p>
+            <div style="background: #fff8e6; padding: 12px 16px; border-radius: 10px; border: 1px solid #fed7aa; margin-top: 10px;">
+              <span style="color: #c2410c; font-size: 13.5px; font-weight: 600;">
+                <i class="fas fa-calendar-day"></i> Faltan <strong>${diasFaltantes} ${diasFaltantes === 1 ? 'día' : 'días'}</strong> para completar el ciclo de 20 días.
+              </span>
+            </div>
+          </div>
+        `,
+        icon: 'warning',
+        confirmButtonColor: '#e67e22',
+        confirmButtonText: 'Entendido',
+        customClass: {
+          popup: 'swal-pendiente-popup',
+          confirmButton: 'swal-confirm-btn'
+        }
+      });
       return;
     }
 
@@ -1302,10 +1446,45 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // ⭐ SI NO HAY FOTOS Y NO SE ACTIVÓ "NO TOMAR FOTO", PREGUNTAR
+    // ⭐ SI NO HAY FOTOS Y NO SE ACTIVÓ "NO TOMAR FOTO", PREGUNTAR CON SWEETALERT2
     if (this.fotosPreview.length === 0 && !this.saltarFotoActivo) {
-      const confirmar = confirm('⚠️ No has tomado ninguna foto.\n\n¿Deseas completar la visita sin evidencia fotográfica?');
-      if (!confirmar) {
+      const confirmResult = await Swal.fire({
+        title: '¿Completar sin evidencia fotográfica?',
+        html: `
+          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px; background: #fdf2f4; padding: 14px; border-radius: 12px; border: 1px solid #fce7eb;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #701f2f; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0;">
+              <i class="fas fa-camera-slash"></i>
+            </div>
+            <div style="text-align: left; overflow: hidden;">
+              <div style="font-weight: 700; font-size: 15px; color: #701f2f; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${this.selectedPaciente.nombre}</div>
+              <div style="font-size: 12px; color: #666; margin-top: 2px;"><i class="fas fa-map-marker-alt"></i> ${this.selectedPaciente.direccion || 'Sin dirección'}</div>
+            </div>
+          </div>
+          <div style="background: #fff8e6; padding: 12px 14px; border-radius: 10px; border-left: 4px solid #f59e0b; margin-bottom: 12px; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #b45309; font-weight: 700; font-size: 13px; margin-bottom: 4px;">
+              <i class="fas fa-triangle-exclamation"></i> No has adjuntado fotos de evidencia
+            </div>
+            <p style="font-size: 12.5px; color: #78350f; margin: 0; line-height: 1.4;">
+              ¿Deseas marcar y guardar la visita médica de este paciente como <strong>COMPLETADA</strong> sin evidencia fotográfica?
+            </p>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fas fa-check-circle" style="margin-right: 6px;"></i> Sí, completar visita',
+        cancelButtonText: '<i class="fas fa-camera" style="margin-right: 6px;"></i> Tomar fotografía',
+        reverseButtons: true,
+        backdrop: 'rgba(0, 0, 0, 0.5)',
+        customClass: {
+          popup: 'swal-completada-popup',
+          confirmButton: 'swal-confirm-btn',
+          cancelButton: 'swal-cancel-btn'
+        }
+      });
+
+      if (!confirmResult.isConfirmed) {
         return;
       }
       this.saltarFotoActivo = true;
@@ -1318,6 +1497,9 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       fotosComprimidas.push(comprimida);
     }
 
+    const pacienteGuardado = this.selectedPaciente;
+    const nombreGuardado = this.selectedPaciente.nombre;
+
     // ⭐ CREAR VISITA
     const nuevaVisita: VisitaCompletada = {
       fecha: new Date(),
@@ -1327,28 +1509,27 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       coordenadas: 'No registradas'
     };
 
-    if (!this.selectedPaciente.historialVisitas) {
-      this.selectedPaciente.historialVisitas = [];
+    if (!pacienteGuardado.historialVisitas) {
+      pacienteGuardado.historialVisitas = [];
     }
-    this.selectedPaciente.historialVisitas.unshift(nuevaVisita);
-    if (this.selectedPaciente.historialVisitas.length > 3) {
-      this.selectedPaciente.historialVisitas = this.selectedPaciente.historialVisitas.slice(0, 3);
+    pacienteGuardado.historialVisitas.unshift(nuevaVisita);
+    if (pacienteGuardado.historialVisitas.length > 3) {
+      pacienteGuardado.historialVisitas = pacienteGuardado.historialVisitas.slice(0, 3);
     }
 
     this.guardarHistorialEnLocalStorage();
 
     // ⭐ ACTUALIZAR ESTADO
-    this.http.patch(`${this.apiUrl}/pacientes/${this.selectedPaciente.id}/estatus`, {
+    this.http.patch(`${this.apiUrl}/pacientes/${pacienteGuardado.id}/estatus`, {
       estatus: 'completada',
       usuarioId: 1
     }).subscribe({
       next: () => {
-        if (this.selectedPaciente) {
-          this.selectedPaciente.estadoVisita = 'completada';
-          this.selectedPaciente.fechaProgramada = new Date();
-          this.selectedPaciente.fechaPendiente = null;
-          this.selectedPaciente.diasPendiente = null;
-        }
+        pacienteGuardado.estadoVisita = 'completada';
+        pacienteGuardado.fechaProgramada = new Date();
+        pacienteGuardado.fechaPendiente = null;
+        pacienteGuardado.diasPendiente = null;
+
         this.guardarPendientesEnLocalStorage();
         this.mostrarModalCompletada = false;
         this.selectedPaciente = null;
@@ -1359,11 +1540,42 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         const mensaje = fotosComprimidas.length > 0
           ? 'Visita completada con evidencia fotográfica'
           : 'Visita completada sin evidencia fotográfica';
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Visita Completada con Éxito!',
+          html: `
+            <div style="text-align: center; padding: 6px 0;">
+              <p style="font-size: 15px; color: #333; margin-bottom: 12px;">
+                Se registró exitosamente la visita para <strong style="color: #701f2f;">${nombreGuardado}</strong>.
+              </p>
+              <div style="display: inline-flex; align-items: center; gap: 8px; background: #e8f5e9; color: #166534; font-size: 13px; font-weight: 600; padding: 6px 16px; border-radius: 20px; border: 1px solid #c8e6c9;">
+                <i class="fas ${fotosComprimidas.length > 0 ? 'fa-camera' : 'fa-check-double'}"></i>
+                <span>${mensaje}</span>
+              </div>
+            </div>
+          `,
+          confirmButtonColor: '#10b981',
+          confirmButtonText: '<i class="fas fa-check"></i> Aceptar',
+          timer: 3500,
+          timerProgressBar: true,
+          customClass: {
+            popup: 'swal-completada-popup',
+            confirmButton: 'swal-confirm-btn'
+          }
+        });
+
         this.crearNotificacion('Visita completada', mensaje, 'success');
         this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Error:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al completar visita',
+          text: 'No se pudo guardar la visita en el servidor. Por favor, intenta de nuevo.',
+          confirmButtonColor: '#701f2f'
+        });
         this.crearNotificacion('Error', 'No se pudo completar la visita', 'error');
       }
     });

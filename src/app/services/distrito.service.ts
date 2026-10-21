@@ -34,6 +34,16 @@ export class DistritoService {
     }
 
     getDistritoActual(): Distrito {
+        const userStr = localStorage.getItem('userData');
+        if (userStr) {
+            try {
+                const userObj = JSON.parse(userStr);
+                const id = userObj.id_personal_enfermeria || userObj.id || 1;
+                this.distritoActual.idEnfermera = id;
+            } catch (e) {
+                console.error('Error parsing userData in DistritoService', e);
+            }
+        }
         return this.distritoActual;
     }
 

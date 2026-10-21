@@ -23,6 +23,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard-distrital', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'dashboard-salud', component: DashboardSaludComponent },
       { path: 'notificaciones', component: NotificacionesComponent },

@@ -33,6 +33,11 @@
 
   <!-- Botones de Navegación y Accesos Rápidos -->
   <div class="header-right-area">
+    <!-- Indicador de Red Online/Offline -->
+    <div class="network-badge" [class.offline]="!isOnline" [title]="isOnline ? 'Conexión activa con el servidor' : 'Modo sin conexión: Trabajando con datos guardados'">
+      <span class="status-dot"></span>
+      <span class="status-text">{{ isOnline ? 'En línea' : 'Sin conexión' }}</span>
+    </div>
     <button class="btn-nav btn-mapa" (click)="irAlMapa()" title="Mapa Operativo">
       <i class="fas fa-map-location-dot"></i>
       <span class="btn-text">Mapa</span>
@@ -159,6 +164,10 @@
   </div>
 
   <div class="sidebar-footer">
+    <button class="btn-instalar-sidebar" (click)="instalarApp()" *ngIf="!isStandalone">
+      <i class="fas fa-mobile-screen-button"></i>
+      <span>📲 Instalar App en Celular</span>
+    </button>
     <button class="btn-cerrar-sesion-sidebar" (click)="logout()">
       <i class="fas fa-sign-out-alt"></i>
       <span>Cerrar Sesión</span>

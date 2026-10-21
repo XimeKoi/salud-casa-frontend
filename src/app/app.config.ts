@@ -14,8 +14,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideStore({ app: appReducer }),
     provideServiceWorker('ngsw-worker.js', {
-      enabled: environment.production,
-      registrationStrategy: 'registerWhenStable:30000'
+      enabled: environment.production || !window.location.hostname.includes('localhost'),
+      registrationStrategy: 'registerImmediately'
     })
   ]
 };

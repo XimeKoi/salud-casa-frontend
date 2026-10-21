@@ -75,10 +75,14 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
   private coloresEstatus: { [key: string]: string } = {
     'VISITADO': '#2e7d32',
     'COMPLETADA': '#2e7d32',
+    'COMPLETADO': '#2e7d32',
     'PENDIENTE': '#FFC107',
     'SIN VISITA': '#FFC107',
-    'RECHAZO': '#D32F2F',
-    'INCIDENCIA': '#D32F2F',
+    'RECHAZO': '#DC2626',
+    'RECHAZADO': '#DC2626',
+    'INCIDENCIA': '#E65100',
+    'CAMBIO DE DOMICILIO': '#8E24AA',
+    'CAMBIO_DOMICILIO': '#8E24AA',
     'FINADO': '#6c757d'
   };
 
@@ -506,10 +510,14 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
 
       if (estatusLower === 'pendiente' || estatusLower === 'sin visita') {
         icon = 'fa-clock';
-      } else if (estatusLower === 'visitado' || estatusLower === 'completada') {
+      } else if (estatusLower === 'visitado' || estatusLower === 'completada' || estatusLower === 'completado') {
         icon = 'fa-check-circle';
-      } else if (estatusLower === 'rechazo' || estatusLower === 'incidencia') {
-        icon = 'fa-exclamation-triangle';
+      } else if (estatusLower === 'rechazo' || estatusLower === 'rechazado') {
+        icon = 'fa-ban';
+      } else if (estatusLower === 'incidencia') {
+        icon = 'fa-triangle-exclamation';
+      } else if (estatusLower === 'cambio de domicilio' || estatusLower === 'cambio_domicilio') {
+        icon = 'fa-truck-moving';
       } else if (estatusLower === 'finado') {
         icon = 'fa-skull';
       }
@@ -537,6 +545,29 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
         iconAnchor: [14, 14],
         popupAnchor: [0, -14]
       });
+
+      const isFin = estatusLower === 'finado';
+      const isVis = estatusLower === 'visitado' || estatusLower === 'completada' || estatusLower === 'completado';
+      const isRech = estatusLower === 'rechazo' || estatusLower === 'rechazado';
+      const isInc = estatusLower === 'incidencia';
+      const isCam = estatusLower === 'cambio de domicilio' || estatusLower === 'cambio_domicilio';
+
+      let pillBg = '#fff3e0';
+      let pillColor = '#e67e22';
+      let pillIcon = 'fa-clock';
+      let pillText = paciente.estatus || 'Pendiente';
+
+      if (isVis) {
+        pillBg = '#e8f5e9'; pillColor = '#2e7d32'; pillIcon = 'fa-check-circle'; pillText = 'Completado';
+      } else if (isRech) {
+        pillBg = '#fee2e2'; pillColor = '#991b1b'; pillIcon = 'fa-ban'; pillText = 'Rechazado';
+      } else if (isInc) {
+        pillBg = '#fff7ed'; pillColor = '#c2410c'; pillIcon = 'fa-triangle-exclamation'; pillText = 'Incidencia';
+      } else if (isCam) {
+        pillBg = '#faf5ff'; pillColor = '#6b21a8'; pillIcon = 'fa-truck-moving'; pillText = 'Cambio Domicilio';
+      } else if (isFin) {
+        pillBg = '#f1f5f9'; pillColor = '#475569'; pillIcon = 'fa-skull'; pillText = 'Finado';
+      }
 
       const marker = L.marker([paciente.lat, paciente.lng], { icon: markerIcon })
         .bindPopup(`
@@ -566,9 +597,9 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
               </div>
             </div>
             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0ece8;">
-              <span style="display: inline-block; background: ${(paciente.estatus || '').toLowerCase() === 'pendiente' ? '#fff3e0' : (paciente.estatus || '').toLowerCase() === 'visitado' ? '#e8f5e9' : (paciente.estatus || '').toLowerCase() === 'rechazo' ? '#ffebee' : '#f0ece8'}; color: ${(paciente.estatus || '').toLowerCase() === 'pendiente' ? '#e67e22' : (paciente.estatus || '').toLowerCase() === 'visitado' ? '#2e7d32' : (paciente.estatus || '').toLowerCase() === 'rechazo' ? '#c62828' : '#6c757d'}; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 700;">
-                <i class="fas ${(paciente.estatus || '').toLowerCase() === 'pendiente' ? 'fa-clock' : (paciente.estatus || '').toLowerCase() === 'visitado' ? 'fa-check-circle' : (paciente.estatus || '').toLowerCase() === 'rechazo' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
-                ${paciente.estatus || 'Pendiente'}
+              <span style="display: inline-block; background: ${pillBg}; color: ${pillColor}; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 700;">
+                <i class="fas ${pillIcon}"></i>
+                ${pillText}
               </span>
               <span style="margin-left: 8px; font-size: 10px; color: #999;">ID: ${paciente.id || 'N/A'}</span>
             </div>

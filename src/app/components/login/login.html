@@ -157,6 +157,20 @@
           </button>
         </form>
 
+        <!-- ⭐ BOTÓN DESTACADO PARA DESCARGAR / INSTALAR LA APP ⭐ -->
+        <div class="clean-install-pwa-box" *ngIf="!isStandalone">
+          <button type="button" class="clean-install-btn" (click)="instalarPwa()" title="Descargar e instalar Cuidalia en tu teléfono">
+            <div class="install-btn-icon">
+              <i class="fas fa-mobile-screen-button"></i>
+            </div>
+            <div class="install-btn-text">
+              <span class="install-main-label">📲 Instalar App en tu Celular</span>
+              <span class="install-sub-label">Descarga directa · Funciona sin internet</span>
+            </div>
+            <i class="fas fa-download install-arrow-icon"></i>
+          </button>
+        </div>
+
         <!-- Divisor Elegante -->
         <div class="clean-divider">
           <span class="divider-text">Soporte & Privacidad</span>

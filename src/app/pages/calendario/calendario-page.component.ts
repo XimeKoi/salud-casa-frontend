@@ -134,7 +134,14 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     cargarPacientesParaBusqueda() {
-        const idEnfermera = 1;
+        let idEnfermera = 1;
+        try {
+            const userStr = localStorage.getItem('userData');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
+            }
+        } catch (e) { }
         this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`).subscribe({
             next: (data) => {
                 if (data && data.length > 0) {

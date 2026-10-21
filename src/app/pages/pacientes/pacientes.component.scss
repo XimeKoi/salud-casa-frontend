@@ -643,8 +643,10 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
     border: 2px solid #ffffff;
 
     &.estado-completada { background: $success; }
-    &.estado-pendiente { background: $warning; }
-    &.estado-incidencia { background: $danger; }
+    &.estado-pendiente { background: #f59e0b; }
+    &.estado-incidencia { background: #ea580c; }
+    &.estado-rechazo { background: #dc2626; }
+    &.estado-cambio-domicilio { background: #9333ea; }
   }
 }
 
@@ -855,15 +857,27 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
   }
 
   &.estado-pendiente {
-    background: $warning-soft;
-    color: $warning-dark;
-    border: 1px solid rgba(234, 88, 12, 0.2);
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid rgba(245, 158, 11, 0.25);
   }
 
   &.estado-incidencia {
-    background: $danger-soft;
-    color: $danger-dark;
-    border: 1px solid rgba(220, 38, 38, 0.2);
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+  }
+
+  &.estado-rechazo {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+
+  &.estado-cambio-domicilio {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid #e9d5ff;
   }
 }
 

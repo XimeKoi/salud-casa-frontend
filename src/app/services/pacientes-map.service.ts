@@ -47,14 +47,27 @@ export class PacientesMapService {
     // ⭐ CACHE PARA NIVELES DE RIESGO
     private nivelesRiesgoCache: Map<number, string> = new Map();
     private nivelesRiesgoTimestamp: number = 0;
+    private cacheEnfermeraId: number | null = null;
     private readonly NIVELES_CACHE_TTL = 30000; // 30 segundos
 
     constructor(private http: HttpClient) { }
+
+    public obtenerIdEnfermeraActual(): number {
+        try {
+            const userStr = localStorage.getItem('userData');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                return userObj.id_personal_enfermeria || userObj.id || 1;
+            }
+        } catch (e) { }
+        return 1;
+    }
 
     clearCache(): void {
         console.log('🧹 [PacientesMapService] Cache limpiado');
         this.cachePacientes = [];
         this.cacheTimestamp = 0;
+        this.cacheEnfermeraId = null;
     }
 
     refreshPacientes(): void {
@@ -62,27 +75,40 @@ export class PacientesMapService {
         this.clearCache();
     }
 
-    setPacientesCache(pacientes: any[]): void {
+    setPacientesCache(pacientes: any[], idEnfermera?: number): void {
         console.log(`📦 [PacientesMapService] Cache establecido con ${pacientes?.length || 0} pacientes`);
         if (pacientes && pacientes.length > 0) {
             this.cachePacientes = this.procesarPacientes(pacientes);
             this.cacheTimestamp = Date.now();
+            this.cacheEnfermeraId = idEnfermera || this.obtenerIdEnfermeraActual();
         }
     }
 
-    getPacientes(idEnfermera: number = 1): Observable<PacienteMap[]> {
-        return this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`).pipe(
+    getPacientes(idEnfermera?: number): Observable<PacienteMap[]> {
+        const id = idEnfermera !== undefined ? idEnfermera : this.obtenerIdEnfermeraActual();
+        return this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${id}`).pipe(
             map(data => this.procesarPacientes(data || []))
         );
     }
 
-    async getPacientesEnfermera(idEnfermera: number = 1): Promise<any[]> {
+    async getPacientesEnfermera(idEnfermera?: number): Promise<any[]> {
+        const id = idEnfermera !== undefined ? idEnfermera : this.obtenerIdEnfermeraActual();
         try {
-            console.log('📥 Intentando obtener pacientes de la BD...');
+            console.log(`📥 Intentando obtener pacientes de la BD para enfermera ${id}...`);
             const pacientes = await firstValueFrom(
-                this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`)
+                this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${id}`)
             );
             console.log(`📊 ${pacientes?.length || 0} pacientes obtenidos de la BD`);
+
+            // ⭐ GUARDAR COPIA LOCAL PARA MODO SIN CONEXIÓN (OFFLINE)
+            if (pacientes && Array.isArray(pacientes) && pacientes.length > 0) {
+                try {
+                    localStorage.setItem('cuidalia_pacientes_raw_' + id, JSON.stringify(pacientes));
+                    console.log(`💾 [Offline Cache] ${pacientes.length} pacientes guardados localmente para enfermera ${id}`);
+                } catch (e) {
+                    console.warn('⚠️ No se pudo guardar en localStorage:', e);
+                }
+            }
 
             const conDiscapacidad = pacientes?.filter(p =>
                 p.discapacidadMotriz || p.discapacidadVisual ||
@@ -95,7 +121,19 @@ export class PacientesMapService {
 
             return pacientes || [];
         } catch (error) {
-            console.error('⚠️ Error obteniendo pacientes de la BD:', error);
+            console.warn('⚠️ Sin conexión con la BD, intentando cargar pacientes desde almacenamiento local offline...', error);
+            try {
+                const localData = localStorage.getItem('cuidalia_pacientes_raw_' + id);
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        console.log(`📶 [Modo Offline] Recuperados ${parsed.length} pacientes desde almacenamiento local para enfermera ${id}`);
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.error('Error leyendo pacientes offline:', e);
+            }
             return [];
         }
     }
@@ -303,11 +341,21 @@ export class PacientesMapService {
             return 'Zona Tabachines';
         }
 
-        // 10. ZONA COBERTURA METROPOLITANA
+        // 10. ZONA SAN JUAN DE DIOS
+        if (texto.includes('SAN JUAN DE DIOS') || texto.includes('JUAN DE DIOS')) {
+            return 'Zona San Juan de Dios';
+        }
+
+        // 11. ZONA CENTRO
+        if (texto.includes('ZONA CENTRO') || texto.includes('CENTRO') || texto.includes('BARRIO DE SANTIAGO') || texto.includes('COECILLO')) {
+            return 'Zona Centro';
+        }
+
+        // 12. ZONA COBERTURA METROPOLITANA
         return 'Zona Cobertura Metropolitana';
     }
 
-    private procesarPacientes(pacientesBD: any[]): PacienteMap[] {
+    public procesarPacientes(pacientesBD: any[]): PacienteMap[] {
         const pacientesConCoords: PacienteMap[] = [];
         let conTelefono = 0;
         let sinTelefono = 0;
@@ -398,15 +446,16 @@ export class PacientesMapService {
         return pacientesConCoords;
     }
 
-    async getPacientesConCoordenadas(idEnfermera: number = 1): Promise<PacienteMap[]> {
-        if (this.cachePacientes.length > 0 && (Date.now() - this.cacheTimestamp) < this.CACHE_TTL) {
-            console.log(`📦 Usando cache de pacientes (${this.cachePacientes.length} pacientes)`);
+    async getPacientesConCoordenadas(idEnfermera?: number): Promise<PacienteMap[]> {
+        const id = idEnfermera !== undefined ? idEnfermera : this.obtenerIdEnfermeraActual();
+        if (this.cachePacientes.length > 0 && this.cacheEnfermeraId === id && (Date.now() - this.cacheTimestamp) < this.CACHE_TTL) {
+            console.log(`📦 Usando cache de pacientes (${this.cachePacientes.length} pacientes) para enfermera ${id}`);
             return this.cachePacientes;
         }
 
         try {
-            console.log('📥 Obteniendo pacientes para el mapa...');
-            const pacientesBD = await this.getPacientesEnfermera(idEnfermera);
+            console.log(`📥 Obteniendo pacientes para el mapa para enfermera ${id}...`);
+            const pacientesBD = await this.getPacientesEnfermera(id);
 
             if (!pacientesBD || pacientesBD.length === 0) {
                 console.warn('⚠️ No se encontraron pacientes en la BD');
@@ -416,6 +465,7 @@ export class PacientesMapService {
             const pacientesProcesados = this.procesarPacientes(pacientesBD);
 
             this.cachePacientes = pacientesProcesados;
+            this.cacheEnfermeraId = id;
             this.cacheTimestamp = Date.now();
 
             return pacientesProcesados;
@@ -429,15 +479,16 @@ export class PacientesMapService {
     // ⭐ OBTENER PACIENTES CON FILTROS APLICADOS
     // ⭐ ============================================
 
-    getPacientesConFiltros(idEnfermera: number = 1, filtros?: {
+    getPacientesConFiltros(idEnfermera?: number, filtros?: {
         perfiles?: { adulto?: boolean; discapacitado?: boolean; finado?: boolean };
         riesgos?: { g1?: boolean; g2?: boolean; g3?: boolean; g4?: boolean };
         zona?: string;
     }): PacienteMap[] {
+        const id = idEnfermera !== undefined ? idEnfermera : this.obtenerIdEnfermeraActual();
         let pacientes = this.cachePacientes;
 
-        if (pacientes.length === 0) {
-            this.getPacientesConCoordenadas(idEnfermera);
+        if (pacientes.length === 0 || this.cacheEnfermeraId !== id) {
+            this.getPacientesConCoordenadas(id);
             pacientes = this.cachePacientes;
         }
 
@@ -597,10 +648,11 @@ export class PacientesMapService {
     /**
      * Obtener pacientes con nivel de riesgo incluido
      */
-    async getPacientesConNivelRiesgo(idEnfermera: number = 1): Promise<any[]> {
+    async getPacientesConNivelRiesgo(idEnfermera?: number): Promise<any[]> {
+        const id = idEnfermera !== undefined ? idEnfermera : this.obtenerIdEnfermeraActual();
         try {
             const response = await firstValueFrom(
-                this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}/con-riesgo`)
+                this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${id}/con-riesgo`)
             );
             return response || [];
         } catch (error) {

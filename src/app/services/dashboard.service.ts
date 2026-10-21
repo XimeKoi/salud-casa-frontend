@@ -64,14 +64,32 @@ export class DashboardService {
         if (this.pacientesCache && this.pacientesCache.length > 0) {
             return this.pacientesCache;
         }
+        const idEnfermera = this.pacientesMapService.obtenerIdEnfermeraActual();
         try {
-            const pacientes = await this.pacientesMapService.getPacientesConCoordenadas(1);
-            this.pacientesCache = pacientes;
-            return pacientes;
+            const pacientes = await this.pacientesMapService.getPacientesConCoordenadas(idEnfermera);
+            if (pacientes && pacientes.length > 0) {
+                this.pacientesCache = pacientes;
+                return pacientes;
+            }
         } catch (e) {
-            console.warn('⚠️ [DashboardService] Usando pacientes en fallback:', e);
-            return [];
+            console.warn('⚠️ [DashboardService] Error obteniendo pacientes online:', e);
         }
+
+        // ⭐ MODO OFFLINE: BUSCAR EN LOCALSTORAGE
+        try {
+            const rawCache = localStorage.getItem('cuidalia_pacientes_raw_' + idEnfermera);
+            if (rawCache) {
+                const raw = JSON.parse(rawCache);
+                if (Array.isArray(raw) && raw.length > 0) {
+                    console.log(`📶 [Dashboard Offline] Usando ${raw.length} pacientes guardados para enfermera ${idEnfermera}`);
+                    const procesados = this.pacientesMapService.procesarPacientes(raw);
+                    this.pacientesCache = procesados;
+                    return procesados;
+                }
+            }
+        } catch (err) {}
+
+        return [];
     }
 
     // ⭐ MÉTODOS PARA OBTENER DATOS CALCULADOS EN TIEMPO REAL DESDE LA BASE DE DATOS REAL
@@ -178,9 +196,9 @@ export class DashboardService {
             const z = mapaZonas.get(col)!;
             z.programadas++;
             const st = (p.estatus || '').toUpperCase();
-            if (st === 'VISITADO' || st === 'COMPLETADA') {
+            if (st === 'VISITADO' || st === 'COMPLETADA' || st === 'COMPLETADO') {
                 z.realizadas++;
-            } else if (st === 'RECHAZO' || st === 'INCIDENCIA') {
+            } else if (st === 'RECHAZO' || st === 'RECHAZADO') {
                 z.rechazos++;
             }
         });

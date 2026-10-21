@@ -381,7 +381,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.cdr.detectChanges();
 
                     if (incidencia.pacienteId) {
-                        this.actualizarEstadoPaciente(incidencia.pacienteId, 'incidencia');
+                        const nuevoEstatus = incidencia.tipo === 'usuario_rechazo' ? 'rechazo' : 'incidencia';
+                        this.actualizarEstadoPaciente(incidencia.pacienteId, nuevoEstatus);
                     }
 
                     this.limpiarDatosPaciente();

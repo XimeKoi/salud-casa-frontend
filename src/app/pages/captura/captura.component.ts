@@ -79,12 +79,22 @@ export class CapturaComponent implements OnInit {
 
     cargarPacientesDesdeBD() {
         this.loading = true;
-        const idEnfermera = 1;
+        let idEnfermera = 1;
+        try {
+            const userStr = localStorage.getItem('userData');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
+            }
+        } catch (e) { }
 
         this.http.get<any[]>(`${this.apiUrl}/pacientes/enfermera/${idEnfermera}`)
             .subscribe({
                 next: (data) => {
                     console.log(' Pacientes recibidos desde BD:', data.length);
+                    try {
+                        localStorage.setItem('cuidalia_pacientes_raw_' + idEnfermera, JSON.stringify(data));
+                    } catch(e) {}
                     this.pacientes = data.map(p => {
                         const apellidoPaterno = p.apellidoPaterno || '';
                         const apellidoMaterno = p.apellidoMaterno || '';
@@ -235,6 +245,45 @@ export class CapturaComponent implements OnInit {
     }
 
     cargarPacientesLocal() {
+        let idEnfermera = 1;
+        try {
+            const userStr = localStorage.getItem('userData');
+            if (userStr) idEnfermera = JSON.parse(userStr).id_personal_enfermeria || 1;
+            const rawCache = localStorage.getItem('cuidalia_pacientes_raw_' + idEnfermera);
+            if (rawCache) {
+                const data = JSON.parse(rawCache);
+                if (Array.isArray(data) && data.length > 0) {
+                    console.log(`📶 [Captura Offline] Usando ${data.length} pacientes reales desde caché local`);
+                    this.pacientes = data.map((p: any) => ({
+                        id: p.id,
+                        numero: p.numero,
+                        nombreCompleto: `${p.nombre || ''} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`.trim() || p.nombre || 'Paciente',
+                        nombre: p.nombre || '',
+                        apellidoPaterno: p.apellidoPaterno || '',
+                        apellidoMaterno: p.apellidoMaterno || '',
+                        curp: p.curp || '',
+                        telefono: p.telefonoCelular || p.telefonoFijo || '',
+                        direccion: p.direccion || '',
+                        colonia: this.extraerColonia(p.direccion),
+                        seccion: p.zonaTrabajo?.split('-').pop() || '',
+                        estatus: p.estatus || 'VISITADO',
+                        programa: p.programa || 'PAM',
+                        discapacidadMotriz: p.discapacidadMotriz || false,
+                        discapacidadVisual: p.discapacidadVisual || false,
+                        discapacidadAuditiva: p.discapacidadAuditiva || false,
+                        discapacidadIntelectual: p.discapacidadIntelectual || false,
+                        discapacidadPsicosocial: p.discapacidadPsicosocial || false,
+                        fechaFinado: p.fechaFinado || null
+                    }));
+                    this.pacientesFiltrados = [...this.pacientes];
+                    this.loading = false;
+                    this.verificarPacientePreseleccionado();
+                    this.cdr.detectChanges();
+                    return;
+                }
+            }
+        } catch (e) {}
+
         console.log(' Usando datos locales de fallback');
         this.pacientes = [
             {

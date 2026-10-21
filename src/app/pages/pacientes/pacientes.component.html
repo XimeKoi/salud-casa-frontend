@@ -71,7 +71,15 @@
                     (click)="cambiarTab('incidencias')">
                     <i class="fas fa-triangle-exclamation"></i>
                     <span>Incidencias</span>
-                    <span class="tab-count danger" *ngIf="pacientesIncidenciasCount > 0">{{ pacientesIncidenciasCount
+                    <span class="tab-count warning" *ngIf="pacientesIncidenciasCount > 0">{{ pacientesIncidenciasCount
+                        }}</span>
+                </button>
+
+                <button class="tab-item" [class.active]="tabActivo === 'rechazos'"
+                    (click)="cambiarTab('rechazos')">
+                    <i class="fas fa-ban"></i>
+                    <span>Rechazados</span>
+                    <span class="tab-count danger" *ngIf="pacientesRechazosCount > 0">{{ pacientesRechazosCount
                         }}</span>
                 </button>
             </div>
@@ -97,6 +105,7 @@
                             <option value="pendiente">Pendientes</option>
                             <option value="completada">Completadas</option>
                             <option value="incidencia">Incidencias</option>
+                            <option value="rechazo">Rechazados</option>
                         </select>
                     </div>
 

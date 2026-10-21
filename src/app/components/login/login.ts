@@ -1,6 +1,6 @@
 // src/app/components/login/login.ts
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,7 +18,7 @@ import { environment } from '../../../environments/environment';
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   // ============================================
   // PROPIEDADES DEL FORMULARIO
   // ============================================
@@ -27,9 +27,14 @@ export class LoginComponent {
   errorMsg: string = '';
   loading: boolean = false;
 
-  // NUEVAS PROPIEDADES (AGREGADAS)
   showPassword: boolean = false;
   rememberMe: boolean = false;
+
+  // PWA Instalación
+  deferredPrompt: any = null;
+  canInstallPwa: boolean = false;
+  isIos: boolean = false;
+  isStandalone: boolean = false;
 
   private apiUrl = environment.apiUrl;
 
@@ -41,6 +46,82 @@ export class LoginComponent {
     console.log('🌍 [Login] API URL:', this.apiUrl);
   }
 
+  ngOnInit(): void {
+    // Detectar si la app ya está instalada / corriendo como PWA standalone
+    if (typeof window !== 'undefined') {
+      this.isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
+
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      this.isIos = /iphone|ipad|ipod/.test(userAgent) && !(window as any).MSStream;
+
+      // Capturar evento PWA en Android / Chrome / Edge
+      window.addEventListener('beforeinstallprompt', (e: Event) => {
+        e.preventDefault();
+        this.deferredPrompt = e;
+        this.canInstallPwa = true;
+        console.log('📲 [PWA] Evento beforeinstallprompt capturado, botón de instalación listo.');
+      });
+
+      window.addEventListener('appinstalled', () => {
+        this.canInstallPwa = false;
+        this.deferredPrompt = null;
+        this.isStandalone = true;
+        console.log('🎉 [PWA] Aplicación Cuidalia instalada con éxito en el dispositivo.');
+      });
+    }
+  }
+
+  // ============================================
+  // INSTALACIÓN DIRECTA DE LA PWA
+  // ============================================
+  instalarPwa(): void {
+    if (this.deferredPrompt) {
+      this.deferredPrompt.prompt();
+      this.deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          console.log('✅ El usuario aceptó instalar Cuidalia');
+          this.canInstallPwa = false;
+        }
+        this.deferredPrompt = null;
+      });
+    } else if (this.isIos) {
+      Swal.fire({
+        title: '📲 Cómo instalar en iPhone / iPad',
+        html: `
+          <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #333;">
+            <p>Para tener <b>Cuidalia</b> como app en tu pantalla de inicio:</p>
+            <ol style="padding-left: 20px; margin-top: 10px;">
+              <li>Toca el botón <b>Compartir</b> <i class="fas fa-arrow-up-from-bracket" style="color: #007aff;"></i> (abajo en Safari).</li>
+              <li>Desliza hacia abajo y presiona <b>"Agregar a pantalla de inicio"</b> ➕.</li>
+              <li>Presiona <b>"Agregar"</b> arriba a la derecha.</li>
+            </ol>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">¡Listo! Se creará el ícono en tu pantalla y funcionará sin internet en campo.</p>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#7A192B'
+      });
+    } else {
+      Swal.fire({
+        title: '📲 Instalar Cuidalia en tu Teléfono',
+        html: `
+          <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #333;">
+            <p>Para instalar la app directamente desde Chrome:</p>
+            <ol style="padding-left: 20px; margin-top: 10px;">
+              <li>Toca el menú del navegador (los <b>3 puntos</b> <i class="fas fa-ellipsis-vertical"></i> arriba a la derecha).</li>
+              <li>Selecciona <b>"Instalar aplicación"</b> o <b>"Agregar a la pantalla principal"</b>.</li>
+              <li>Presiona <b>"Instalar"</b>.</li>
+            </ol>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">Se descargará el ícono en tu pantalla de inicio y podrás usarla sin conexión.</p>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#7A192B'
+      });
+    }
+  }
+
   // ============================================
   // MÉTODO PRINCIPAL DE LOGIN
   // ============================================
@@ -48,7 +129,6 @@ export class LoginComponent {
     const usuarioLimpio = (this.username || '').trim();
     const passwordLimpio = (this.password || '').trim();
 
-    // Validar que los campos no estén vacíos
     if (!usuarioLimpio || !passwordLimpio) {
       this.errorMsg = 'Ingrese su usuario / CURP y contraseña';
       return;
@@ -70,27 +150,23 @@ export class LoginComponent {
           console.log('✅ Login exitoso:', userData);
           console.log('📌 Recordar sesión:', this.rememberMe);
 
-          // Guardar en localStorage si "Recordar sesión" está activado
           if (this.rememberMe) {
             localStorage.setItem('rememberMe', 'true');
           } else {
             localStorage.removeItem('rememberMe');
           }
 
-          // Dispatch de acción para NgRx
           this.store.dispatch(AppActions.loginSuccess({
             user: { username: userData.username },
             role: userData.role,
             userData: userData
           }));
 
-          // Guardar datos en localStorage
           localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('rol', userData.role);
           localStorage.setItem('userData', JSON.stringify(userData));
 
-          // Redirigir según el rol
-          if (userData.role === 'distrital') {
+          if (userData.role === 'distrital' || userData.role === 'enlace') {
             this.router.navigate(['/dashboard-distrital']);
           } else {
             this.router.navigate(['/dashboard']);
@@ -101,14 +177,53 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading = false;
-        console.error('❌ Error de conexión:', err);
-        this.errorMsg = 'Error de conexión con el servidor. ¿El backend está corriendo?';
+        console.warn('⚠️ Error de conexión con el servidor, verificando sesión local offline...', err);
+
+        // ⭐ MODO OFFLINE: Si no hay internet, verificar si el usuario ya inició sesión previamente
+        try {
+          const userStr = localStorage.getItem('userData');
+          if (userStr) {
+            const cachedUser = JSON.parse(userStr);
+            const matchCurp = (cachedUser.curp || '').toUpperCase() === usuarioLimpio.toUpperCase();
+            const matchUser = (cachedUser.username || '').toUpperCase() === usuarioLimpio.toUpperCase();
+
+            if (matchCurp || matchUser) {
+              console.log('📶 [Login Offline] Autenticación local offline exitosa:', cachedUser);
+              this.store.dispatch(AppActions.loginSuccess({
+                user: { username: cachedUser.username },
+                role: cachedUser.role,
+                userData: cachedUser
+              }));
+              localStorage.setItem('isAuthenticated', 'true');
+
+              Swal.fire({
+                icon: 'info',
+                title: 'Modo sin conexión activado',
+                text: 'Ingresaste a Cuidalia con tus datos guardados en este dispositivo.',
+                timer: 2600,
+                showConfirmButton: false,
+                confirmButtonColor: '#7A192B'
+              });
+
+              if (cachedUser.role === 'distrital' || cachedUser.role === 'enlace') {
+                this.router.navigate(['/dashboard-distrital']);
+              } else {
+                this.router.navigate(['/dashboard']);
+              }
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('Error en validación offline:', e);
+        }
+
+        this.errorMsg = 'Sin conexión con el servidor. Revisa tu conexión a internet o verifica que tus credenciales sean correctas.';
       }
     });
   }
 
   // ============================================
-  // MOSTRAR/OCULTAR CONTRASEÑA (NUEVO MÉTODO)
+  // MOSTRAR/OCULTAR CONTRASEÑA
   // ============================================
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
@@ -127,12 +242,7 @@ export class LoginComponent {
       confirmButtonColor: '#8a2038',
       confirmButtonText: 'Entendido',
       background: '#ffffff',
-      iconColor: '#8a2038',
-      customClass: {
-        title: 'swal-title-custom',
-        confirmButton: 'swal-button-custom',
-        popup: 'swal-popup-custom'
-      }
+      iconColor: '#8a2038'
     });
   }
 
@@ -160,31 +270,7 @@ export class LoginComponent {
           </p>
           <p style="margin-bottom: 10px;">
             En cumplimiento con la <strong>normativa de protección de datos personales</strong>,
-            te informamos que:
-          </p>
-          <ul style="margin: 8px 0 12px 0; padding-left: 20px; list-style: disc;">
-            <li style="margin-bottom: 6px;">
-              Los datos personales recabados son utilizados <strong>exclusivamente</strong>
-              para fines de atención médica, prevención y seguimiento de salud.
-            </li>
-            <li style="margin-bottom: 6px;">
-              Toda la información es <strong>estrictamente confidencial</strong> y está protegida
-              con los más altos estándares de seguridad y privacidad clínica.
-            </li>
-            <li style="margin-bottom: 6px;">
-              Los profesionales de la salud y pacientes tienen derecho a <strong>acceder, rectificar y proteger</strong>
-              sus datos en todo momento.
-            </li>
-            <li style="margin-bottom: 6px;">
-              La información solo es accesible por personal clínico y de coordinación autorizado.
-            </li>
-          </ul>
-          <p style="margin-bottom: 8px;">
-            <strong>Coordinación y Soporte:</strong>
-            <span style="color: #8a2038; font-weight: 600;">Equipo Cuidalia</span>
-          </p>
-          <p style="font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 8px; text-align: center;">
-            Última actualización: Junio 2026
+            te informamos que los datos recabados son utilizados exclusivamente para fines de atención médica.
           </p>
         </div>
       `,
@@ -193,13 +279,7 @@ export class LoginComponent {
       confirmButtonText: 'Aceptar y Entendido',
       background: '#ffffff',
       iconColor: '#8a2038',
-      showCloseButton: true,
-      customClass: {
-        title: 'swal-title-custom',
-        confirmButton: 'swal-button-custom',
-        popup: 'swal-popup-custom',
-        htmlContainer: 'swal-html-custom'
-      }
+      showCloseButton: true
     });
   }
 

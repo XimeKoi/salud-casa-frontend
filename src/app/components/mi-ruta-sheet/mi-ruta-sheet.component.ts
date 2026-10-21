@@ -411,7 +411,12 @@ export class MiRutaSheetComponent implements OnInit, OnDestroy {
           this.notificarSugerenciaExitosa(cantidad);
         },
         error: () => {
-          alert('No se pudieron consultar los pacientes.');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de consulta',
+            text: 'No se pudieron consultar los pacientes. Intenta de nuevo.',
+            confirmButtonColor: '#7E101F'
+          });
         }
       });
     }

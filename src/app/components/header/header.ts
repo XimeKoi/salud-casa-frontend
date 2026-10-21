@@ -17,6 +17,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
   cantidadNotificaciones = 3;
   esRutaMapa = true;
 
+  // Estado de conexión y PWA
+  isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+  isStandalone = false;
+  deferredPrompt: any = null;
+  canInstall = false;
+  isIos = false;
+  private onlineListener?: () => void;
+  private offlineListener?: () => void;
+
   private menuSub?: Subscription;
   private routerSub?: Subscription;
 
@@ -38,11 +47,58 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.sidebarOpen = open;
       this.cdr.markForCheck();
     });
+
+    if (typeof window !== 'undefined') {
+      this.isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
+
+      const ua = window.navigator.userAgent.toLowerCase();
+      this.isIos = /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
+
+      this.onlineListener = () => {
+        this.isOnline = true;
+        this.cdr.markForCheck();
+      };
+      this.offlineListener = () => {
+        this.isOnline = false;
+        this.cdr.markForCheck();
+      };
+
+      window.addEventListener('online', this.onlineListener);
+      window.addEventListener('offline', this.offlineListener);
+
+      window.addEventListener('beforeinstallprompt', (e: Event) => {
+        e.preventDefault();
+        this.deferredPrompt = e;
+        this.canInstall = true;
+        this.cdr.markForCheck();
+      });
+    }
+  }
+
+  instalarApp() {
+    if (this.deferredPrompt) {
+      this.deferredPrompt.prompt();
+      this.deferredPrompt.userChoice.then((choice: any) => {
+        if (choice && choice.outcome === 'accepted') {
+          this.canInstall = false;
+        }
+        this.deferredPrompt = null;
+      });
+    } else if (this.isIos) {
+      alert('Para instalar en iPhone/iPad: toca el botón Compartir de Safari y luego "Agregar a pantalla de inicio"');
+    } else {
+      alert('Para instalar en tu teléfono: abre el menú del navegador (3 puntos) y selecciona "Instalar aplicación" o "Agregar a pantalla principal"');
+    }
   }
 
   ngOnDestroy() {
     this.menuSub?.unsubscribe();
     this.routerSub?.unsubscribe();
+    if (typeof window !== 'undefined') {
+      if (this.onlineListener) window.removeEventListener('online', this.onlineListener);
+      if (this.offlineListener) window.removeEventListener('offline', this.offlineListener);
+    }
   }
 
   private calcularEsRutaMapa(): boolean {

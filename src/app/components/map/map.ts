@@ -106,10 +106,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     'COMPLETADO': '#2e7d32',
     'PENDIENTE': '#FFC107',
     'SIN VISITA': '#FFC107',
-    'RECHAZO': '#D32F2F',
-    'RECHAZADO': '#D32F2F',
+    'RECHAZO': '#DC2626',
+    'RECHAZADO': '#DC2626',
     'INCIDENCIA': '#E65100',
     'CAMBIO DE DOMICILIO': '#8E24AA',
+    'CAMBIO_DOMICILIO': '#8E24AA',
     'FINADO': '#6c757d'
   };
 
@@ -151,9 +152,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       const userStr = localStorage.getItem('userData');
       if (userStr) {
         const userObj = JSON.parse(userStr);
-        if (userObj.id) {
-          this.idEnfermera = userObj.id;
-        }
+        this.idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
       }
     } catch (e) { }
   }
@@ -161,7 +160,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   cargarPacientesDirectamente(forceRefresh: boolean = false) {
     if (this.loadingPacientes) return;
 
-    console.log('🔄 [MapComponent] Cargando pacientes...');
+    try {
+      const userStr = localStorage.getItem('userData');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        this.idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
+      }
+    } catch (e) { }
+
+    console.log('🔄 [MapComponent] Cargando pacientes para enfermera:', this.idEnfermera);
     this.loadingPacientes = true;
 
     if (forceRefresh) {
@@ -179,6 +186,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (data: any) => {
         console.log('✅ Pacientes recibidos:', data?.length || 0);
         this.pacientesMapService.setPacientesCache(data);
+        if (data && Array.isArray(data) && data.length > 0) {
+          try {
+            localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(data));
+          } catch (e) {}
+        }
 
         const pacientesConCoords = data.filter((p: any) =>
           p.lat && p.lng && p.lat !== 0 && p.lng !== 0
@@ -228,9 +240,54 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('❌ Error cargando pacientes:', error);
+        console.warn('⚠️ Error de conexión cargando pacientes en mapa, buscando en caché local...', error);
+        let dataOffline = [];
+        try {
+          const mapCache = localStorage.getItem('cuidalia_map_pacientes_' + this.idEnfermera);
+          if (mapCache) {
+            dataOffline = JSON.parse(mapCache);
+          } else {
+            const rawCache = localStorage.getItem('cuidalia_pacientes_raw_' + this.idEnfermera);
+            if (rawCache) dataOffline = JSON.parse(rawCache);
+          }
+        } catch (e) {}
+
+        if (dataOffline && dataOffline.length > 0) {
+          console.log(`📶 [Offline Mapa] Mostrando ${dataOffline.length} pacientes guardados localmente`);
+          this.pacientesMapService.setPacientesCache(dataOffline);
+          const pacientesConCoords = dataOffline.filter((p: any) =>
+            p.lat && p.lng && p.lat !== 0 && p.lng !== 0
+          );
+          this.pacientes = pacientesConCoords;
+          this.pacientesOriginal = [...pacientesConCoords];
+
+          const zonasSet = new Set<string>();
+          dataOffline.forEach((p: any) => {
+            let zona = this.determinarZona(p);
+            if (zona) zonasSet.add(zona);
+          });
+          if (zonasSet.size === 0) zonasSet.add('TODAS LAS ZONAS');
+          this.manzanasDisponibles = Array.from(zonasSet).sort();
+
+          this.coloresManzanas = {};
+          this.manzanasDisponibles.forEach((zona, index) => {
+            const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
+            this.coloresManzanas[zona] = color;
+          });
+
+          this.loadingPacientes = false;
+          this.datosCargados = true;
+          if (this.mapInicializado) {
+            this.limpiarMarcadoresPacientes();
+            this.agregarMarcadoresPacientes();
+          }
+          this.mostrarToast('Modo sin conexión', `Mostrando ${pacientesConCoords.length} pacientes guardados`, 'info');
+          this.cdr.detectChanges();
+          return;
+        }
+
         this.loadingPacientes = false;
-        this.mostrarToast('Error', 'No se pudieron cargar los pacientes', 'error');
+        this.mostrarToast('Sin conexión', 'No hay datos guardados para mostrar sin internet', 'error');
         this.cdr.detectChanges();
       }
     });
@@ -1359,7 +1416,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return 'Zona Tabachines';
     }
 
-    // 10. ZONA COBERTURA METROPOLITANA
+    // 10. ZONA SAN JUAN DE DIOS
+    if (texto.includes('SAN JUAN DE DIOS') || texto.includes('JUAN DE DIOS')) {
+      return 'Zona San Juan de Dios';
+    }
+
+    // 11. ZONA CENTRO
+    if (texto.includes('ZONA CENTRO') || texto.includes('CENTRO') || texto.includes('BARRIO DE SANTIAGO') || texto.includes('COECILLO')) {
+      return 'Zona Centro';
+    }
+
+    // 12. ZONA COBERTURA METROPOLITANA
     return 'Zona Cobertura Metropolitana';
   }
 
@@ -1424,14 +1491,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const isFinado = estatusLower === 'finado';
-    const isVisitado = estatusLower === 'visitado' || estatusLower === 'completada';
-    const isRechazo = estatusLower === 'rechazo' || estatusLower === 'incidencia';
+    const isVisitado = estatusLower === 'visitado' || estatusLower === 'completada' || estatusLower === 'completado';
+    const isRechazo = estatusLower === 'rechazo' || estatusLower === 'rechazado';
+    const isIncidencia = estatusLower === 'incidencia';
+    const isCambioDom = estatusLower === 'cambio de domicilio' || estatusLower === 'cambio_domicilio';
 
     let st = { bg: '#FEF3C7', color: '#92400E', dot: '#F59E0B', icon: 'fa-clock', text: paciente.estatus || 'Pendiente' };
     if (isVisitado) {
       st = { bg: '#DCFCE7', color: '#166534', dot: '#22C55E', icon: 'fa-check-circle', text: 'Completado' };
     } else if (isRechazo) {
-      st = { bg: '#FEE2E2', color: '#991B1B', dot: '#EF4444', icon: 'fa-triangle-exclamation', text: 'Incidencia' };
+      st = { bg: '#FEE2E2', color: '#991B1B', dot: '#EF4444', icon: 'fa-ban', text: 'Rechazado' };
+    } else if (isIncidencia) {
+      st = { bg: '#FFF7ED', color: '#C2410C', dot: '#F97316', icon: 'fa-triangle-exclamation', text: 'Incidencia' };
+    } else if (isCambioDom) {
+      st = { bg: '#FAF5FF', color: '#6B21A8', dot: '#A855F7', icon: 'fa-truck-moving', text: 'Cambio Domicilio' };
     } else if (isFinado) {
       st = { bg: '#F1F5F9', color: '#475569', dot: '#64748B', icon: 'fa-skull', text: 'Finado' };
     }
@@ -1883,10 +1956,32 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           bgGradient = 'linear-gradient(135deg, #10B981, #059669)';
           glowColor = 'rgba(16, 185, 129, 0.8)';
           iconFinal = 'fa-check-circle';
-        } else if (estatusLower === 'rechazo' || estatusLower === 'incidencia') {
-          bgGradient = 'linear-gradient(135deg, #EF4444, #B91C1C)';
-          glowColor = 'rgba(239, 68, 68, 0.8)';
-          iconFinal = 'fa-exclamation-triangle';
+          badgeText = badgeText || 'VISITADO';
+          badgeBg = badgeBg || '#059669';
+        } else if (estatusLower === 'rechazo' || estatusLower === 'rechazado') {
+          bgGradient = 'linear-gradient(135deg, #EF4444, #991B1B)';
+          glowColor = 'rgba(239, 68, 68, 0.85)';
+          iconFinal = 'fa-ban';
+          badgeText = badgeText || 'RECHAZADO';
+          badgeBg = badgeBg || '#DC2626';
+        } else if (estatusLower === 'incidencia') {
+          bgGradient = 'linear-gradient(135deg, #F97316, #C2410C)';
+          glowColor = 'rgba(249, 115, 22, 0.85)';
+          iconFinal = 'fa-triangle-exclamation';
+          badgeText = badgeText || 'INCIDENCIA';
+          badgeBg = badgeBg || '#EA580C';
+        } else if (estatusLower === 'cambio de domicilio' || estatusLower === 'cambio_domicilio') {
+          bgGradient = 'linear-gradient(135deg, #A855F7, #7E22CE)';
+          glowColor = 'rgba(168, 85, 247, 0.85)';
+          iconFinal = 'fa-truck-moving';
+          badgeText = badgeText || 'CAMBIO DOM';
+          badgeBg = badgeBg || '#7E22CE';
+        } else if (estatusLower === 'finado') {
+          bgGradient = 'linear-gradient(135deg, #64748B, #334155)';
+          glowColor = 'rgba(100, 116, 139, 0.85)';
+          iconFinal = 'fa-skull';
+          badgeText = badgeText || 'FINADO';
+          badgeBg = badgeBg || '#334155';
         } else {
           bgGradient = 'linear-gradient(135deg, #F59E0B, #D97706)';
           glowColor = 'rgba(245, 158, 11, 0.8)';
@@ -1961,8 +2056,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           icon = 'fa-clock';
         } else if (estatusLower === 'visitado' || estatusLower === 'completada' || estatusLower === 'completado') {
           icon = 'fa-check-circle';
-        } else if (estatusLower === 'rechazo' || estatusLower === 'incidencia') {
-          icon = 'fa-exclamation-triangle';
+        } else if (estatusLower === 'rechazo' || estatusLower === 'rechazado') {
+          icon = 'fa-ban';
+        } else if (estatusLower === 'incidencia') {
+          icon = 'fa-triangle-exclamation';
+        } else if (estatusLower === 'cambio de domicilio' || estatusLower === 'cambio_domicilio') {
+          icon = 'fa-truck-moving';
         } else if (estatusLower === 'finado') {
           icon = 'fa-skull';
         }
