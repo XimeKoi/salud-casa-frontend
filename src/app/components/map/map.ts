@@ -2583,36 +2583,64 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const backupOriginal = [...this.pacientesOriginal];
     const queryUpper = query.toUpperCase();
 
-    // Detectar si la búsqueda incluye número de calle (ej. "CHOPIN 417" -> número 417, calle "CHOPIN")
+    // Extractor robusto de dirección
+    const extractPatientDir = (dir: string) => {
+      const full = (dir || '').toUpperCase().trim();
+      const mainPart = full.split('|')[0].trim();
+      const numM = mainPart.match(/#\s*([0-9]+)/);
+      const houseNum = numM ? numM[1] : '';
+      const beforeHash = mainPart.split(/#|,/)[0].trim();
+      const street = beforeHash
+        .replace(/^(?:CALLE|C\.|AVENIDA|AV\.|BLVD\.|BLVD|ANDADOR|AND\.|CTO\.|CIRCUITO|PROL\.|PROLONGACION)\s+/i, '')
+        .trim();
+      return { street, houseNum, full };
+    };
+
+    // Detectar número y tokens de calle en la búsqueda
     const matchNumber = query.match(/\b\d+\b/);
     const hasNumber = !!matchNumber;
     const searchNum = matchNumber ? matchNumber[0] : '';
-    const searchStreet = query.replace(/\b\d+\b/g, '').replace(/[#,]/g, '').trim().toUpperCase();
+    const cleanStreetTokens = queryUpper
+      .replace(/\b\d+\b/g, '')
+      .replace(/[#,,.]/g, ' ')
+      .replace(/\b(?:CALLE|C|AVENIDA|AV|BLVD|BOULEVARD|ANDADOR|AND|PRIVADA|PRIV|CTO|CIRCUITO|PROL|COLONIA|COL|FRACCIONAMIENTO|FRACC|BARRIO|RESIDENCIAL|LEON|GUANAJUATO|GTO|MEXICO)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .filter((t: string) => t.length >= 2);
 
-    // 1. Verificar si existe un paciente con coincidencia EXACTA (misma calle Y mismo número exterior, o nombre completo)
+    const searchStreet = cleanStreetTokens.join(' ');
+
+    // 1. Búsqueda local en pacientesOriginal
     let exactPatients: any[] = [];
-    if (hasNumber && searchStreet.length >= 2) {
+    if (hasNumber) {
       exactPatients = backupOriginal.filter((p: any) => {
-        const dir = (p.direccion || '').toUpperCase();
-        const num = (p.numero || '').toString().trim();
-        const calle = (p.calle || '').toUpperCase();
-        const tieneCalle = (calle && calle.includes(searchStreet)) || dir.includes(searchStreet);
-        const tieneNumero = (num && num === searchNum) || dir.includes(` ${searchNum}`) || dir.includes(`#${searchNum}`);
-        return tieneCalle && tieneNumero;
+        const { street, houseNum, full } = extractPatientDir(p.direccion);
+        const matchNum = (houseNum === searchNum) || full.includes(`#${searchNum}`) || full.includes(` ${searchNum}`) || (p.numero && p.numero.toString() === searchNum);
+        if (!matchNum) return false;
+        if (cleanStreetTokens.length === 0) return true;
+        return cleanStreetTokens.every((tok: string) => street.includes(tok) || full.includes(tok)) || street.includes(searchStreet);
       });
     } else {
-      // Búsqueda por nombre de persona, CURP o teléfono
+      // Búsqueda por nombre de persona, CURP, teléfono o calle
       exactPatients = backupOriginal.filter((p: any) => {
         const nombreCompleto = `${p.nombre || ''} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`.toUpperCase();
         const curp = (p.curp || '').toUpperCase();
         const tel = (p.telefonoCelular || p.telefonoFijo || '');
-        return nombreCompleto.includes(queryUpper) || (curp && curp.includes(queryUpper)) || (tel && tel.includes(queryUpper));
+        const { street, full } = extractPatientDir(p.direccion);
+        if (nombreCompleto.includes(queryUpper) || (curp && curp.includes(queryUpper)) || (tel && tel.includes(queryUpper))) {
+          return true;
+        }
+        if (cleanStreetTokens.length > 0 && cleanStreetTokens.every((tok: string) => street.includes(tok) || full.includes(tok))) {
+          return true;
+        }
+        return false;
       });
     }
 
-    // Si encontramos al paciente EXACTO con ese número y calle, o por su nombre:
+    // Si encontramos al paciente EXACTO localmente:
     if (exactPatients.length > 0) {
-      console.log(`✅ Paciente exacto encontrado: ${exactPatients.length}`);
+      console.log(`✅ Paciente exacto encontrado localmente: ${exactPatients.length}`);
       this.mostrarPacientesEncontrados(exactPatients, backupOriginal, query);
       this.busquedaEnProgreso = false;
       this.isSearching = false;
@@ -2620,10 +2648,29 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // 2. Si no hay paciente exacto con ese número (ej. Chopin 417 cuando solo hay Chopin 413),
-    // es una NUEVA DIRECCIÓN a geolocalizar en el mapa:
-    console.log(`🌍 Buscando ubicación geográfica para "${query}"...`);
-    this.buscarUbicacionPorDireccion(query, searchStreet, searchNum);
+    // 2. Si no se encontró en la lista local, consultar al backend por si pertenece a otra enfermera o zona
+    console.log(`🔍 Buscando en backend para "${query}"...`);
+    this.http.get<any[]>(`${this.apiUrl}/pacientes/buscar?direccion=${encodeURIComponent(query)}`).subscribe({
+      next: (backendPatients: any[]) => {
+        if (backendPatients && backendPatients.length > 0) {
+          console.log(`✅ Pacientes encontrados en backend: ${backendPatients.length}`);
+          const validCoords = backendPatients.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
+          if (validCoords.length > 0) {
+            this.mostrarPacientesEncontrados(validCoords, backupOriginal, query);
+            this.busquedaEnProgreso = false;
+            this.isSearching = false;
+            this.cdr.detectChanges();
+            return;
+          }
+        }
+        // 3. Fallback a Nominatim si no existe en la base de datos
+        console.log(`🌍 Buscando ubicación geográfica en OSM para "${query}"...`);
+        this.buscarUbicacionPorDireccion(query, searchStreet, searchNum);
+      },
+      error: () => {
+        this.buscarUbicacionPorDireccion(query, searchStreet, searchNum);
+      }
+    });
   }
 
   private mostrarPacientesEncontrados(pacientes: any[], backupOriginal: any[], query: string) {
