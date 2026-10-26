@@ -101,6 +101,17 @@ export class CalendarioPageComponent implements OnInit {
     plantillaMensaje: string = 'Estimado(a) {nombre}, le recordamos su visita domiciliaria de Salud Casa por Casa agendada para el día {fecha} a las {hora}. En caso de requerir reprogramar, favor de responder este mensaje.';
     envioMasivoEnProgreso: boolean = false;
 
+    // ⭐ ASIGNACIÓN DE PACIENTES A DÍAS/SEMANAS SELECCIONADAS
+    mostrarModalAsignarPacientes: boolean = false;
+    busquedaPacienteAsignar: string = '';
+    pacientesParaAsignarSeleccionados: any[] = [];
+    modoDistribucion: 'repartir' | 'mismo_dia' = 'repartir';
+    diaEspecificoAsignar: string = '';
+    horaBaseAsignar: string = '09:00';
+    intervaloMinutosAsignar: number = 45;
+    prioridadAsignar: 'alta' | 'media' | 'baja' = 'media';
+    guardandoAsignacion: boolean = false;
+
     constructor(
         private http: HttpClient,
         private cdr: ChangeDetectorRef,
@@ -1399,6 +1410,191 @@ export class CalendarioPageComponent implements OnInit {
             title: '¡Mensajes Enviados!',
             text: `Se enviaron recordatorios de visita a ${enviados} de ${total} paciente(s).`,
             confirmButtonColor: '#7e101f'
+        });
+    }
+
+
+
+    // ⭐ ============================================
+    // ⭐ ASIGNAR PACIENTES A DÍAS/SEMANA SELECCIONADA
+    // ⭐ ============================================
+
+    abrirModalAsignarPacientes() {
+        if (this.totalDiasSeleccionados === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona días primero',
+                text: 'Selecciona al menos un día o una semana en el calendario para poder asignar pacientes.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+        const lista = this.diasSeleccionadosLista;
+        this.diaEspecificoAsignar = lista.length > 0 ? lista[0].fechaStr : '';
+        this.busquedaPacienteAsignar = '';
+        this.pacientesParaAsignarSeleccionados = [];
+        this.guardandoAsignacion = false;
+        this.mostrarModalAsignarPacientes = true;
+        this.cdr.detectChanges();
+    }
+
+    cerrarModalAsignarPacientes() {
+        this.mostrarModalAsignarPacientes = false;
+    }
+
+    get diasSeleccionadosLista(): { fechaStr: string; diaNum: number; nombreDia: string; color: string }[] {
+        const claves = Object.keys(this.diasSeleccionadosMap).sort();
+        return claves.map(clave => {
+            const item = this.diasSeleccionadosMap[clave];
+            const d = item.fecha;
+            const nombre = this.nombreDias[d.getDay()];
+            return {
+                fechaStr: clave,
+                diaNum: item.diaNum,
+                nombreDia: nombre,
+                color: item.color
+            };
+        });
+    }
+
+    get pacientesFiltradosParaAsignar(): any[] {
+        const q = (this.busquedaPacienteAsignar || '').toLowerCase().trim();
+
+        return this.todosLosPacientes.filter(p => {
+            if (p.finado) return false;
+            if (this.pacientesParaAsignarSeleccionados.some(sel => sel.id === p.id)) return false;
+
+            if (!q) return true;
+            const nom = (p.nombreCompleto || p.nombre || '').toLowerCase();
+            const curp = (p.curp || '').toLowerCase();
+            const col = (p.colonia || '').toLowerCase();
+            const dir = (p.direccion || '').toLowerCase();
+            return nom.includes(q) || curp.includes(q) || col.includes(q) || dir.includes(q);
+        }).slice(0, 15);
+    }
+
+    agregarPacienteALaTanda(p: any) {
+        if (!this.pacientesParaAsignarSeleccionados.some(x => x.id === p.id)) {
+            this.pacientesParaAsignarSeleccionados.push(p);
+            this.cdr.detectChanges();
+        }
+    }
+
+    removerPacienteDeLaTanda(pId: number) {
+        this.pacientesParaAsignarSeleccionados = this.pacientesParaAsignarSeleccionados.filter(x => x.id !== pId);
+        this.cdr.detectChanges();
+    }
+
+    private sumarMinutosAHora(horaStr: string, minutosSumar: number): string {
+        const partes = (horaStr || '09:00').split(':').map(Number);
+        const h = partes[0] || 9;
+        const m = partes[1] || 0;
+        const totalMins = h * 60 + m + minutosSumar;
+        const horas = Math.floor(totalMins / 60) % 24;
+        const minutos = totalMins % 60;
+        return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+    }
+
+    get previsualizacionAsignacion(): { paciente: any; fechaStr: string; hora: string; diaNombre: string; color: string }[] {
+        const pacientes = this.pacientesParaAsignarSeleccionados;
+        const dias = this.diasSeleccionadosLista;
+        if (pacientes.length === 0 || dias.length === 0) return [];
+
+        const res: any[] = [];
+
+        if (this.modoDistribucion === 'repartir') {
+            const conteoPorDia: { [fechaStr: string]: number } = {};
+            dias.forEach(d => conteoPorDia[d.fechaStr] = 0);
+
+            pacientes.forEach((paciente, idx) => {
+                const diaTarget = dias[idx % dias.length];
+                const indexEnDia = conteoPorDia[diaTarget.fechaStr];
+                conteoPorDia[diaTarget.fechaStr]++;
+
+                const hora = this.sumarMinutosAHora(this.horaBaseAsignar || '09:00', indexEnDia * this.intervaloMinutosAsignar);
+                res.push({
+                    paciente,
+                    fechaStr: diaTarget.fechaStr,
+                    hora,
+                    diaNombre: diaTarget.nombreDia,
+                    color: diaTarget.color
+                });
+            });
+        } else {
+            const diaTarget = dias.find(d => d.fechaStr === this.diaEspecificoAsignar) || dias[0];
+            pacientes.forEach((paciente, idx) => {
+                const hora = this.sumarMinutosAHora(this.horaBaseAsignar || '09:00', idx * this.intervaloMinutosAsignar);
+                res.push({
+                    paciente,
+                    fechaStr: diaTarget.fechaStr,
+                    hora,
+                    diaNombre: diaTarget.nombreDia,
+                    color: diaTarget.color
+                });
+            });
+        }
+
+        return res;
+    }
+
+    confirmarAsignacionPacientes() {
+        const asignaciones = this.previsualizacionAsignacion;
+        if (asignaciones.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin pacientes seleccionados',
+                text: 'Agrega al menos un paciente para programar en los días seleccionados.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+
+        this.guardandoAsignacion = true;
+        const { usuarioId } = this.obtenerUsuarioActual();
+
+        const nuevasVisitas: any[] = asignaciones.map((asig, index) => {
+            const p = asig.paciente;
+            return {
+                id: Date.now() + index,
+                pacienteId: p.id,
+                pacienteNombre: p.nombreCompleto || p.nombre,
+                pacienteCurp: p.curp || '',
+                pacienteDireccion: p.direccion || '',
+                pacienteTelefono: p.telefono || '',
+                colonia: p.colonia || 'Sin colonia',
+                fecha: asig.fechaStr,
+                hora: asig.hora,
+                prioridad: this.prioridadAsignar,
+                notas: 'Programación masiva en lote',
+                estado: 'pendiente',
+                usuarioId: usuarioId
+            };
+        });
+
+        this.visitasProgramadas = [...this.visitasProgramadas, ...nuevasVisitas];
+        this.guardarVisitasEnStorage();
+        this.generarCalendario();
+
+        this.http.post(`${this.apiUrl}/calendario/visitas`, { visitas: nuevasVisitas, usuarioId: usuarioId }).subscribe({
+            next: () => {
+                console.log('✅ Visitas en lote guardadas en el backend');
+            },
+            error: (err) => {
+                console.warn('ℹ️ Guardado localmente, backend no disponible o error:', err);
+            }
+        });
+
+        this.guardandoAsignacion = false;
+        this.cerrarModalAsignarPacientes();
+        this.cdr.detectChanges();
+
+        Swal.fire({
+            icon: 'success',
+            title: '¡Visitas Programadas!',
+            text: `Se agendaron con éxito ${nuevasVisitas.length} visita(s) en los días seleccionados. Ahora puedes enviarles mensajes con el botón "Enviar Mensajes".`,
+            confirmButtonColor: '#7e101f',
+            timer: 3500,
+            timerProgressBar: true
         });
     }
 

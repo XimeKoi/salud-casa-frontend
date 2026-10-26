@@ -836,7 +836,7 @@
     <!-- ============================================ -->
     <!-- ⭐ MODAL: EDITAR PACIENTE (DIRECCIÓN, CONTACTO, ESTADO) -->
     <!-- ============================================ -->
-    <div class="modal-backdrop-glass" *ngIf="mostrarModalEditar" (click)="cerrarModalEditar()">
+    <div class="modal-backdrop-glass" [class.active]="mostrarModalEditar" *ngIf="mostrarModalEditar" (click)="cerrarModalEditar()">
         <div class="modal-dialog-modern modal-dialog-editar" (click)="$event.stopPropagation()">
             <!-- Header -->
             <div class="dialog-header header-brand">
