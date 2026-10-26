@@ -543,9 +543,62 @@
             <span class="msg-hint">Redacta el mensaje una sola vez; este mismo texto se enviará a cada paciente agendado.</span>
           </div>
         </div>
-        <textarea class="general-msg-textarea" [(ngModel)]="plantillaMensaje" rows="4"
+
+        <!-- 🩺 BARRA CONFIGURABLE DE LA ENFERMERA -->
+        <div class="nurse-config-box">
+          <div class="nurse-config-left">
+            <div class="nurse-avatar-icon">
+              <i class="fas fa-user-nurse"></i>
+            </div>
+            <div class="nurse-text-meta">
+              <span class="nurse-label-title">Enfermera(o) a cargo del mensaje:</span>
+              <span class="nurse-label-sub">Se sustituye automáticamente donde coloques la etiqueta <strong>&#123;enfermera&#125;</strong></span>
+            </div>
+          </div>
+          <div class="nurse-input-action-row">
+            <div class="nurse-input-wrapper">
+              <i class="fas fa-signature input-nurse-lead-icon"></i>
+              <input type="text" class="input-nurse-name-field" [(ngModel)]="nombreEnfermera"
+                (ngModelChange)="actualizarNombreEnfermera($event)"
+                placeholder="Ej. Enf. María López / Lic. Juan Pérez" />
+              <button type="button" class="btn-restore-nurse" *ngIf="nombreEnfermera !== nombreEnfermeraOriginal"
+                (click)="restablecerNombreEnfermera()" title="Restablecer nombre detectado en el sistema">
+                <i class="fas fa-rotate-left"></i>
+              </button>
+            </div>
+            <button type="button" class="btn-insert-nurse-chip" (click)="insertarVariable('{enfermera}')"
+              title="Añadir la etiqueta {enfermera} en la redacción del mensaje">
+              <i class="fas fa-plus"></i> Añadir &#123;enfermera&#125;
+            </button>
+          </div>
+        </div>
+
+        <textarea class="general-msg-textarea" [(ngModel)]="plantillaMensaje" rows="3"
           placeholder="Escribe aquí el mensaje general que recibirán todos los pacientes agendados..."></textarea>
-        
+
+        <!-- Etiquetas Dinámicas Rápidas -->
+        <div class="template-chips-ribbon">
+          <span class="chips-title"><i class="fas fa-wand-magic-sparkles"></i> Etiquetas dinámicas:</span>
+          <button type="button" class="chip-action-btn" (click)="insertarVariable('{nombre}')" title="Insertar nombre del paciente">
+            + &#123;nombre&#125;
+          </button>
+          <button type="button" class="chip-action-btn chip-nurse-highlight" (click)="insertarVariable('{enfermera}')" title="Insertar nombre de la enfermera">
+            <i class="fas fa-user-nurse"></i> + &#123;enfermera&#125;
+          </button>
+          <button type="button" class="chip-action-btn" (click)="insertarVariable('{fecha}')" title="Insertar fecha de la visita">
+            + &#123;fecha&#125;
+          </button>
+          <button type="button" class="chip-action-btn" (click)="insertarVariable('{hora}')" title="Insertar hora de la visita">
+            + &#123;hora&#125;
+          </button>
+          <button type="button" class="chip-action-btn" (click)="insertarVariable('{colonia}')" title="Insertar colonia del paciente">
+            + &#123;colonia&#125;
+          </button>
+          <button type="button" class="chip-action-btn chip-sign-btn" (click)="agregarFirmaEnfermera()" title="Añadir firma al final del mensaje">
+            <i class="fas fa-signature"></i> Agregar firma al final
+          </button>
+        </div>
+
         <div class="general-msg-actions">
           <button class="btn-send-all-sms-hero" (click)="enviarTodosLosSMS()" [disabled]="envioMasivoEnProgreso || contarPacientesConCelular() === 0">
             <i class="fas fa-spinner fa-spin" *ngIf="envioMasivoEnProgreso"></i>
@@ -588,9 +641,30 @@
                   <i class="fas fa-location-dot"></i> {{ p.colonia }}
                 </span>
               </div>
-              <!-- Previsualización del mensaje general -->
-              <div class="recipient-msg-quote">
-                <i class="fas fa-quote-left"></i> {{ generarTextoMensaje(p) }}
+              <!-- Previsualización del mensaje con opción de personalizar -->
+              <div class="recipient-msg-preview-wrap">
+                <div class="recipient-msg-quote" *ngIf="!p.editandoMensaje">
+                  <div class="quote-text-content">
+                    <i class="fas fa-quote-left"></i> {{ generarTextoMensaje(p) }}
+                  </div>
+                  <button type="button" class="btn-edit-inline-msg" (click)="personalizarMensajePaciente(p)" title="Modificar texto exclusivo para este paciente">
+                    <i class="fas fa-pencil"></i> Modificar
+                  </button>
+                </div>
+
+                <!-- Editor individual en caso de personalizar -->
+                <div class="recipient-msg-edit-panel" *ngIf="p.editandoMensaje">
+                  <textarea class="textarea-indiv-custom" [(ngModel)]="p.mensajePersonalizado" rows="2"
+                    placeholder="Escribe el mensaje personalizado para este paciente..."></textarea>
+                  <div class="indiv-action-buttons">
+                    <button type="button" class="btn-done-indiv" (click)="p.editandoMensaje = false">
+                      <i class="fas fa-check"></i> Listo
+                    </button>
+                    <button type="button" class="btn-reset-indiv" (click)="restablecerMensajePaciente(p)">
+                      <i class="fas fa-rotate-left"></i> Restablecer al general
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -675,7 +749,12 @@
       <!-- 2. Mensaje Global para todos los pacientes seleccionados -->
       <div class="global-message-banner-pro">
         <div class="banner-title-line">
-          <span class="banner-title"><i class="fas fa-comment-medical text-primary"></i> Mensaje o Motivo Global para Todos los Pacientes:</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 8px;">
+            <span class="banner-title"><i class="fas fa-comment-medical text-primary"></i> Mensaje o Motivo Global para Todos los Pacientes:</span>
+            <span class="banner-nurse-pill" *ngIf="nombreEnfermera" title="Enfermera a cargo">
+              <i class="fas fa-user-nurse"></i> {{ nombreEnfermera }}
+            </span>
+          </div>
           <span class="banner-subtext">Se aplicará automáticamente a todas las visitas de esta tanda (también puedes personalizarlo individualmente abajo):</span>
         </div>
         <div class="banner-input-wrap">

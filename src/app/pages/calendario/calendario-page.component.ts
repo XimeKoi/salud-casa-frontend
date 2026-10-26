@@ -99,7 +99,9 @@ export class CalendarioPageComponent implements OnInit {
     diasSeleccionadosMap: { [fechaKey: string]: { fecha: Date; fechaStr: string; color: string; diaNum: number } } = {};
     mostrarModalMensajeria: boolean = false;
     pacientesParaMensajes: any[] = [];
-    plantillaMensaje: string = 'Estimado(a) paciente, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa. Favor de estar atento a nuestro personal de salud.';
+    nombreEnfermera: string = '';
+    nombreEnfermeraOriginal: string = '';
+    plantillaMensaje: string = 'Estimado(a) {nombre}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa el día {fecha}{hora}. Le atenderá la enfermera(o) {enfermera}. Favor de estar atento(a).';
     envioMasivoEnProgreso: boolean = false;
 
     // ⭐ ASIGNACIÓN DE PACIENTES A DÍAS/SEMANAS SELECCIONADAS
@@ -137,6 +139,7 @@ export class CalendarioPageComponent implements OnInit {
             this.yearsDisponibles.push(i);
         }
 
+        this.inicializarNombreEnfermera();
         this.cargarPacientesParaBusqueda();
         this.cargarVisitasDesdeStorage();
         this.cargarVisitasDesdeBackend();
@@ -1359,6 +1362,7 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     abrirModalMensajeria() {
+        this.inicializarNombreEnfermera();
         this.pacientesParaMensajes = this.calcularPacientesParaMensajes();
         if (this.pacientesUnicosParaMensaje.length === 0) {
             Swal.fire({
@@ -1377,20 +1381,86 @@ export class CalendarioPageComponent implements OnInit {
         this.mostrarModalMensajeria = false;
     }
 
+    inicializarNombreEnfermera() {
+        try {
+            const guardado = localStorage.getItem('nombreEnfermeraPersonalizado');
+            const userStr = localStorage.getItem('userData');
+            let nombreDetectado = '';
+
+            if (userStr) {
+                const u = JSON.parse(userStr);
+                nombreDetectado = u.nombre || u.nombre_completo || '';
+                if (!nombreDetectado && (u.apellidoPaterno || u.apellidoMaterno)) {
+                    nombreDetectado = [u.nombre, u.apellidoPaterno, u.apellidoMaterno].filter(Boolean).join(' ').trim();
+                }
+                if (!nombreDetectado && u.username) {
+                    nombreDetectado = u.username;
+                }
+            }
+
+            this.nombreEnfermeraOriginal = nombreDetectado ? nombreDetectado.trim() : 'Personal de Salud';
+            this.nombreEnfermera = guardado && guardado.trim() ? guardado.trim() : this.nombreEnfermeraOriginal;
+        } catch (e) {
+            this.nombreEnfermera = 'Personal de Salud';
+            this.nombreEnfermeraOriginal = 'Personal de Salud';
+        }
+    }
+
+    actualizarNombreEnfermera(nuevoNombre: string) {
+        this.nombreEnfermera = nuevoNombre;
+        try {
+            localStorage.setItem('nombreEnfermeraPersonalizado', nuevoNombre);
+        } catch (e) { }
+        this.cdr.detectChanges();
+    }
+
+    restablecerNombreEnfermera() {
+        this.nombreEnfermera = this.nombreEnfermeraOriginal;
+        try {
+            localStorage.removeItem('nombreEnfermeraPersonalizado');
+        } catch (e) { }
+        this.cdr.detectChanges();
+    }
+
     insertarVariable(variable: string) {
-        this.plantillaMensaje += ' ' + variable;
+        if (!this.plantillaMensaje) {
+            this.plantillaMensaje = variable;
+        } else {
+            this.plantillaMensaje += ' ' + variable;
+        }
+        this.cdr.detectChanges();
+    }
+
+    agregarFirmaEnfermera() {
+        const firma = '\nLe atenderá su enfermera(o): {enfermera}.';
+        if (!this.plantillaMensaje.includes('{enfermera}')) {
+            this.plantillaMensaje += firma;
+        } else if (!this.plantillaMensaje.includes('Le atenderá')) {
+            this.plantillaMensaje += firma;
+        }
+        this.cdr.detectChanges();
     }
 
     generarTextoMensaje(paciente: any): string {
+        const nombreEnf = (this.nombreEnfermera && this.nombreEnfermera.trim()) 
+            ? this.nombreEnfermera.trim() 
+            : 'Personal de Salud';
+
+        let textoBase = '';
         if (paciente.mensajePersonalizado && paciente.mensajePersonalizado.trim()) {
-            return paciente.mensajePersonalizado;
+            textoBase = paciente.mensajePersonalizado;
+        } else {
+            textoBase = this.plantillaMensaje || '';
         }
+
         const fechaFormateada = this.formatearFechaLegible(paciente.fechaStr || paciente.fecha);
         const horaTexto = paciente.hora && paciente.hora !== '09:00' ? ` a las ${paciente.hora}` : '';
-        return (this.plantillaMensaje || '')
-            .replace(/{nombre}/g, paciente.nombre)
+
+        return textoBase
+            .replace(/{nombre}/g, paciente.nombre || 'Paciente')
             .replace(/{fecha}/g, fechaFormateada)
             .replace(/{hora}/g, horaTexto)
+            .replace(/{enfermera}/g, nombreEnf)
             .replace(/{colonia}/g, paciente.colonia || '')
             .replace(/{direccion}/g, paciente.direccion || '');
     }

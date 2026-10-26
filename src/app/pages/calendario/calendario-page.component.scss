@@ -3173,3 +3173,320 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
     }
   }
 }
+
+
+// 🩺 ESTILOS: BARRA DE CONFIGURACIÓN DE LA ENFERMERA
+.nurse-config-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+
+  .nurse-config-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .nurse-avatar-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      color: #1d4ed8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .nurse-text-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .nurse-label-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .nurse-label-sub {
+        font-size: 11px;
+        color: #64748b;
+
+        strong {
+          color: #1d4ed8;
+        }
+      }
+    }
+  }
+
+  .nurse-input-action-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 280px;
+    justify-content: flex-end;
+
+    .nurse-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      max-width: 340px;
+
+      .input-nurse-lead-icon {
+        position: absolute;
+        left: 10px;
+        color: #94a3b8;
+        font-size: 13px;
+        pointer-events: none;
+      }
+
+      .input-nurse-name-field {
+        width: 100%;
+        padding: 7px 32px 7px 30px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        outline: none;
+        transition: all 0.2s ease;
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+      }
+
+      .btn-restore-nurse {
+        position: absolute;
+        right: 8px;
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px;
+
+        &:hover {
+          color: #b91c1c;
+        }
+      }
+    }
+
+    .btn-insert-nurse-chip {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #dbeafe;
+        border-color: #93c5fd;
+      }
+    }
+  }
+}
+
+// 🏷️ ESTILOS: ETIQUETAS DINÁMICAS RÁPIDAS
+.template-chips-ribbon {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+
+  .chips-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    margin-right: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chip-action-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    &.chip-nurse-highlight {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #15803d;
+
+      &:hover {
+        background: #dcfce7;
+      }
+    }
+
+    &.chip-sign-btn {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #b45309;
+
+      &:hover {
+        background: #fef3c7;
+      }
+    }
+  }
+}
+
+// 💬 ESTILOS: EDICIÓN INDIVIDUAL DE MENSAJE
+.recipient-msg-preview-wrap {
+  margin-top: 6px;
+
+  .recipient-msg-quote {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+
+    .quote-text-content {
+      flex: 1;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #334155;
+    }
+
+    .btn-edit-inline-msg {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+    }
+  }
+
+  .recipient-msg-edit-panel {
+    background: #ffffff;
+    border: 1.5px solid #93c5fd;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+
+    .textarea-indiv-custom {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: #1e293b;
+      outline: none;
+      resize: vertical;
+      font-family: inherit;
+
+      &:focus {
+        border-color: #2563eb;
+      }
+    }
+
+    .indiv-action-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 6px;
+
+      .btn-done-indiv {
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        &:hover {
+          background: #1d4ed8;
+        }
+      }
+
+      .btn-reset-indiv {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 4px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        &:hover {
+          background: #e2e8f0;
+          color: #334155;
+        }
+      }
+    }
+  }
+}
+
+// 🩺 PILL DE ENFERMERA EN EL BANNER GLOBAL
+.banner-nurse-pill {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
