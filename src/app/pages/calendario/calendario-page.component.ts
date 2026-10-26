@@ -99,7 +99,7 @@ export class CalendarioPageComponent implements OnInit {
     diasSeleccionadosMap: { [fechaKey: string]: { fecha: Date; fechaStr: string; color: string; diaNum: number } } = {};
     mostrarModalMensajeria: boolean = false;
     pacientesParaMensajes: any[] = [];
-    plantillaMensaje: string = 'Estimado(a) {nombre}, le recordamos su visita domiciliaria de Salud Casa por Casa agendada para el día {fecha} a las {hora}. En caso de requerir reprogramar, favor de responder este mensaje.';
+    plantillaMensaje: string = 'Estimado(a) paciente, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa. Favor de estar atento a nuestro personal de salud.';
     envioMasivoEnProgreso: boolean = false;
 
     // ⭐ ASIGNACIÓN DE PACIENTES A DÍAS/SEMANAS SELECCIONADAS
@@ -1552,32 +1552,13 @@ export class CalendarioPageComponent implements OnInit {
             return;
         }
 
-        const dias = this.diasSeleccionadosLista;
-        let fechaTarget = dias.length > 0 ? dias[0].fechaStr : '';
-
-        if (this.modoDistribucion === 'repartir' && dias.length > 0) {
-            const idx = this.pacientesParaAsignarSeleccionados.length % dias.length;
-            fechaTarget = dias[idx].fechaStr;
-        } else if (this.modoDistribucion === 'mismo_dia' && this.diaEspecificoAsignar) {
-            fechaTarget = this.diaEspecificoAsignar;
-        }
-
-        // Si el usuario especificó una hora base e intervalo para auto-rellenar:
-        let horaCalculada = '';
-        if (this.horaBaseAsignar && this.intervaloMinutosAsignar > 0) {
-            const pacientesEnMismoDia = this.pacientesParaAsignarSeleccionados.filter(x => x.fechaStr === fechaTarget).length;
-            horaCalculada = this.sumarMinutosAHora(this.horaBaseAsignar, pacientesEnMismoDia * this.intervaloMinutosAsignar);
-        } else if (this.horaBaseAsignar) {
-            horaCalculada = this.horaBaseAsignar;
-        }
-
         this.pacientesParaAsignarSeleccionados.push({
             id: p.id,
             paciente: p,
-            fechaStr: fechaTarget,
-            hora: horaCalculada,                     // Puede dejarse en blanco
-            prioridad: this.prioridadAsignar || '',  // Puede dejarse en blanco
-            notas: ''                               // Notas o mensaje individual
+            fechaStr: '',            // Totalmente en blanco como pidió el usuario para que la enfermera lo elija
+            hora: '',                // En blanco
+            prioridad: '',           // En blanco
+            notas: ''                // En blanco
         });
 
         this.cdr.detectChanges();
@@ -1588,73 +1569,15 @@ export class CalendarioPageComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
-    private sumarMinutosAHora(horaStr: string, minutosSumar: number): string {
-        if (!horaStr) return '';
-        const partes = horaStr.split(':').map(Number);
-        const h = partes[0] || 9;
-        const m = partes[1] || 0;
-        const totalMins = h * 60 + m + minutosSumar;
-        const horas = Math.floor(totalMins / 60) % 24;
-        const minutos = totalMins % 60;
-        return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
-    }
-
-    // ⭐ AUTO-APLICAR O LIMPIAR HORARIOS EN TODOS LOS PACIENTES
-    aplicarHorariosATodos() {
-        if (!this.horaBaseAsignar) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Hora de inicio requerida',
-                text: 'Indica una hora de inicio si deseas calcular los horarios automáticamente.',
-                confirmButtonColor: '#7e101f'
-            });
-            return;
-        }
-
-        const dias = this.diasSeleccionadosLista;
-        const conteoPorDia: { [fecha: string]: number } = {};
-        dias.forEach(d => conteoPorDia[d.fechaStr] = 0);
-
+    asignarMismoDiaATodos(fechaStr: string) {
+        if (!fechaStr) return;
         this.pacientesParaAsignarSeleccionados.forEach(item => {
-            const diaKey = item.fechaStr;
-            const indexEnDia = conteoPorDia[diaKey] || 0;
-            conteoPorDia[diaKey] = indexEnDia + 1;
-
-            if (this.intervaloMinutosAsignar > 0) {
-                item.hora = this.sumarMinutosAHora(this.horaBaseAsignar, indexEnDia * this.intervaloMinutosAsignar);
-            } else {
-                item.hora = this.horaBaseAsignar;
-            }
-
-            if (this.prioridadAsignar) {
-                item.prioridad = this.prioridadAsignar;
-            }
+            item.fechaStr = fechaStr;
         });
-
         this.cdr.detectChanges();
-        this.mostrarToast('Horarios Asignados', 'Se actualizaron los horarios de los pacientes seleccionados', 'success');
+        this.mostrarToast('Día Asignado', 'Se asignó la fecha a todos los pacientes de la tanda', 'info');
     }
 
-    limpiarHorariosDeTodos() {
-        this.pacientesParaAsignarSeleccionados.forEach(item => {
-            item.hora = '';
-        });
-        this.horaBaseAsignar = '';
-        this.intervaloMinutosAsignar = 0;
-        this.cdr.detectChanges();
-        this.mostrarToast('Horarios en Blanco', 'Se dejaron todas las horas en blanco (sin horario fijo)', 'info');
-    }
-
-    limpiarPrioridadesDeTodos() {
-        this.pacientesParaAsignarSeleccionados.forEach(item => {
-            item.prioridad = '';
-        });
-        this.prioridadAsignar = '';
-        this.cdr.detectChanges();
-        this.mostrarToast('Prioridades en Blanco', 'Se quitaron las prioridades globales', 'info');
-    }
-
-    
     obtenerColorDia(fechaStr: string): string {
         return this.diasSeleccionadosMap[fechaStr]?.color || '#7e101f';
     }
@@ -1675,23 +1598,23 @@ export class CalendarioPageComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
-    redistribuirDiasEnSemana() {
-        const dias = this.diasSeleccionadosLista;
-        if (dias.length === 0) return;
-
-        this.pacientesParaAsignarSeleccionados.forEach((item, idx) => {
-            item.fechaStr = dias[idx % dias.length].fechaStr;
-        });
-        this.cdr.detectChanges();
-        this.mostrarToast('Días Balanceados', 'Se repartieron los pacientes a lo largo de los días seleccionados', 'info');
-    }
-
     confirmarAsignacionPacientes() {
         if (this.pacientesParaAsignarSeleccionados.length === 0) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Sin pacientes seleccionados',
                 text: 'Agrega al menos un paciente para programar en los días seleccionados.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+
+        const sinDia = this.pacientesParaAsignarSeleccionados.filter(x => !x.fechaStr);
+        if (sinDia.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Día de visita pendiente',
+                text: `Hay ${sinDia.length} paciente(s) sin día de visita asignado. Por favor selecciona el día para cada uno en su tarjeta antes de guardar.`,
                 confirmButtonColor: '#7e101f'
             });
             return;
@@ -1711,9 +1634,9 @@ export class CalendarioPageComponent implements OnInit {
                 pacienteTelefono: p.telefono || '',
                 colonia: p.colonia || 'Sin colonia',
                 fecha: item.fechaStr,
-                hora: item.hora || '09:00', // En BD TypeORM guarda valor predeterminado si el usuario lo dejó en blanco
+                hora: item.hora || '09:00', // En BD TypeORM guarda valor predeterminado si se dejó en blanco
                 horaOriginal: item.hora || '',
-                prioridad: item.prioridad || 'media',
+                prioridad: item.prioridad || '',
                 notas: item.notas || 'Visita programada',
                 estado: 'pendiente',
                 usuarioId: usuarioId
@@ -1740,7 +1663,7 @@ export class CalendarioPageComponent implements OnInit {
         Swal.fire({
             icon: 'success',
             title: '¡Visitas Programadas!',
-            text: `Se agendaron con éxito ${nuevasVisitas.length} visita(s). Puedes enviarles mensajes con el botón "Enviar Mensajes".`,
+            text: `Se agendaron con éxito ${nuevasVisitas.length} visita(s).`,
             confirmButtonColor: '#7e101f',
             timer: 3500,
             timerProgressBar: true
