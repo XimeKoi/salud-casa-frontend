@@ -838,138 +838,274 @@
     <!-- ============================================ -->
     <div class="modal-backdrop-glass" [class.active]="mostrarModalEditar" *ngIf="mostrarModalEditar" (click)="cerrarModalEditar()">
         <div class="modal-dialog-modern modal-dialog-editar" (click)="$event.stopPropagation()">
-            <!-- Header -->
-            <div class="dialog-header header-brand">
+            <!-- Header Premium -->
+            <div class="dialog-header modal-header-hero">
                 <div class="header-title-group">
-                    <div class="header-icon-circle edit-icon-bg">
+                    <div class="header-icon-circle-premium">
                         <i class="fas fa-user-pen"></i>
                     </div>
                     <div>
-                        <h3>Editar Datos del Paciente</h3>
-                        <p class="subtitle">Actualiza dirección, colonia, teléfonos de contacto y estatus</p>
+                        <div class="header-pretitle">EXPEDIENTE CLÍNICO DIGITAL</div>
+                        <h3>Actualizar Datos del Paciente</h3>
+                        <p class="subtitle">Modifica la dirección geolocalizada, teléfonos de contacto y estatus de atención</p>
                     </div>
                 </div>
-                <button class="btn-dialog-close" (click)="cerrarModalEditar()" title="Cerrar modal">&times;</button>
+                <button class="btn-dialog-close-round" (click)="cerrarModalEditar()" title="Cerrar modal">&times;</button>
             </div>
 
             <!-- Body -->
             <div class="dialog-body editar-dialog-body">
-                <div class="patient-summary-banner" *ngIf="pacienteEditando">
-                    <div class="banner-avatar">
-                        {{ getIniciales(pacienteEditando.nombreCompleto || pacienteEditando.nombre) }}
+                <!-- Patient Profile Hero Card -->
+                <div class="patient-hero-card" *ngIf="pacienteEditando">
+                    <div class="hero-avatar-box">
+                        <div class="hero-avatar">
+                            {{ getIniciales(pacienteEditando.nombreCompleto || pacienteEditando.nombre) }}
+                        </div>
+                        <span class="avatar-badge-id">#{{ pacienteEditando.id }}</span>
                     </div>
-                    <div class="banner-info">
-                        <strong>{{ pacienteEditando.nombreCompleto || pacienteEditando.nombre }}</strong>
-                        <div class="banner-meta">
-                            <span *ngIf="pacienteEditando.curp"><i class="fas fa-id-card"></i> {{ pacienteEditando.curp }}</span>
-                            <span><i class="fas fa-hashtag"></i> ID #{{ pacienteEditando.id }}</span>
-                            <span class="badge-programa" *ngIf="pacienteEditando.programa">{{ pacienteEditando.programa }}</span>
+
+                    <div class="hero-details">
+                        <div class="hero-name-row">
+                            <h4 class="hero-patient-name">{{ pacienteEditando.nombreCompleto || pacienteEditando.nombre }}</h4>
+                            <span class="badge-estatus-chip" [ngClass]="'status-' + (formEdicion.estatus || 'PENDIENTE').toLowerCase()">
+                                <span class="dot"></span> {{ formEdicion.estatus }}
+                            </span>
+                        </div>
+
+                        <div class="hero-meta-pills">
+                            <span class="meta-pill" *ngIf="pacienteEditando.curp">
+                                <i class="fas fa-id-card"></i> {{ pacienteEditando.curp }}
+                            </span>
+                            <span class="meta-pill" *ngIf="pacienteEditando.seccion">
+                                <i class="fas fa-layer-group"></i> Sección {{ pacienteEditando.seccion }}
+                            </span>
+                            <span class="meta-pill pill-programa" *ngIf="pacienteEditando.programa">
+                                <i class="fas fa-hand-holding-medical"></i> {{ pacienteEditando.programa }}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 <form class="form-editar-paciente" (ngSubmit)="guardarEdicionPaciente()">
-                    <!-- Bloque 1: Ubicación -->
-                    <div class="form-section-title">
-                        <i class="fas fa-map-location-dot"></i> Domicilio y Ubicación
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group flex-2">
-                            <label for="editCalleNumero">Calle y Número Exterior / Interior <span class="req">*</span></label>
-                            <div class="input-icon-wrap">
-                                <i class="fas fa-road"></i>
-                                <input type="text" id="editCalleNumero" [(ngModel)]="formEdicion.calleNumero" name="calleNumero"
-                                    placeholder="Ej. SIERRA DE LOS VALLES #122" class="form-control" required />
+                    
+                    <!-- 📍 TARJETA 1: UBICACIÓN Y DOMICILIO -->
+                    <div class="form-module-card">
+                        <div class="module-header">
+                            <div class="module-icon icon-location">
+                                <i class="fas fa-location-dot"></i>
+                            </div>
+                            <div class="module-title-box">
+                                <h5>Ubicación y Domicilio Geográfico</h5>
+                                <span class="module-desc">Dirección vinculada al plano georreferenciado de brigadas</span>
                             </div>
                         </div>
 
-                        <div class="form-group flex-2">
-                            <label for="editColonia">Colonia / Fraccionamiento <span class="req">*</span></label>
-                            <div class="input-icon-wrap">
-                                <i class="fas fa-city"></i>
-                                <input type="text" id="editColonia" [(ngModel)]="formEdicion.colonia" name="colonia"
-                                    placeholder="Ej. VALLE DEL TEPEYAC" class="form-control" required />
+                        <div class="module-body">
+                            <div class="form-row">
+                                <div class="form-group flex-2">
+                                    <label for="editCalleNumero">
+                                        Calle y Número Exterior / Interior <span class="req">*</span>
+                                    </label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-road"></i>
+                                        <input type="text" id="editCalleNumero" [(ngModel)]="formEdicion.calleNumero" name="calleNumero"
+                                            placeholder="Ej. C. SIERRA DE LOS VALLES #122" class="form-control" required />
+                                    </div>
+                                    <small class="field-hint">Incluye calle, número exterior e interior si aplica.</small>
+                                </div>
+
+                                <div class="form-group flex-2">
+                                    <label for="editColonia">
+                                        Colonia / Fraccionamiento <span class="req">*</span>
+                                    </label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-city"></i>
+                                        <input type="text" id="editColonia" [(ngModel)]="formEdicion.colonia" name="colonia"
+                                            placeholder="Ej. VALLE DEL TEPEYAC" class="form-control" required />
+                                    </div>
+                                    <small class="field-hint">Zona de trabajo o colonia asignada en León.</small>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="editReferencias">Referencias Viales y Características de la Vivienda</label>
-                        <div class="input-icon-wrap">
-                            <i class="fas fa-signs-post"></i>
-                            <input type="text" id="editReferencias" [(ngModel)]="formEdicion.referencias" name="referencias"
-                                placeholder="Ej. ENTRE CALLE HIDALGO Y JUAREZ, FACHADA VERDE" class="form-control" />
-                        </div>
-                    </div>
-
-                    <!-- Bloque 2: Contacto -->
-                    <div class="form-section-title">
-                        <i class="fas fa-phone-volume"></i> Números de Contacto
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group flex-1">
-                            <label for="editTelefonoCelular">Teléfono Celular (WhatsApp / SMS) <span class="req">*</span></label>
-                            <div class="input-icon-wrap">
-                                <i class="fas fa-mobile-screen"></i>
-                                <input type="tel" id="editTelefonoCelular" [(ngModel)]="formEdicion.telefonoCelular" name="telefonoCelular"
-                                    placeholder="10 dígitos (ej. 4771234567)" class="form-control" maxlength="15" />
-                            </div>
-                        </div>
-
-                        <div class="form-group flex-1">
-                            <label for="editTelefonoFijo">Teléfono Fijo / Alternativo</label>
-                            <div class="input-icon-wrap">
-                                <i class="fas fa-phone"></i>
-                                <input type="tel" id="editTelefonoFijo" [(ngModel)]="formEdicion.telefonoFijo" name="telefonoFijo"
-                                    placeholder="Teléfono fijo o de familiar" class="form-control" maxlength="15" />
+                            <div class="form-group">
+                                <label for="editReferencias">
+                                    Referencias Viales y Fachada de la Vivienda
+                                </label>
+                                <div class="input-icon-wrap">
+                                    <i class="fas fa-signs-post"></i>
+                                    <input type="text" id="editReferencias" [(ngModel)]="formEdicion.referencias" name="referencias"
+                                        placeholder="Ej. ENTRE HIDALGO Y JUAREZ, PORTÓN NEGRO, FRENTE A TIENDA DE ABARROTES" class="form-control" />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Bloque 3: Estado -->
-                    <div class="form-section-title">
-                        <i class="fas fa-heart-pulse"></i> Estado de Atención del Paciente
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group flex-1">
-                            <label for="editEstatus">Estatus Actual <span class="req">*</span></label>
-                            <div class="input-icon-wrap">
-                                <i class="fas fa-circle-notch"></i>
-                                <select id="editEstatus" [(ngModel)]="formEdicion.estatus" name="estatus" class="form-control select-control" required>
-                                    <option value="PENDIENTE">🟡 PENDIENTE (En espera de visita)</option>
-                                    <option value="COMPLETADA">🟢 COMPLETADA (Visita realizada con éxito)</option>
-                                    <option value="INCIDENCIA">🟠 INCIDENCIA (Domicilio no localizado / No abrió)</option>
-                                    <option value="RECHAZO">🔴 RECHAZO (No aceptó atención médica)</option>
-                                    <option value="FINADO">⚫ FINADO (Fallecido)</option>
-                                </select>
+                    <!-- 📞 TARJETA 2: TELÉFONOS DE CONTACTO -->
+                    <div class="form-module-card">
+                        <div class="module-header">
+                            <div class="module-icon icon-phone">
+                                <i class="fas fa-phone-volume"></i>
+                            </div>
+                            <div class="module-title-box">
+                                <h5>Canales de Contacto Directo</h5>
+                                <span class="module-desc">Números telefónicos para aviso de visitas médicas por WhatsApp o llamada</span>
                             </div>
                         </div>
 
-                        <div class="form-group flex-1" *ngIf="formEdicion.estatus === 'PENDIENTE'">
-                            <label for="editDiasPendiente">Días Acumulados de Espera</label>
-                            <div class="input-icon-wrap">
-                                <i class="fas fa-hourglass-half"></i>
-                                <input type="number" id="editDiasPendiente" [(ngModel)]="formEdicion.diasPendiente" name="diasPendiente"
-                                    min="0" max="365" class="form-control" />
+                        <div class="module-body">
+                            <div class="form-row">
+                                <div class="form-group flex-1">
+                                    <label for="editTelefonoCelular">
+                                        Teléfono Celular
+                                        <span class="badge-wa"><i class="fab fa-whatsapp"></i> WhatsApp / SMS</span>
+                                    </label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-mobile-screen"></i>
+                                        <input type="tel" id="editTelefonoCelular" [(ngModel)]="formEdicion.telefonoCelular" name="telefonoCelular"
+                                            placeholder="10 dígitos (ej. 4771234567)" class="form-control" maxlength="15" />
+                                    </div>
+                                    <small class="field-hint">Utilizado para enviar recordatorios automáticos.</small>
+                                </div>
+
+                                <div class="form-group flex-1">
+                                    <label for="editTelefonoFijo">
+                                        Teléfono Fijo / Alternativo
+                                        <span class="badge-fijo"><i class="fas fa-phone"></i> Casa</span>
+                                    </label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-phone"></i>
+                                        <input type="tel" id="editTelefonoFijo" [(ngModel)]="formEdicion.telefonoFijo" name="telefonoFijo"
+                                            placeholder="Teléfono fijo o de contacto familiar" class="form-control" maxlength="15" />
+                                    </div>
+                                    <small class="field-hint">Teléfono adicional para emergencias.</small>
+                                </div>
                             </div>
-                            <small class="hint-text">Al acumular 20 días o más, el sistema lo califica como Listo para Visita.</small>
                         </div>
                     </div>
 
-                    <!-- Footer -->
-                    <div class="dialog-footer">
-                        <button type="button" class="btn-dialog-cancel" (click)="cerrarModalEditar()" [disabled]="guardandoEdicion">
+                    <!-- 🩺 TARJETA 3: ESTADO Y CICLO DE ATENCIÓN -->
+                    <div class="form-module-card">
+                        <div class="module-header">
+                            <div class="module-icon icon-status">
+                                <i class="fas fa-heart-pulse"></i>
+                            </div>
+                            <div class="module-title-box">
+                                <h5>Estado Clínico y Ciclo de Visita</h5>
+                                <span class="module-desc">Clasificación operativa del paciente en el programa</span>
+                            </div>
+                        </div>
+
+                        <div class="module-body">
+                            <div class="form-group">
+                                <label>Selecciona el Estatus del Paciente <span class="req">*</span></label>
+                                <div class="status-selector-grid">
+                                    <button type="button" class="btn-status-option opt-pendiente" 
+                                        [class.active]="formEdicion.estatus === 'PENDIENTE'"
+                                        (click)="formEdicion.estatus = 'PENDIENTE'">
+                                        <div class="opt-indicator"></div>
+                                        <div class="opt-label-group">
+                                            <span class="opt-name">En Espera (Pendiente)</span>
+                                            <span class="opt-sub">En ciclo para próxima visita</span>
+                                        </div>
+                                        <i class="fas fa-check opt-check" *ngIf="formEdicion.estatus === 'PENDIENTE'"></i>
+                                    </button>
+
+                                    <button type="button" class="btn-status-option opt-completada" 
+                                        [class.active]="formEdicion.estatus === 'COMPLETADA'"
+                                        (click)="formEdicion.estatus = 'COMPLETADA'">
+                                        <div class="opt-indicator"></div>
+                                        <div class="opt-label-group">
+                                            <span class="opt-name">Completada / Visitado</span>
+                                            <span class="opt-sub">Atención médica realizada</span>
+                                        </div>
+                                        <i class="fas fa-check opt-check" *ngIf="formEdicion.estatus === 'COMPLETADA'"></i>
+                                    </button>
+
+                                    <button type="button" class="btn-status-option opt-incidencia" 
+                                        [class.active]="formEdicion.estatus === 'INCIDENCIA'"
+                                        (click)="formEdicion.estatus = 'INCIDENCIA'">
+                                        <div class="opt-indicator"></div>
+                                        <div class="opt-label-group">
+                                            <span class="opt-name">Incidencia de Visita</span>
+                                            <span class="opt-sub">No abrió o no localizado</span>
+                                        </div>
+                                        <i class="fas fa-check opt-check" *ngIf="formEdicion.estatus === 'INCIDENCIA'"></i>
+                                    </button>
+
+                                    <button type="button" class="btn-status-option opt-rechazo" 
+                                        [class.active]="formEdicion.estatus === 'RECHAZO'"
+                                        (click)="formEdicion.estatus = 'RECHAZO'">
+                                        <div class="opt-indicator"></div>
+                                        <div class="opt-label-group">
+                                            <span class="opt-name">Rechazo de Atención</span>
+                                            <span class="opt-sub">No aceptó servicio médico</span>
+                                        </div>
+                                        <i class="fas fa-check opt-check" *ngIf="formEdicion.estatus === 'RECHAZO'"></i>
+                                    </button>
+
+                                    <button type="button" class="btn-status-option opt-finado" 
+                                        [class.active]="formEdicion.estatus === 'FINADO'"
+                                        (click)="formEdicion.estatus = 'FINADO'">
+                                        <div class="opt-indicator"></div>
+                                        <div class="opt-label-group">
+                                            <span class="opt-name">Finado (Fallecido)</span>
+                                            <span class="opt-sub">Baja por defunción</span>
+                                        </div>
+                                        <i class="fas fa-check opt-check" *ngIf="formEdicion.estatus === 'FINADO'"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Ciclo de Espera (solo si es PENDIENTE) -->
+                            <div class="ciclo-espera-box" *ngIf="formEdicion.estatus === 'PENDIENTE'">
+                                <div class="ciclo-header">
+                                    <span class="ciclo-title">
+                                        <i class="fas fa-hourglass-half"></i> Ciclo de Espera Acumulado
+                                    </span>
+                                    <span class="ciclo-counter">
+                                        <strong>{{ formEdicion.diasPendiente || 0 }}</strong> / 20 días
+                                    </span>
+                                </div>
+
+                                <div class="ciclo-progress-track">
+                                    <div class="ciclo-progress-bar" 
+                                        [style.width]="Math.min(((formEdicion.diasPendiente || 0) / 20) * 100, 100) + '%'"
+                                        [class.completado]="(formEdicion.diasPendiente || 0) >= 20">
+                                    </div>
+                                </div>
+
+                                <div class="ciclo-controls-row">
+                                    <div class="ciclo-input-wrap">
+                                        <label for="editDiasPendiente">Días transcurridos:</label>
+                                        <input type="number" id="editDiasPendiente" [(ngModel)]="formEdicion.diasPendiente" name="diasPendiente"
+                                            min="0" max="365" class="form-control-sm" />
+                                    </div>
+
+                                    <div class="ciclo-status-badge">
+                                        <span *ngIf="(formEdicion.diasPendiente || 0) >= 20" class="badge-listo">
+                                            <i class="fas fa-check-circle"></i> ¡Listo para visita médica (20+ días)!
+                                        </span>
+                                        <span *ngIf="(formEdicion.diasPendiente || 0) < 20" class="badge-espera">
+                                            <i class="fas fa-clock"></i> Faltan {{ 20 - (formEdicion.diasPendiente || 0) }} día(s) para completar el ciclo
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Flotante con Acciones -->
+                    <div class="dialog-footer-modern">
+                        <button type="button" class="btn-cancel-modern" (click)="cerrarModalEditar()" [disabled]="guardandoEdicion">
                             <i class="fas fa-xmark"></i> Cancelar
                         </button>
-                        <button type="submit" class="btn-dialog-save" [disabled]="guardandoEdicion || !formEdicion.calleNumero || !formEdicion.colonia">
+                        <button type="submit" class="btn-save-modern" [disabled]="guardandoEdicion || !formEdicion.calleNumero || !formEdicion.colonia">
                             <i class="fas fa-spinner fa-spin" *ngIf="guardandoEdicion"></i>
-                            <i class="fas fa-floppy-disk" *ngIf="!guardandoEdicion"></i>
-                            {{ guardandoEdicion ? 'Guardando cambios...' : 'Guardar Datos' }}
+                            <i class="fas fa-check" *ngIf="!guardandoEdicion"></i>
+                            {{ guardandoEdicion ? 'Guardando Cambios...' : 'Guardar y Actualizar Paciente' }}
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>
