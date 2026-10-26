@@ -136,16 +136,22 @@
           [disabled]="totalDiasSeleccionados === 0" 
           (click)="abrirModalAsignarPacientes()"
           title="Asignar y programar pacientes en los días seleccionados">
-          <i class="fas fa-calendar-plus"></i>
-          <span>Asignar Pacientes ({{ totalDiasSeleccionados }})</span>
+          <div class="btn-icon-box">
+            <i class="fas fa-calendar-plus"></i>
+          </div>
+          <span class="btn-text">Asignar Pacientes</span>
+          <span class="btn-count-pill" *ngIf="totalDiasSeleccionados > 0">{{ totalDiasSeleccionados }}</span>
         </button>
 
         <button class="btn-messaging-action" 
           [disabled]="pacientesUnicosParaMensaje.length === 0" 
           (click)="abrirModalMensajeria()"
           title="Enviar mensajes SMS / WhatsApp a pacientes agendados en los días seleccionados">
-          <i class="fas fa-paper-plane"></i>
-          <span>Enviar Mensajes ({{ pacientesUnicosParaMensaje.length }})</span>
+          <div class="btn-icon-box">
+            <i class="fas fa-paper-plane"></i>
+          </div>
+          <span class="btn-text">Enviar Mensajes</span>
+          <span class="btn-count-pill" *ngIf="pacientesUnicosParaMensaje.length > 0">{{ pacientesUnicosParaMensaje.length }}</span>
         </button>
       </div>
     </div>

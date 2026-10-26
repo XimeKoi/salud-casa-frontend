@@ -1793,31 +1793,162 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
       .divider { color: #6ee7b7; }
     }
 
-    .btn-messaging-action {
-      display: flex;
+        .btn-assign-action {
+      display: inline-flex;
       align-items: center;
-      gap: 7px;
-      background: $primary;
+      gap: 9px;
+      background: linear-gradient(135deg, #7e101f 0%, #991b1b 55%, #b91c1c 100%);
       color: #ffffff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 8px 18px;
+      border-radius: 12px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(126, 16, 31, 0.25);
-      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 4px 14px rgba(126, 16, 31, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: -0.1px;
+
+      .btn-icon-box {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12.5px;
+        transition: transform 0.2s;
+      }
+
+      .btn-text {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .btn-count-pill {
+        background: #ffffff;
+        color: #7e101f;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 900;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      }
 
       &:hover:not(:disabled) {
-        background: darken(#7e101f, 8%);
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #991b1b 0%, #b91c1c 55%, #dc2626 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 7px 22px rgba(126, 16, 31, 0.45);
+
+        .btn-icon-box {
+          transform: scale(1.12);
+        }
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(126, 16, 31, 0.3);
       }
 
       &:disabled {
-        opacity: 0.5;
+        background: #e2e8f0;
+        color: #94a3b8;
+        border: 1px solid #cbd5e1;
+        box-shadow: none;
         cursor: not-allowed;
+        transform: none;
+
+        .btn-icon-box {
+          background: rgba(0, 0, 0, 0.05);
+          color: #94a3b8;
+        }
+
+        .btn-count-pill {
+          background: #cbd5e1;
+          color: #64748b;
+        }
       }
     }
+
+    .btn-messaging-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: linear-gradient(135deg, #059669 0%, #047857 55%, #065f46 100%);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 8px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.32);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: -0.1px;
+
+      .btn-icon-box {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12.5px;
+        transition: transform 0.2s;
+      }
+
+      .btn-text {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .btn-count-pill {
+        background: #ffffff;
+        color: #047857;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 900;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      }
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #047857 0%, #065f46 55%, #064e3b 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 7px 22px rgba(5, 150, 105, 0.42);
+
+        .btn-icon-box {
+          transform: scale(1.12);
+        }
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+      }
+
+      &:disabled {
+        background: #e2e8f0;
+        color: #94a3b8;
+        border: 1px solid #cbd5e1;
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+
+        .btn-icon-box {
+          background: rgba(0, 0, 0, 0.05);
+          color: #94a3b8;
+        }
+
+        .btn-count-pill {
+          background: #cbd5e1;
+          color: #64748b;
+        }
+      }
+    }
+  }
   }
 }
 
