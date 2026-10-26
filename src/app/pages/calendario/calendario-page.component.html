@@ -617,160 +617,172 @@
 
 <!-- ⭐ MODAL: ASIGNAR PACIENTES A LOS DÍAS SELECCIONADOS DE LA SEMANA / MES -->
 <div class="modal-backdrop-glass" [class.active]="mostrarModalAsignarPacientes" *ngIf="mostrarModalAsignarPacientes" (click)="cerrarModalAsignarPacientes()">
-  <div class="modal-dialog-modern modal-dialog-asignar modal-dialog-asignar-clean" (click)="$event.stopPropagation()">
-    <!-- Header Hero Institucional -->
-    <div class="dialog-header header-brand">
-      <div class="header-title-group">
-        <div class="header-icon-circle assign-icon-bg">
-          <i class="fas fa-calendar-check"></i>
+  <div class="modal-dialog-modern modal-dialog-asignar-pro" (click)="$event.stopPropagation()">
+    <!-- Header Hero Pro -->
+    <div class="modal-header-pro">
+      <div class="header-left-content">
+        <div class="header-icon-badge">
+          <i class="fas fa-calendar-plus"></i>
         </div>
-        <div>
+        <div class="header-texts">
           <h3>Asignar Pacientes a Días Seleccionados</h3>
-          <p class="subtitle">Agrega a los pacientes y selecciona su día de visita. La hora y prioridad son opcionales.</p>
+          <p>Selecciona los días para cada paciente y añade un mensaje o motivo para las visitas</p>
         </div>
       </div>
-      <button class="btn-dialog-close" (click)="cerrarModalAsignarPacientes()" title="Cerrar modal">&times;</button>
+      <div class="header-right-actions">
+        <span class="days-counter-pill">
+          <i class="fas fa-calendar-days"></i> {{ totalDiasSeleccionados }} día(s)
+        </span>
+        <button class="btn-close-pro" (click)="cerrarModalAsignarPacientes()" title="Cerrar modal">&times;</button>
+      </div>
     </div>
 
-    <!-- Body -->
-    <div class="dialog-body asignar-dialog-body">
-      <!-- 1. Días de destino seleccionados -->
-      <div class="card-modulo-clean">
-        <div class="modulo-header-row">
-          <label class="modulo-titulo-label">
-            <i class="fas fa-calendar-days text-primary"></i> Días Seleccionados en el Calendario ({{ totalDiasSeleccionados }}):
-          </label>
-          <!-- Acceso rápido opcional para la enfermera -->
-          <div class="quick-assign-all-wrap" *ngIf="pacientesParaAsignarSeleccionados.length > 1">
-            <span class="quick-label">Asignar todos al mismo día:</span>
-            <select class="quick-select-dia" (change)="asignarMismoDiaATodos($any($event.target).value); $any($event.target).value = ''">
-              <option value="">-- Seleccionar día para todos --</option>
-              <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">{{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})</option>
-            </select>
+    <!-- Body Pro -->
+    <div class="dialog-body-pro">
+      <!-- 1. Días Seleccionados Ribbon -->
+      <div class="dias-ribbon-bar">
+        <div class="ribbon-left">
+          <span class="ribbon-label"><i class="fas fa-calendar-week"></i> Días de destino:</span>
+          <div class="ribbon-chips-scroll">
+            <span *ngFor="let d of diasSeleccionadosLista" class="day-chip-pro"
+              [style.borderColor]="d.color" [style.backgroundColor]="d.color + '18'">
+              <span class="chip-dot" [style.backgroundColor]="d.color"></span>
+              <strong>{{ d.nombreDia }} {{ d.diaNum }}</strong>
+              <small class="chip-date-sub">({{ d.fechaStr }})</small>
+            </span>
           </div>
         </div>
-        <div class="dias-destino-chips-clean">
-          <span *ngFor="let d of diasSeleccionadosLista" class="dia-destino-chip-pill" [style.borderColor]="d.color" [style.backgroundColor]="d.color + '18'">
-            <span class="chip-color-dot" [style.backgroundColor]="d.color"></span>
-            <strong>{{ d.nombreDia }} {{ d.diaNum }}</strong>
-            <small class="dia-chip-fecha">({{ d.fechaStr }})</small>
-          </span>
+        <div class="ribbon-right" *ngIf="pacientesParaAsignarSeleccionados.length > 1">
+          <label class="label-quick-day">Asignar todos al día:</label>
+          <select class="select-quick-day" (change)="asignarMismoDiaATodos($any($event.target).value); $any($event.target).value = ''">
+            <option value="">-- Elige día para todos --</option>
+            <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">{{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})</option>
+          </select>
         </div>
       </div>
 
-      <!-- 2. Buscador y Selección de Pacientes Disponibles -->
-      <div class="card-modulo-clean">
-        <label class="modulo-titulo-label">
-          <i class="fas fa-user-plus text-primary"></i> Buscar y Agregar Pacientes a la Lista:
+      <!-- 2. Mensaje Global para todos los pacientes seleccionados -->
+      <div class="global-message-banner-pro">
+        <div class="banner-title-line">
+          <span class="banner-title"><i class="fas fa-comment-medical text-primary"></i> Mensaje o Motivo Global para Todos los Pacientes:</span>
+          <span class="banner-subtext">Se aplicará automáticamente a todas las visitas de esta tanda (también puedes personalizarlo individualmente abajo):</span>
+        </div>
+        <div class="banner-input-wrap">
+          <i class="fas fa-pen-nib"></i>
+          <input type="text" class="input-global-msg-pro" [(ngModel)]="mensajeGlobalAsignar" (ngModelChange)="aplicarMensajeGlobalATodos()"
+            placeholder="Escribe el mensaje o motivo general de la visita (ej: Valoración médica mensual, control de signos vitales, entrega de medicamento)..." />
+          <button type="button" class="btn-clear-global-msg" *ngIf="mensajeGlobalAsignar" (click)="mensajeGlobalAsignar = ''; aplicarMensajeGlobalATodos()" title="Borrar mensaje">&times;</button>
+        </div>
+      </div>
+
+      <!-- 3. Buscador y Catálogo Rápido de Pacientes -->
+      <div class="search-catalog-panel-pro">
+        <label class="panel-section-label">
+          <i class="fas fa-user-plus text-primary"></i> Buscar y Agregar Pacientes:
         </label>
-        <div class="search-input-wrap-clean">
+        <div class="search-bar-pro">
           <i class="fas fa-magnifying-glass"></i>
-          <input type="text" class="input-search-clean" [(ngModel)]="busquedaPacienteAsignar"
-            placeholder="Buscar por nombre, CURP, colonia o dirección..." />
-          <button type="button" class="btn-clear-search-clean" *ngIf="busquedaPacienteAsignar" (click)="busquedaPacienteAsignar = ''">&times;</button>
+          <input type="text" class="input-search-pro" [(ngModel)]="busquedaPacienteAsignar"
+            placeholder="Escribe el nombre, CURP o colonia del paciente para agregarlo..." />
+          <button type="button" class="btn-clear-search-pro" *ngIf="busquedaPacienteAsignar" (click)="busquedaPacienteAsignar = ''">&times;</button>
         </div>
 
-        <!-- Lista rápida de pacientes disponibles -->
-        <div class="pacientes-disponibles-clean-list">
-          <div *ngFor="let p of pacientesFiltradosParaAsignar" class="paciente-disponible-item-clean">
-            <div class="p-info-block">
+        <!-- Resultados de búsqueda rápidos -->
+        <div class="search-results-grid-pro" *ngIf="busquedaPacienteAsignar.trim().length > 0">
+          <div *ngFor="let p of pacientesFiltradosParaAsignar" class="patient-search-chip">
+            <div class="patient-search-info">
               <strong>{{ p.nombreCompleto || p.nombre }}</strong>
-              <small>{{ p.colonia || 'Sin colonia' }} • CURP: {{ p.curp || 'No reg.' }}</small>
+              <small><i class="fas fa-map-marker-alt"></i> {{ p.colonia || 'Sin colonia' }} • CURP: {{ p.curp || 'S/N' }}</small>
             </div>
-            <button type="button" class="btn-add-p-clean" (click)="agregarPacienteALaTanda(p)" title="Agregar a la lista">
+            <button type="button" class="btn-add-patient-chip" (click)="agregarPacienteALaTanda(p)">
               <i class="fas fa-plus"></i> Agregar
             </button>
           </div>
-          <div *ngIf="pacientesFiltradosParaAsignar.length === 0" class="empty-busqueda-clean">
-            <small>No hay pacientes que coincidan con la búsqueda o ya están agregados a la lista.</small>
+          <div *ngIf="pacientesFiltradosParaAsignar.length === 0" class="no-results-chip">
+            <i class="fas fa-search-minus"></i> No se encontraron pacientes con esa búsqueda.
           </div>
         </div>
       </div>
 
-      <!-- 3. Pacientes en la Tanda (Configuración directa por la enfermera) -->
-      <div class="card-modulo-clean">
-        <div class="tanda-clean-header">
-          <div>
-            <label class="modulo-titulo-label">
-              <i class="fas fa-clipboard-check text-primary"></i> Pacientes Agregados a la Lista ({{ pacientesParaAsignarSeleccionados.length }}):
-            </label>
-            <span class="tanda-hint-text">Elige el día de visita para cada paciente. La hora y prioridad son opcionales:</span>
+      <!-- 4. Pacientes en la Tanda -->
+      <div class="tanda-panel-pro">
+        <div class="tanda-panel-header">
+          <div class="panel-header-left">
+            <h4><i class="fas fa-clipboard-list text-primary"></i> Pacientes Agregados a la Lista ({{ pacientesParaAsignarSeleccionados.length }})</h4>
+            <span class="panel-sub">Elige el día de visita para cada paciente. La hora y prioridad son opcionales:</span>
           </div>
-          <button type="button" class="btn-vaciar-tanda-clean" *ngIf="pacientesParaAsignarSeleccionados.length > 0" (click)="pacientesParaAsignarSeleccionados = []">
+          <button type="button" class="btn-clean-tanda-pro" *ngIf="pacientesParaAsignarSeleccionados.length > 0" (click)="pacientesParaAsignarSeleccionados = []">
             <i class="fas fa-trash-can"></i> Quitar todos
           </button>
         </div>
 
-        <!-- Estado vacío si no hay pacientes agregados -->
-        <div *ngIf="pacientesParaAsignarSeleccionados.length === 0" class="empty-tanda-clean">
-          <div class="empty-icon-box">
-            <i class="fas fa-user-clock"></i>
+        <!-- Estado vacío -->
+        <div *ngIf="pacientesParaAsignarSeleccionados.length === 0" class="empty-state-pro">
+          <div class="empty-art-icon">
+            <i class="fas fa-user-plus"></i>
           </div>
-          <h4>Aún no has agregado pacientes</h4>
-          <p>Utiliza el buscador superior para agregar a los pacientes que visitará la enfermera.</p>
+          <h5>No hay pacientes en la lista</h5>
+          <p>Busca arriba por nombre, colonia o CURP para agregar a los pacientes que visitará la enfermera.</p>
         </div>
 
-        <!-- Tarjetas de pacientes agregados -->
-        <div class="tanda-cards-clean-list" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
-          <div class="tanda-card-item" *ngFor="let item of pacientesParaAsignarSeleccionados; let idx = index"
-            [class.card-alerta-sin-dia]="!item.fechaStr">
+        <!-- Lista de tarjetas de pacientes -->
+        <div class="patient-cards-scroll-pro" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+          <div class="patient-card-pro" *ngFor="let item of pacientesParaAsignarSeleccionados; let idx = index"
+            [class.warning-border]="!item.fechaStr">
             
-            <!-- Cabecera del paciente -->
-            <div class="tanda-card-top">
-              <div class="tanda-card-left">
-                <span class="index-pill">#{{ idx + 1 }}</span>
-                <span class="patient-full-title">{{ item.paciente.nombreCompleto || item.paciente.nombre }}</span>
-                <span class="patient-meta-tag"><i class="fas fa-map-pin"></i> {{ item.paciente.colonia || 'Sin colonia' }}</span>
-                <span class="patient-meta-tag" *ngIf="item.paciente.curp"><i class="fas fa-id-card"></i> {{ item.paciente.curp }}</span>
-                <span class="patient-meta-tag" *ngIf="item.paciente.telefono"><i class="fas fa-phone"></i> {{ item.paciente.telefono }}</span>
+            <!-- Cabecera de la tarjeta del paciente -->
+            <div class="card-header-pro">
+              <div class="header-patient-meta">
+                <span class="order-badge-pro">#{{ idx + 1 }}</span>
+                <span class="patient-title-pro">{{ item.paciente.nombreCompleto || item.paciente.nombre }}</span>
+                <span class="pill-meta"><i class="fas fa-map-pin"></i> {{ item.paciente.colonia || 'Sin colonia' }}</span>
+                <span class="pill-meta" *ngIf="item.paciente.curp"><i class="fas fa-id-card"></i> {{ item.paciente.curp }}</span>
+                <span class="pill-meta" *ngIf="item.paciente.telefono"><i class="fas fa-phone"></i> {{ item.paciente.telefono }}</span>
               </div>
-              <button type="button" class="btn-quitar-item" (click)="removerPacienteDeLaTanda(item.id)" title="Quitar este paciente">
+              <button type="button" class="btn-remove-row-pro" (click)="removerPacienteDeLaTanda(item.id)" title="Quitar paciente de la lista">
                 <i class="fas fa-trash-can"></i>
               </button>
             </div>
 
-            <!-- Fila de controles sencillos y directos -->
-            <div class="tanda-card-inputs-grid">
-              <!-- 1. Día de visita asignado (Elige la enfermera) -->
-              <div class="input-cell cell-dia">
+            <!-- Fila de controles alineada y profesional -->
+            <div class="card-controls-row-pro">
+              <!-- 1. Día Asignado (Elige la enfermera) -->
+              <div class="ctrl-group ctrl-dia">
                 <label>
-                  <i class="fas fa-calendar-day"></i> Día de Visita:
-                  <span class="badge-requerido" *ngIf="!item.fechaStr">¡Elige un día!</span>
+                  <i class="fas fa-calendar-day"></i> Día Asignado:
+                  <span class="badge-req" *ngIf="!item.fechaStr">¡Falta elegir día!</span>
                 </label>
-                <div class="select-dia-wrap" [class.sin-dia-alerta]="!item.fechaStr">
-                  <select class="control-select-dia" [(ngModel)]="item.fechaStr">
-                    <option value="">-- Selecciona el día asignado --</option>
+                <div class="ctrl-select-wrap" [class.unassigned-wrap]="!item.fechaStr">
+                  <select class="select-field-pro" [(ngModel)]="item.fechaStr">
+                    <option value="">-- Selecciona el día --</option>
                     <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">
                       {{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})
                     </option>
                   </select>
                 </div>
-                <small class="alerta-dia-msg" *ngIf="!item.fechaStr">
-                  <i class="fas fa-hand-point-up"></i> Selecciona qué día irá la enfermera
-                </small>
               </div>
 
-              <!-- 2. Hora de visita (Opcional - Puede dejarse en blanco) -->
-              <div class="input-cell cell-hora">
+              <!-- 2. Hora de Visita (Opcional) -->
+              <div class="ctrl-group ctrl-hora">
                 <label>
                   <i class="fas fa-clock"></i> Hora:
-                  <span class="badge-opcional">Opcional</span>
+                  <span class="badge-opt">Opcional</span>
                 </label>
-                <div class="input-hora-wrap">
-                  <input type="time" class="control-input-hora" [(ngModel)]="item.hora" />
-                  <button type="button" class="btn-clean-hora" *ngIf="item.hora" (click)="limpiarHoraPaciente(item)" title="Dejar sin hora">&times;</button>
+                <div class="time-field-wrap">
+                  <input type="time" class="input-field-pro" [(ngModel)]="item.hora" />
+                  <button type="button" class="btn-clear-time-pro" *ngIf="item.hora" (click)="limpiarHoraPaciente(item)" title="Dejar sin hora">&times;</button>
                 </div>
-                <small class="sin-hora-note" *ngIf="!item.hora">Sin hora fija</small>
+                <small class="time-subnote" *ngIf="!item.hora">Sin hora fija</small>
               </div>
 
-              <!-- 3. Prioridad (Opcional - Puede dejarse en blanco) -->
-              <div class="input-cell cell-prioridad">
+              <!-- 3. Prioridad (Opcional) -->
+              <div class="ctrl-group ctrl-prio">
                 <label>
                   <i class="fas fa-flag"></i> Prioridad:
-                  <span class="badge-opcional">Opcional</span>
+                  <span class="badge-opt">Opcional</span>
                 </label>
-                <select class="control-select-prioridad" [(ngModel)]="item.prioridad" [class.p-alta]="item.prioridad === 'alta' || item.prioridad === 'urgente'">
-                  <option value="">Sin prioridad (en blanco)</option>
+                <select class="select-field-pro" [(ngModel)]="item.prioridad" [class.prio-high]="item.prioridad === 'alta' || item.prioridad === 'urgente'">
+                  <option value="">Normal (en blanco)</option>
                   <option value="baja">Baja</option>
                   <option value="media">Media</option>
                   <option value="alta">Alta</option>
@@ -778,14 +790,13 @@
                 </select>
               </div>
 
-              <!-- 4. Nota o motivo médico (Opcional) -->
-              <div class="input-cell cell-nota">
+              <!-- 4. Mensaje / Nota Particular -->
+              <div class="ctrl-group ctrl-nota">
                 <label>
-                  <i class="fas fa-comment-medical"></i> Nota o Motivo:
-                  <span class="badge-opcional">Opcional</span>
+                  <i class="fas fa-comment"></i> Mensaje o Nota Particular:
                 </label>
-                <input type="text" class="control-input-nota" [(ngModel)]="item.notas"
-                  placeholder="Ej: Toma de signos, control de presión..." />
+                <input type="text" class="input-field-pro" [(ngModel)]="item.notas"
+                  placeholder="Mensaje o nota para este paciente..." />
               </div>
             </div>
           </div>
@@ -793,21 +804,23 @@
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="dialog-footer">
-      <div class="footer-counter-info" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+    <!-- Footer Pro -->
+    <div class="dialog-footer-pro">
+      <div class="footer-stats-pro" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
         <i class="fas fa-check-circle text-success"></i>
-        <span><strong>{{ pacientesParaAsignarSeleccionados.length }}</strong> paciente(s) en la lista</span>
+        <span><strong>{{ pacientesParaAsignarSeleccionados.length }}</strong> paciente(s) listos para agendar</span>
       </div>
-      <button type="button" class="btn-dialog-cancel" (click)="cerrarModalAsignarPacientes()" [disabled]="guardandoAsignacion">
-        <i class="fas fa-xmark"></i> Cancelar
-      </button>
-      <button type="button" class="btn-dialog-save" (click)="confirmarAsignacionPacientes()" 
-        [disabled]="guardandoAsignacion || pacientesParaAsignarSeleccionados.length === 0">
-        <i class="fas fa-spinner fa-spin" *ngIf="guardandoAsignacion"></i>
-        <i class="fas fa-calendar-check" *ngIf="!guardandoAsignacion"></i>
-        {{ guardandoAsignacion ? 'Guardando visitas...' : 'Confirmar y Guardar Visitas (' + pacientesParaAsignarSeleccionados.length + ')' }}
-      </button>
+      <div class="footer-buttons-pro">
+        <button type="button" class="btn-cancel-pro" (click)="cerrarModalAsignarPacientes()" [disabled]="guardandoAsignacion">
+          <i class="fas fa-xmark"></i> Cancelar
+        </button>
+        <button type="button" class="btn-save-pro" (click)="confirmarAsignacionPacientes()"
+          [disabled]="guardandoAsignacion || pacientesParaAsignarSeleccionados.length === 0">
+          <i class="fas fa-spinner fa-spin" *ngIf="guardandoAsignacion"></i>
+          <i class="fas fa-calendar-check" *ngIf="!guardandoAsignacion"></i>
+          {{ guardandoAsignacion ? 'Guardando visitas...' : 'Confirmar y Guardar Visitas (' + pacientesParaAsignarSeleccionados.length + ')' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

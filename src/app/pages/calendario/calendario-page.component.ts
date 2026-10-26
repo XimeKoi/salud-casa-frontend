@@ -105,6 +105,7 @@ export class CalendarioPageComponent implements OnInit {
     // ⭐ ASIGNACIÓN DE PACIENTES A DÍAS/SEMANAS SELECCIONADAS
     mostrarModalAsignarPacientes: boolean = false;
     busquedaPacienteAsignar: string = '';
+    mensajeGlobalAsignar: string = '';
     pacientesParaAsignarSeleccionados: {
         id: number;
         paciente: any;
@@ -1503,6 +1504,7 @@ export class CalendarioPageComponent implements OnInit {
         const lista = this.diasSeleccionadosLista;
         this.diaEspecificoAsignar = lista.length > 0 ? lista[0].fechaStr : '';
         this.busquedaPacienteAsignar = '';
+        this.mensajeGlobalAsignar = '';
         this.pacientesParaAsignarSeleccionados = [];
         this.horaBaseAsignar = '';
         this.intervaloMinutosAsignar = 0;
@@ -1558,7 +1560,7 @@ export class CalendarioPageComponent implements OnInit {
             fechaStr: '',            // Totalmente en blanco como pidió el usuario para que la enfermera lo elija
             hora: '',                // En blanco
             prioridad: '',           // En blanco
-            notas: ''                // En blanco
+            notas: this.mensajeGlobalAsignar || ''
         });
 
         this.cdr.detectChanges();
@@ -1566,6 +1568,14 @@ export class CalendarioPageComponent implements OnInit {
 
     removerPacienteDeLaTanda(pId: number) {
         this.pacientesParaAsignarSeleccionados = this.pacientesParaAsignarSeleccionados.filter(x => x.id !== pId);
+        this.cdr.detectChanges();
+    }
+
+    
+    aplicarMensajeGlobalATodos() {
+        this.pacientesParaAsignarSeleccionados.forEach(item => {
+            item.notas = this.mensajeGlobalAsignar;
+        });
         this.cdr.detectChanges();
     }
 

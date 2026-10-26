@@ -2201,481 +2201,729 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 // ============================================
-// ⭐ ESTILOS MODAL ASIGNAR PACIENTES (DISEÑO LIMPIO Y DIRECTO)
+// ============================================
+// ⭐ ESTILOS MODAL ASIGNAR PACIENTES (DISEÑO PROFESIONAL REFINADO)
 // ============================================
 
-.btn-assign-action {
+.modal-dialog-asignar-pro {
+  max-width: 940px;
+  width: 95%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+// 1. Header Hero
+.modal-header-pro {
+  background: linear-gradient(135deg, #4a0710 0%, #7e101f 65%, #9b111e 100%);
+  padding: 16px 22px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  background: #1e40af;
+  justify-content: space-between;
+  gap: 16px;
   color: #ffffff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
-  transition: all 0.15s ease;
 
-  i { font-size: 13.5px; }
+  .header-left-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 
-  &:hover:not(:disabled) {
-    background: #1d4ed8;
-    transform: translateY(-1px);
+    .header-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .header-texts {
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+        color: #ffffff;
+      }
+
+      p {
+        margin: 2px 0 0 0;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.82);
+      }
+    }
   }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .header-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .days-counter-pill {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-close-pro {
+      background: rgba(255, 255, 255, 0.14);
+      border: none;
+      color: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 20px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+      }
+    }
   }
 }
 
-.modal-dialog-asignar-clean {
-  max-width: 860px;
-  width: 96%;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3);
-}
-
-.asignar-dialog-body {
-  overflow-y: auto;
-  max-height: calc(88vh - 120px);
+// 2. Body
+.dialog-body-pro {
   padding: 16px 20px;
+  overflow-y: auto;
+  max-height: calc(88vh - 130px);
   display: flex;
   flex-direction: column;
   gap: 14px;
   background: #f8fafc;
 }
 
-.card-modulo-clean {
+// 3. Ribbon Días
+.dias-ribbon-bar {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 14px 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
 
-  .modulo-header-row {
+  .ribbon-left {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+    gap: 10px;
+    flex: 1;
+    min-width: 280px;
 
-  .modulo-titulo-label {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+    .ribbon-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
 
-  .quick-assign-all-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    .quick-label {
-      font-size: 11px;
-      color: #64748b;
-      font-weight: 600;
+      i { color: $primary; }
     }
 
-    .quick-select-dia {
-      padding: 4px 8px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
+    .ribbon-chips-scroll {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+
+      .day-chip-pro {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border: 1.5px solid;
+        border-radius: 16px;
+        font-size: 11px;
+        color: #1e293b;
+
+        .chip-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .chip-date-sub {
+          font-size: 10.5px;
+          color: #64748b;
+        }
+      }
+    }
+  }
+
+  .ribbon-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .label-quick-day {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    .select-quick-day {
+      padding: 5px 10px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 7px;
       font-size: 11.5px;
       color: #1e293b;
-      background: #f8fafc;
+      background: #ffffff;
       outline: none;
       cursor: pointer;
+      font-weight: 600;
 
       &:focus {
         border-color: $primary;
       }
     }
   }
+}
 
-  .dias-destino-chips-clean {
+// 4. Banner Mensaje Global
+.global-message-banner-pro {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px solid #a7f3d0;
+  border-left: 5px solid #059669;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.05);
+
+  .banner-title-line {
     display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
-    gap: 7px;
 
-    .dia-destino-chip-pill {
-      display: inline-flex;
+    .banner-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #065f46;
+      display: flex;
       align-items: center;
       gap: 6px;
-      padding: 5px 11px;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 18px;
-      font-size: 11.5px;
-      color: #1e293b;
 
-      .chip-color-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-      }
-
-      .dia-chip-fecha {
-        color: #64748b;
-        font-size: 10.5px;
-      }
+      i { font-size: 14px; }
     }
-  }
-}
 
-// 2. Buscador
-.search-input-wrap-clean {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-top: 6px;
-  margin-bottom: 8px;
-
-  i {
-    position: absolute;
-    left: 12px;
-    color: #94a3b8;
-    font-size: 13px;
-    pointer-events: none;
-  }
-
-  .input-search-clean {
-    width: 100%;
-    padding: 8px 34px 8px 34px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 12.5px;
-    color: #1e293b;
-    outline: none;
-    transition: all 0.15s ease;
-
-    &:focus {
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba(126, 16, 31, 0.1);
+    .banner-subtext {
+      font-size: 11px;
+      color: #047857;
     }
   }
 
-  .btn-clear-search-clean {
-    position: absolute;
-    right: 10px;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    font-size: 16px;
-    cursor: pointer;
-
-    &:hover { color: #dc2626; }
-  }
-}
-
-.pacientes-disponibles-clean-list {
-  max-height: 160px;
-  overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: #f8fafc;
-
-  .paciente-disponible-item-clean {
+  .banner-input-wrap {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 6px 10px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    transition: all 0.15s ease;
 
-    &:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+    i {
+      position: absolute;
+      left: 12px;
+      color: #059669;
+      font-size: 13px;
     }
 
-    .p-info-block {
-      display: flex;
-      flex-direction: column;
+    .input-global-msg-pro {
+      width: 100%;
+      padding: 9px 34px 9px 34px;
+      border: 1.5px solid #6ee7b7;
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #064e3b;
+      background: #ffffff;
+      outline: none;
+      transition: all 0.2s ease;
 
-      strong {
-        font-size: 12px;
-        color: #1e293b;
+      &::placeholder {
+        color: #94a3b8;
       }
 
-      small {
-        font-size: 10.5px;
-        color: #64748b;
+      &:focus {
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
       }
     }
 
-    .btn-add-p-clean {
-      padding: 4px 10px;
-      border: 1px solid #10b981;
-      background: #ecfdf5;
-      color: #065f46;
-      border-radius: 5px;
-      font-size: 11px;
-      font-weight: 700;
+    .btn-clear-global-msg {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
       cursor: pointer;
+
+      &:hover { color: #dc2626; }
+    }
+  }
+}
+
+// 5. Panel Buscador
+.search-catalog-panel-pro {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+
+  .panel-section-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .search-bar-pro {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    i {
+      position: absolute;
+      left: 12px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .input-search-pro {
+      width: 100%;
+      padding: 8px 34px 8px 34px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #1e293b;
+      outline: none;
+      transition: all 0.15s ease;
+
+      &:focus {
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba(126, 16, 31, 0.1);
+      }
+    }
+
+    .btn-clear-search-pro {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
+      cursor: pointer;
+
+      &:hover { color: #dc2626; }
+    }
+  }
+
+  .search-results-grid-pro {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 4px;
+
+    .patient-search-chip {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 7px 10px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: space-between;
+      gap: 10px;
       transition: all 0.15s ease;
 
       &:hover {
-        background: #10b981;
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+      }
+
+      .patient-search-info {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        strong {
+          font-size: 12px;
+          color: #1e293b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        small {
+          font-size: 10.5px;
+          color: #64748b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+
+      .btn-add-patient-chip {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        padding: 4px 9px;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background: #10b981;
+          color: #ffffff;
+        }
+      }
+    }
+
+    .no-results-chip {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 12px;
+      color: #94a3b8;
+      font-size: 11.5px;
+    }
+  }
+}
+
+// 6. Tanda Panel
+.tanda-panel-pro {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+
+  .tanda-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .panel-header-left {
+      display: flex;
+      flex-direction: column;
+
+      h4 {
+        margin: 0;
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .panel-sub {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+      }
+    }
+
+    .btn-clean-tanda-pro {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #dc2626;
         color: #ffffff;
       }
     }
   }
 
-  .empty-busqueda-clean {
+  .empty-state-pro {
     text-align: center;
-    padding: 14px;
-    color: #94a3b8;
-    font-size: 11.5px;
-  }
-}
+    padding: 32px 16px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
 
-// 3. Tanda
-.tanda-clean-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-  gap: 6px;
-
-  .tanda-hint-text {
-    font-size: 11px;
-    color: #64748b;
-  }
-
-  .btn-vaciar-tanda-clean {
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #dc2626;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 5px;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: #dc2626;
-      color: #ffffff;
-    }
-  }
-}
-
-.empty-tanda-clean {
-  text-align: center;
-  padding: 30px 15px;
-  background: #f8fafc;
-  border: 2px dashed #cbd5e1;
-  border-radius: 10px;
-
-  .empty-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    color: #64748b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    margin: 0 auto 10px auto;
-  }
-
-  h4 {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 3px;
-  }
-
-  p {
-    font-size: 11.5px;
-    color: #64748b;
-  }
-}
-
-.tanda-cards-clean-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 4px;
-
-  .tanda-card-item {
-    background: #ffffff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: all 0.15s ease;
-
-    &.card-alerta-sin-dia {
-      border-color: #f59e0b;
-      background: #fffdfa;
-    }
-
-    &:hover {
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
-    }
-
-    .tanda-card-top {
+    .empty-art-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-
-      .tanda-card-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-
-        .index-pill {
-          background: #334155;
-          color: #ffffff;
-          font-size: 10.5px;
-          font-weight: 800;
-          padding: 2px 6px;
-          border-radius: 4px;
-        }
-
-        .patient-full-title {
-          font-size: 13px;
-          font-weight: 700;
-          color: #1e293b;
-        }
-
-        .patient-meta-tag {
-          font-size: 10.5px;
-          color: #64748b;
-          background: #f1f5f9;
-          padding: 2px 7px;
-          border-radius: 8px;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-        }
-      }
-
-      .btn-quitar-item {
-        background: transparent;
-        border: none;
-        color: #94a3b8;
-        font-size: 13px;
-        cursor: pointer;
-        padding: 3px 6px;
-        border-radius: 4px;
-        transition: all 0.15s ease;
-
-        &:hover {
-          background: #fee2e2;
-          color: #dc2626;
-        }
-      }
+      justify-content: center;
+      font-size: 20px;
+      margin: 0 auto 10px auto;
     }
 
-    .tanda-card-inputs-grid {
-      display: grid;
-      grid-template-columns: 210px 125px 130px 1fr;
-      gap: 8px;
-      align-items: flex-start;
+    h5 {
+      margin: 0 0 4px 0;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #334155;
+    }
 
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr 1fr;
+    p {
+      margin: 0;
+      font-size: 11.5px;
+      color: #64748b;
+    }
+  }
+
+  .patient-cards-scroll-pro {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+
+    .patient-card-pro {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.15s ease;
+
+      &.warning-border {
+        border-color: #f59e0b;
+        background: #fffdfa;
       }
 
-      .input-cell {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
+      &:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+      }
 
-        label {
-          font-size: 11px;
-          font-weight: 700;
-          color: #475569;
+      .card-header-pro {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+
+        .header-patient-meta {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          gap: 8px;
+          flex-wrap: wrap;
 
-          i { color: $primary; }
-
-          .badge-requerido {
-            font-size: 9px;
-            color: #d97706;
-            background: #fef3c7;
-            padding: 1px 5px;
-            border-radius: 4px;
+          .order-badge-pro {
+            background: #334155;
+            color: #ffffff;
+            font-size: 10.5px;
             font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
           }
 
-          .badge-opcional {
-            font-size: 9px;
-            color: #94a3b8;
-            font-weight: normal;
+          .patient-title-pro {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+          }
+
+          .pill-meta {
+            font-size: 10.5px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 7px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
           }
         }
 
-        .select-dia-wrap {
-          border-radius: 6px;
-          border: 1px solid #cbd5e1;
+        .btn-remove-row-pro {
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          font-size: 14px;
+          cursor: pointer;
+          padding: 3px 6px;
+          border-radius: 4px;
+          transition: all 0.15s ease;
 
-          &.sin-dia-alerta {
-            border-color: #f59e0b;
-            background: #fffbeb;
+          &:hover {
+            background: #fee2e2;
+            color: #dc2626;
+          }
+        }
+      }
+
+      .card-controls-row-pro {
+        display: grid;
+        grid-template-columns: 210px 125px 130px 1fr;
+        gap: 8px;
+        align-items: flex-start;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .ctrl-group {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+
+          label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            i { color: $primary; }
+
+            .badge-req {
+              font-size: 9px;
+              color: #d97706;
+              background: #fef3c7;
+              padding: 1px 5px;
+              border-radius: 4px;
+              font-weight: 800;
+            }
+
+            .badge-opt {
+              font-size: 9px;
+              color: #94a3b8;
+              font-weight: normal;
+            }
           }
 
-          .control-select-dia {
+          .ctrl-select-wrap {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+
+            &.unassigned-wrap {
+              border-color: #f59e0b;
+              background: #fffbeb;
+            }
+
+            .select-field-pro {
+              width: 100%;
+              padding: 5px 8px;
+              border: none;
+              background: transparent;
+              font-size: 11.5px;
+              color: #1e293b;
+              font-weight: 600;
+              outline: none;
+            }
+          }
+
+          .time-field-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            .input-field-pro {
+              width: 100%;
+              padding: 5px 22px 5px 7px;
+              border: 1px solid #cbd5e1;
+              border-radius: 6px;
+              font-size: 11.5px;
+              color: #1e293b;
+              outline: none;
+
+              &:focus {
+                border-color: $primary;
+              }
+            }
+
+            .btn-clear-time-pro {
+              position: absolute;
+              right: 5px;
+              background: transparent;
+              border: none;
+              color: #94a3b8;
+              font-size: 14px;
+              cursor: pointer;
+
+              &:hover { color: #dc2626; }
+            }
+          }
+
+          .time-subnote {
+            font-size: 9.5px;
+            color: #94a3b8;
+            font-style: italic;
+          }
+
+          .select-field-pro {
             width: 100%;
-            padding: 5px 8px;
-            border: none;
-            background: transparent;
+            padding: 5px 7px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             font-size: 11.5px;
             color: #1e293b;
             outline: none;
-            font-weight: 600;
+            background: #ffffff;
+
+            &.prio-high {
+              border-color: #ef4444;
+              background: #fff5f5;
+              color: #b91c1c;
+              font-weight: 700;
+            }
           }
-        }
 
-        .alerta-dia-msg {
-          font-size: 9.5px;
-          color: #d97706;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 3px;
-        }
-
-        .input-hora-wrap {
-          position: relative;
-          display: flex;
-          align-items: center;
-
-          .control-input-hora {
+          .input-field-pro {
             width: 100%;
-            padding: 5px 22px 5px 7px;
+            padding: 5px 8px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 11.5px;
@@ -2686,67 +2934,81 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
               border-color: $primary;
             }
           }
-
-          .btn-clean-hora {
-            position: absolute;
-            right: 5px;
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 14px;
-            cursor: pointer;
-
-            &:hover { color: #dc2626; }
-          }
-        }
-
-        .sin-hora-note {
-          font-size: 9.5px;
-          color: #94a3b8;
-          font-style: italic;
-        }
-
-        .control-select-prioridad {
-          width: 100%;
-          padding: 5px 7px;
-          border: 1px solid #cbd5e1;
-          border-radius: 6px;
-          font-size: 11.5px;
-          color: #1e293b;
-          outline: none;
-          background: #ffffff;
-
-          &.p-alta {
-            border-color: #ef4444;
-            background: #fff5f5;
-            color: #b91c1c;
-            font-weight: 700;
-          }
-        }
-
-        .control-input-nota {
-          width: 100%;
-          padding: 5px 8px;
-          border: 1px solid #cbd5e1;
-          border-radius: 6px;
-          font-size: 11.5px;
-          color: #1e293b;
-          outline: none;
-
-          &:focus {
-            border-color: $primary;
-          }
         }
       }
     }
   }
 }
 
-.footer-counter-info {
-  margin-right: auto;
-  font-size: 12px;
-  color: #334155;
+// 7. Footer Pro
+.dialog-footer-pro {
+  padding: 12px 20px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: space-between;
+  gap: 12px;
+
+  .footer-stats-pro {
+    font-size: 12px;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .footer-buttons-pro {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+
+    .btn-cancel-pro {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+      }
+    }
+
+    .btn-save-pro {
+      background: linear-gradient(135deg, #7e101f, #9b111e);
+      border: none;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 16px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(126, 16, 31, 0.25);
+      transition: all 0.15s ease;
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #9b111e, #b91c1c);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(126, 16, 31, 0.35);
+      }
+
+      &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+    }
+  }
 }
