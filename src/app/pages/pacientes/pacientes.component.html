@@ -40,47 +40,54 @@
             <!-- Tabs segmentados -->
             <div class="tabs-segmented">
                 <button class="tab-item" [class.active]="tabActivo === 'todos'" (click)="cambiarTab('todos')">
-                    <i class="fas fa-list"></i>
-                    <span>Todos</span>
+                    <div class="tab-label-group">
+                        <i class="fas fa-list"></i>
+                        <span class="tab-title">Todos</span>
+                    </div>
                     <span class="tab-count">{{ pacientes.length }}</span>
                 </button>
 
                 <button class="tab-item" [class.active]="tabActivo === 'pendientes'" (click)="cambiarTab('pendientes')">
-                    <i class="fas fa-hourglass-half"></i>
-                    <span>En Espera</span>
-                    <span class="tab-count warning" *ngIf="pacientesPendientesCount > 0">{{ pacientesPendientesCount
-                        }}</span>
+                    <div class="tab-label-group">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span class="tab-title">En Espera</span>
+                    </div>
+                    <span class="tab-count warning" *ngIf="pacientesPendientesCount > 0">{{ pacientesPendientesCount }}</span>
                 </button>
 
                 <button class="tab-item" [class.active]="tabActivo === 'vencidos'" (click)="cambiarTab('vencidos')">
-                    <i class="fas fa-circle-exclamation"></i>
-                    <span>Listos para Visita (20+ d)</span>
-                    <span class="tab-count danger" *ngIf="pacientesVencidosCount > 0">{{ pacientesVencidosCount
-                        }}</span>
+                    <div class="tab-label-group">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span class="tab-title">Listos para Visita (20+ d)</span>
+                    </div>
+                    <span class="tab-count danger" *ngIf="pacientesVencidosCount > 0">{{ pacientesVencidosCount }}</span>
                 </button>
 
                 <button class="tab-item" [class.active]="tabActivo === 'completadas'"
                     (click)="cambiarTab('completadas')">
-                    <i class="fas fa-circle-check"></i>
-                    <span>Completadas</span>
-                    <span class="tab-count success" *ngIf="pacientesCompletadasCount > 0">{{ pacientesCompletadasCount
-                        }}</span>
+                    <div class="tab-label-group">
+                        <i class="fas fa-circle-check"></i>
+                        <span class="tab-title">Completadas</span>
+                    </div>
+                    <span class="tab-count success" *ngIf="pacientesCompletadasCount > 0">{{ pacientesCompletadasCount }}</span>
                 </button>
 
                 <button class="tab-item" [class.active]="tabActivo === 'incidencias'"
                     (click)="cambiarTab('incidencias')">
-                    <i class="fas fa-triangle-exclamation"></i>
-                    <span>Incidencias</span>
-                    <span class="tab-count warning" *ngIf="pacientesIncidenciasCount > 0">{{ pacientesIncidenciasCount
-                        }}</span>
+                    <div class="tab-label-group">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span class="tab-title">Incidencias</span>
+                    </div>
+                    <span class="tab-count warning" *ngIf="pacientesIncidenciasCount > 0">{{ pacientesIncidenciasCount }}</span>
                 </button>
 
                 <button class="tab-item" [class.active]="tabActivo === 'rechazos'"
                     (click)="cambiarTab('rechazos')">
-                    <i class="fas fa-ban"></i>
-                    <span>Rechazados</span>
-                    <span class="tab-count danger" *ngIf="pacientesRechazosCount > 0">{{ pacientesRechazosCount
-                        }}</span>
+                    <div class="tab-label-group">
+                        <i class="fas fa-ban"></i>
+                        <span class="tab-title">Rechazados</span>
+                    </div>
+                    <span class="tab-count danger" *ngIf="pacientesRechazosCount > 0">{{ pacientesRechazosCount }}</span>
                 </button>
             </div>
 
@@ -393,6 +400,12 @@
                                         <i class="fas fa-triangle-exclamation"></i>
                                     </button>
 
+                                    <!-- Botón Editar Paciente (Dirección, Colonia, Contacto y Estado) -->
+                                    <button class="btn-action btn-editar" (click)="abrirModalEditar(paciente)"
+                                        title="Editar dirección, colonia, teléfonos y estado">
+                                        <i class="fas fa-pen-to-square"></i>
+                                    </button>
+
                                     <!-- Botón Ver Historial -->
                                     <button class="btn-action btn-historial" (click)="verHistorial(paciente)"
                                         title="Ver historial de visitas"
@@ -539,6 +552,11 @@
                     <button class="btn-card-action btn-incidencia" (click)="abrirIncidencia(paciente)"
                         title="Incidencia">
                         <i class="fas fa-triangle-exclamation"></i>
+                    </button>
+
+                    <button class="btn-card-action btn-editar" (click)="abrirModalEditar(paciente)"
+                        title="Editar dirección, colonia, contacto y estado">
+                        <i class="fas fa-pen-to-square"></i>
                     </button>
 
                     <button class="btn-card-action btn-historial" (click)="verHistorial(paciente)" title="Historial"
@@ -812,6 +830,148 @@
                 </button>
             </div>
 
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ⭐ MODAL: EDITAR PACIENTE (DIRECCIÓN, CONTACTO, ESTADO) -->
+    <!-- ============================================ -->
+    <div class="modal-backdrop-glass" *ngIf="mostrarModalEditar" (click)="cerrarModalEditar()">
+        <div class="modal-dialog-modern modal-dialog-editar" (click)="$event.stopPropagation()">
+            <!-- Header -->
+            <div class="dialog-header header-brand">
+                <div class="header-title-group">
+                    <div class="header-icon-circle edit-icon-bg">
+                        <i class="fas fa-user-pen"></i>
+                    </div>
+                    <div>
+                        <h3>Editar Datos del Paciente</h3>
+                        <p class="subtitle">Actualiza dirección, colonia, teléfonos de contacto y estatus</p>
+                    </div>
+                </div>
+                <button class="btn-dialog-close" (click)="cerrarModalEditar()" title="Cerrar modal">&times;</button>
+            </div>
+
+            <!-- Body -->
+            <div class="dialog-body editar-dialog-body">
+                <div class="patient-summary-banner" *ngIf="pacienteEditando">
+                    <div class="banner-avatar">
+                        {{ getIniciales(pacienteEditando.nombreCompleto || pacienteEditando.nombre) }}
+                    </div>
+                    <div class="banner-info">
+                        <strong>{{ pacienteEditando.nombreCompleto || pacienteEditando.nombre }}</strong>
+                        <div class="banner-meta">
+                            <span *ngIf="pacienteEditando.curp"><i class="fas fa-id-card"></i> {{ pacienteEditando.curp }}</span>
+                            <span><i class="fas fa-hashtag"></i> ID #{{ pacienteEditando.id }}</span>
+                            <span class="badge-programa" *ngIf="pacienteEditando.programa">{{ pacienteEditando.programa }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="form-editar-paciente" (ngSubmit)="guardarEdicionPaciente()">
+                    <!-- Bloque 1: Ubicación -->
+                    <div class="form-section-title">
+                        <i class="fas fa-map-location-dot"></i> Domicilio y Ubicación
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="editCalleNumero">Calle y Número Exterior / Interior <span class="req">*</span></label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-road"></i>
+                                <input type="text" id="editCalleNumero" [(ngModel)]="formEdicion.calleNumero" name="calleNumero"
+                                    placeholder="Ej. SIERRA DE LOS VALLES #122" class="form-control" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group flex-2">
+                            <label for="editColonia">Colonia / Fraccionamiento <span class="req">*</span></label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-city"></i>
+                                <input type="text" id="editColonia" [(ngModel)]="formEdicion.colonia" name="colonia"
+                                    placeholder="Ej. VALLE DEL TEPEYAC" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editReferencias">Referencias Viales y Características de la Vivienda</label>
+                        <div class="input-icon-wrap">
+                            <i class="fas fa-signs-post"></i>
+                            <input type="text" id="editReferencias" [(ngModel)]="formEdicion.referencias" name="referencias"
+                                placeholder="Ej. ENTRE CALLE HIDALGO Y JUAREZ, FACHADA VERDE" class="form-control" />
+                        </div>
+                    </div>
+
+                    <!-- Bloque 2: Contacto -->
+                    <div class="form-section-title">
+                        <i class="fas fa-phone-volume"></i> Números de Contacto
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="editTelefonoCelular">Teléfono Celular (WhatsApp / SMS) <span class="req">*</span></label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-mobile-screen"></i>
+                                <input type="tel" id="editTelefonoCelular" [(ngModel)]="formEdicion.telefonoCelular" name="telefonoCelular"
+                                    placeholder="10 dígitos (ej. 4771234567)" class="form-control" maxlength="15" />
+                            </div>
+                        </div>
+
+                        <div class="form-group flex-1">
+                            <label for="editTelefonoFijo">Teléfono Fijo / Alternativo</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="editTelefonoFijo" [(ngModel)]="formEdicion.telefonoFijo" name="telefonoFijo"
+                                    placeholder="Teléfono fijo o de familiar" class="form-control" maxlength="15" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloque 3: Estado -->
+                    <div class="form-section-title">
+                        <i class="fas fa-heart-pulse"></i> Estado de Atención del Paciente
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="editEstatus">Estatus Actual <span class="req">*</span></label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-circle-notch"></i>
+                                <select id="editEstatus" [(ngModel)]="formEdicion.estatus" name="estatus" class="form-control select-control" required>
+                                    <option value="PENDIENTE">🟡 PENDIENTE (En espera de visita)</option>
+                                    <option value="COMPLETADA">🟢 COMPLETADA (Visita realizada con éxito)</option>
+                                    <option value="INCIDENCIA">🟠 INCIDENCIA (Domicilio no localizado / No abrió)</option>
+                                    <option value="RECHAZO">🔴 RECHAZO (No aceptó atención médica)</option>
+                                    <option value="FINADO">⚫ FINADO (Fallecido)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group flex-1" *ngIf="formEdicion.estatus === 'PENDIENTE'">
+                            <label for="editDiasPendiente">Días Acumulados de Espera</label>
+                            <div class="input-icon-wrap">
+                                <i class="fas fa-hourglass-half"></i>
+                                <input type="number" id="editDiasPendiente" [(ngModel)]="formEdicion.diasPendiente" name="diasPendiente"
+                                    min="0" max="365" class="form-control" />
+                            </div>
+                            <small class="hint-text">Al acumular 20 días o más, el sistema lo califica como Listo para Visita.</small>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="dialog-footer">
+                        <button type="button" class="btn-dialog-cancel" (click)="cerrarModalEditar()" [disabled]="guardandoEdicion">
+                            <i class="fas fa-xmark"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-dialog-save" [disabled]="guardandoEdicion || !formEdicion.calleNumero || !formEdicion.colonia">
+                            <i class="fas fa-spinner fa-spin" *ngIf="guardandoEdicion"></i>
+                            <i class="fas fa-floppy-disk" *ngIf="!guardandoEdicion"></i>
+                            {{ guardandoEdicion ? 'Guardando cambios...' : 'Guardar Datos' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

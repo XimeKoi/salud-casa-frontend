@@ -119,6 +119,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private _eventListener: ((event: any) => void) | null = null;
   private _incidenciaListener: ((event: any) => void) | null = null;
   private _capturaListener: ((event: any) => void) | null = null;
+  private _editarPacienteListener: ((event: any) => void) | null = null;
   private _toggleVisitaHoyListener: ((event: any) => void) | null = null;
   private _planHoyActualizadoListener: ((event: any) => void) | null = null;
   private _enfocarPacienteListener: ((event: any) => void) | null = null;
@@ -390,6 +391,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this._incidenciaListener) {
       window.removeEventListener('reportarIncidencia', this._incidenciaListener);
       this._incidenciaListener = null;
+    }
+    if (this._editarPacienteListener) {
+      window.removeEventListener('editarPacientePopup', this._editarPacienteListener);
+      this._editarPacienteListener = null;
     }
     if (this._capturaListener) {
       window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
@@ -1672,6 +1677,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <i class="fas fa-flag"></i>
             <span>Reporte</span>
           </button>
+
+          <button class="cp-btn cp-btn-editar" style="color: #1e40af; border-color: #1e40af;"
+            onclick="window.dispatchEvent(new CustomEvent('editarPacientePopup', { detail: {
+              pacienteId: ${paciente.id}
+            } }))" title="Editar dirección, colonia, teléfonos y estado">
+            <i class="fas fa-pen-to-square"></i>
+            <span>Editar</span>
+          </button>
         </div>
       </div>
     </div>
@@ -2240,6 +2253,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     window.addEventListener('capturarVisitaPaciente', this._capturaListener);
+
+    if (this._editarPacienteListener) {
+      window.removeEventListener('editarPacientePopup', this._editarPacienteListener);
+    }
+    this._editarPacienteListener = (event: any) => {
+      this.ngZone.run(() => {
+        const data = event.detail;
+        this.router.navigate(['/pacientes'], { queryParams: { editarId: data.pacienteId } });
+      });
+    };
+    window.addEventListener('editarPacientePopup', this._editarPacienteListener);
 
     // ⭐ EXPONER TOGGLE RÁPIDO Y SEGURO A NIVEL GLOBAL
     (window as any).__togglePacienteRuta = (pacienteId: number) => {

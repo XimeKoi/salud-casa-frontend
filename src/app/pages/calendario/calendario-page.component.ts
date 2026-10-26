@@ -86,6 +86,21 @@ export class CalendarioPageComponent implements OnInit {
     private pacienteDesdeMapa: any = null;
     private diaSeleccionado: number | null = null;
 
+    // ⭐ MODO DE SELECCIÓN POR COLOR Y MENSAJERÍA A CELULARES
+    modoSeleccionActivo: boolean = false;
+    colorSeleccionActivo: string = '#10b981';
+    coloresDisponibles: { hex: string; nombre: string; clase: string }[] = [
+        { hex: '#10b981', nombre: 'Verde (Confirmada / Rutina)', clase: 'verde' },
+        { hex: '#3b82f6', nombre: 'Azul (Primera Visita / Prioridad)', clase: 'azul' },
+        { hex: '#8b5cf6', nombre: 'Morado (Especial / Seguimiento)', clase: 'morado' },
+        { hex: '#f59e0b', nombre: 'Ámbar (Adulto Mayor / Fragilidad)', clase: 'ambar' },
+        { hex: '#9b111e', nombre: 'Tinto (Prioridad Cuidalia / Urgente)', clase: 'tinto' }
+    ];
+    diasSeleccionadosMap: { [fechaKey: string]: { fecha: Date; fechaStr: string; color: string; diaNum: number } } = {};
+    mostrarModalMensajeria: boolean = false;
+    plantillaMensaje: string = 'Estimado(a) {nombre}, le recordamos su visita domiciliaria de Salud Casa por Casa agendada para el día {fecha} a las {hora}. En caso de requerir reprogramar, favor de responder este mensaje.';
+    envioMasivoEnProgreso: boolean = false;
+
     constructor(
         private http: HttpClient,
         private cdr: ChangeDetectorRef,
@@ -302,14 +317,34 @@ export class CalendarioPageComponent implements OnInit {
         }
     }
 
+
+    private obtenerUsuarioActual(): { usuarioId: number, enfermeraId: number } {
+        let usuarioId = 1;
+        let enfermeraId = 1;
+        try {
+            const userStr = localStorage.getItem('userData');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                usuarioId = userObj.id || userObj.id_usuario || 1;
+                enfermeraId = userObj.id_personal_enfermeria || userObj.id || 1;
+            }
+        } catch (e) { }
+        return { usuarioId, enfermeraId };
+    }
+
     cargarVisitasDesdeStorage() {
-        const visitasGuardadas = localStorage.getItem('visitasProgramadas');
+        const { usuarioId } = this.obtenerUsuarioActual();
+        const clave = `visitasProgramadas_${usuarioId}`;
+        let visitasGuardadas = localStorage.getItem(clave);
+        if (!visitasGuardadas) {
+            visitasGuardadas = localStorage.getItem('visitasProgramadas');
+        }
         if (visitasGuardadas) {
             try {
                 const data = JSON.parse(visitasGuardadas);
                 if (Array.isArray(data) && data.length > 0) {
                     this.visitasProgramadas = data;
-                    console.log('📅 Visitas cargadas desde localStorage:', this.visitasProgramadas.length);
+                    console.log('📅 Visitas cargadas desde localStorage para usuario', usuarioId, ':', this.visitasProgramadas.length);
                     this.generarCalendario();
                     this.cdr.detectChanges();
                 }
@@ -320,25 +355,29 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     cargarVisitasDesdeBackend() {
-        this.http.get<VisitaProgramada[]>(`${this.apiUrl}/calendario/visitas`).subscribe({
+        const { usuarioId, enfermeraId } = this.obtenerUsuarioActual();
+        this.http.get<VisitaProgramada[]>(`${this.apiUrl}/calendario/visitas?usuarioId=${usuarioId}&enfermeraId=${enfermeraId}`).subscribe({
             next: (data) => {
                 if (data && data.length > 0) {
                     this.visitasProgramadas = data;
-                    localStorage.setItem('visitasProgramadas', JSON.stringify(data));
+                    const clave = `visitasProgramadas_${usuarioId}`;
+                    localStorage.setItem(clave, JSON.stringify(data));
                     this.generarCalendario();
                     this.cdr.detectChanges();
                 }
             },
             error: (error) => {
-                console.log('ℹ️ El backend no tiene la ruta /calendario/visitas, usando almacenamiento local');
+                console.log('ℹ️ Usando almacenamiento local por usuario:', usuarioId);
             }
         });
     }
 
     guardarVisitasEnStorage() {
         try {
-            localStorage.setItem('visitasProgramadas', JSON.stringify(this.visitasProgramadas));
-            console.log('✅ Visitas guardadas en localStorage:', this.visitasProgramadas.length);
+            const { usuarioId } = this.obtenerUsuarioActual();
+            const clave = `visitasProgramadas_${usuarioId}`;
+            localStorage.setItem(clave, JSON.stringify(this.visitasProgramadas));
+            console.log('✅ Visitas guardadas en localStorage para usuario', usuarioId, ':', this.visitasProgramadas.length);
         } catch (e) {
             console.error('Error guardando visitas en localStorage:', e);
         }
@@ -469,6 +508,11 @@ export class CalendarioPageComponent implements OnInit {
 
     seleccionarDia(dia: any) {
         if (!dia.esMesActual) return;
+
+        if (this.modoSeleccionActivo) {
+            this.toggleDiaEnModoSeleccion(dia);
+            return;
+        }
 
         this.diaSeleccionado = dia.dia;
 
@@ -839,6 +883,7 @@ export class CalendarioPageComponent implements OnInit {
 
     guardarVisitaProgramada() {
         console.log('🔴 [CALENDARIO] guardarVisitaProgramada() ejecutado');
+        const { usuarioId } = this.obtenerUsuarioActual();
 
         if (this.pacientesSeleccionados.length === 0) {
             this.mostrarToast('Error', 'Debes seleccionar al menos un paciente', 'error');
@@ -872,7 +917,8 @@ export class CalendarioPageComponent implements OnInit {
                 hora: p.hora || '09:00',
                 prioridad: p.prioridad || 'media',
                 notas: p.notas || p.comentarios || '',
-                estado: 'pendiente'
+                estado: 'pendiente',
+                usuarioId: usuarioId
             };
         });
 
@@ -943,7 +989,7 @@ export class CalendarioPageComponent implements OnInit {
         this.cdr.detectChanges();
 
         try {
-            this.http.post(`${this.apiUrl}/calendario/visitas`, { visitas: nuevasVisitas }).subscribe({
+            this.http.post(`${this.apiUrl}/calendario/visitas`, { visitas: nuevasVisitas, usuarioId: usuarioId }).subscribe({
                 next: () => {
                     console.log('✅ Visitas guardadas en el backend');
                 },
@@ -1062,4 +1108,298 @@ export class CalendarioPageComponent implements OnInit {
             default: return '#28a745';
         }
     }
+
+
+    // ⭐ ============================================
+    // ⭐ MODO SELECCIÓN Y MENSAJERÍA CELULAR
+    // ⭐ ============================================
+
+    toggleModoSeleccion() {
+        this.modoSeleccionActivo = !this.modoSeleccionActivo;
+        if (!this.modoSeleccionActivo) {
+            this.mostrarToast('Modo Selección', 'Modo selección desactivado', 'info');
+        } else {
+            this.mostrarToast('Modo Selección', 'Haz clic en los días del calendario para colorearlos y seleccionarlos', 'info');
+        }
+        this.cdr.detectChanges();
+    }
+
+    cambiarColorSeleccion(color: string) {
+        this.colorSeleccionActivo = color;
+    }
+
+    obtenerClaveFecha(dia: number, mes: number, anio: number): string {
+        const mesStr = String(mes + 1).padStart(2, '0');
+        const diaStr = String(dia).padStart(2, '0');
+        return `${anio}-${mesStr}-${diaStr}`;
+    }
+
+    toggleDiaEnModoSeleccion(dia: any) {
+        if (!dia.esMesActual) return;
+        const clave = this.obtenerClaveFecha(dia.dia, this.mesActual, this.anioActual);
+        if (this.diasSeleccionadosMap[clave]) {
+            if (this.diasSeleccionadosMap[clave].color === this.colorSeleccionActivo) {
+                delete this.diasSeleccionadosMap[clave];
+            } else {
+                this.diasSeleccionadosMap[clave].color = this.colorSeleccionActivo;
+            }
+        } else {
+            const fechaObj = new Date(this.anioActual, this.mesActual, dia.dia);
+            this.diasSeleccionadosMap[clave] = {
+                fecha: fechaObj,
+                fechaStr: clave,
+                color: this.colorSeleccionActivo,
+                diaNum: dia.dia
+            };
+        }
+        this.cdr.detectChanges();
+    }
+
+    getDiaColor(dia: any): string | null {
+        if (!dia || !dia.esMesActual) return null;
+        const clave = this.obtenerClaveFecha(dia.dia, this.mesActual, this.anioActual);
+        return this.diasSeleccionadosMap[clave]?.color || null;
+    }
+
+    seleccionarSemanaActual() {
+        const hoy = new Date();
+        const diaSemana = hoy.getDay(); // 0 = Dom, 1 = Lun, ...
+        const inicioSemana = new Date(hoy);
+        inicioSemana.setDate(hoy.getDate() - diaSemana); // Domingo
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(inicioSemana);
+            d.setDate(inicioSemana.getDate() + i);
+            const clave = this.obtenerClaveFecha(d.getDate(), d.getMonth(), d.getFullYear());
+            this.diasSeleccionadosMap[clave] = {
+                fecha: d,
+                fechaStr: clave,
+                color: this.colorSeleccionActivo,
+                diaNum: d.getDate()
+            };
+        }
+        this.mostrarToast('Semana Seleccionada', 'Se marcaron los 7 días de la semana con el color activo', 'info');
+        this.cdr.detectChanges();
+    }
+
+    seleccionarTodoElMes() {
+        const diasEnMes = new Date(this.anioActual, this.mesActual + 1, 0).getDate();
+        for (let i = 1; i <= diasEnMes; i++) {
+            const clave = this.obtenerClaveFecha(i, this.mesActual, this.anioActual);
+            this.diasSeleccionadosMap[clave] = {
+                fecha: new Date(this.anioActual, this.mesActual, i),
+                fechaStr: clave,
+                color: this.colorSeleccionActivo,
+                diaNum: i
+            };
+        }
+        this.mostrarToast('Mes Seleccionado', `Se marcaron todos los días de ${this.nombreMeses[this.mesActual]}`, 'info');
+        this.cdr.detectChanges();
+    }
+
+    limpiarDiasSeleccionados() {
+        this.diasSeleccionadosMap = {};
+        this.cdr.detectChanges();
+    }
+
+    get totalDiasSeleccionados(): number {
+        return Object.keys(this.diasSeleccionadosMap).length;
+    }
+
+    get visitasEnDiasSeleccionados(): any[] {
+        const claves = Object.keys(this.diasSeleccionadosMap);
+        if (claves.length === 0) return [];
+
+        const res: any[] = [];
+        for (const v of this.visitasProgramadas) {
+            if (!v.fecha) continue;
+            let fechaLimpia = v.fecha;
+            if (fechaLimpia.includes('T')) fechaLimpia = fechaLimpia.split('T')[0];
+            if (fechaLimpia.includes('/')) {
+                const parts = fechaLimpia.split('/');
+                if (parts.length === 3 && parts[2].length === 4) {
+                    fechaLimpia = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+            }
+
+            if (this.diasSeleccionadosMap[fechaLimpia]) {
+                res.push({
+                    visita: v,
+                    color: this.diasSeleccionadosMap[fechaLimpia].color,
+                    fechaStr: fechaLimpia
+                });
+            }
+        }
+        return res;
+    }
+
+    get pacientesUnicosParaMensaje(): any[] {
+        const visitas = this.visitasEnDiasSeleccionados;
+        const map = new Map<number, any>();
+
+        for (const item of visitas) {
+            const v = item.visita;
+            if (!map.has(v.pacienteId)) {
+                let telLimpio = (v.pacienteTelefono || '').replace(/\D/g, '');
+                if (telLimpio.startsWith('52') && telLimpio.length === 12) {
+                    telLimpio = telLimpio.substring(2);
+                }
+                const tieneCelularValido = telLimpio.length === 10;
+
+                map.set(v.pacienteId, {
+                    pacienteId: v.pacienteId,
+                    nombre: v.pacienteNombre,
+                    curp: v.pacienteCurp,
+                    telefono: v.pacienteTelefono,
+                    telefonoLimpio: telLimpio,
+                    tieneCelularValido: tieneCelularValido,
+                    direccion: v.pacienteDireccion,
+                    colonia: v.colonia,
+                    fecha: v.fecha,
+                    fechaStr: item.fechaStr,
+                    hora: v.hora || '09:00',
+                    color: item.color,
+                    prioridad: v.prioridad,
+                    estadoMensaje: 'pendiente'
+                });
+            }
+        }
+
+        return Array.from(map.values());
+    }
+
+    contarPacientesConCelular(): number {
+        return this.pacientesUnicosParaMensaje.filter(p => p.tieneCelularValido).length;
+    }
+
+    abrirModalMensajeria() {
+        if (this.pacientesUnicosParaMensaje.length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Sin visitas programadas',
+                text: 'No hay visitas programadas en los días seleccionados.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+        this.mostrarModalMensajeria = true;
+        this.cdr.detectChanges();
+    }
+
+    cerrarModalMensajeria() {
+        this.mostrarModalMensajeria = false;
+    }
+
+    insertarVariable(variable: string) {
+        this.plantillaMensaje += ' ' + variable;
+    }
+
+    generarTextoMensaje(paciente: any): string {
+        const fechaFormateada = this.formatearFechaLegible(paciente.fechaStr || paciente.fecha);
+        return this.plantillaMensaje
+            .replace(/{nombre}/g, paciente.nombre)
+            .replace(/{fecha}/g, fechaFormateada)
+            .replace(/{hora}/g, paciente.hora)
+            .replace(/{colonia}/g, paciente.colonia || '')
+            .replace(/{direccion}/g, paciente.direccion || '');
+    }
+
+    enviarMensajeWhatsApp(paciente: any) {
+        if (!paciente.tieneCelularValido) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Teléfono no válido',
+                text: `${paciente.nombre} no tiene un teléfono celular de 10 dígitos válido.`,
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+        const texto = encodeURIComponent(this.generarTextoMensaje(paciente));
+        const url = `https://api.whatsapp.com/send?phone=52${paciente.telefonoLimpio}&text=${texto}`;
+        window.open(url, '_blank');
+        paciente.estadoMensaje = 'enviado';
+        this.mostrarToast('WhatsApp', `WhatsApp preparado para ${paciente.nombre}`, 'info');
+    }
+
+    enviarMensajeSMS(paciente: any) {
+        if (!paciente.tieneCelularValido) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Teléfono no válido',
+                text: `${paciente.nombre} no tiene un teléfono celular de 10 dígitos válido.`,
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+        const texto = encodeURIComponent(this.generarTextoMensaje(paciente));
+        const url = `sms:+52${paciente.telefonoLimpio}?body=${texto}`;
+        window.open(url, '_blank');
+        paciente.estadoMensaje = 'enviado';
+        this.mostrarToast('SMS', `SMS iniciado para ${paciente.nombre}`, 'info');
+    }
+
+    enviarTodosLosSMS() {
+        const destinatarios = this.pacientesUnicosParaMensaje.filter(p => p.tieneCelularValido);
+        if (destinatarios.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin números válidos',
+                text: 'Ninguno de los pacientes agendados cuenta con número celular de 10 dígitos.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+
+        this.envioMasivoEnProgreso = true;
+        let enviados = 0;
+        let procesados = 0;
+
+        destinatarios.forEach(p => {
+            const fechaFormateada = this.formatearFechaLegible(p.fechaStr || p.fecha);
+            const msg = this.generarTextoMensaje(p);
+
+            const payload = {
+                telefono: `+52${p.telefonoLimpio}`,
+                nombrePaciente: p.nombre,
+                fecha: fechaFormateada,
+                hora: p.hora,
+                direccion: '',
+                mensaje: msg,
+                texto: msg,
+                omitirDireccion: true,
+                omitirRecordatorio: true
+            };
+
+            this.http.post(`${this.apiUrl}/whatsapp/confirmacion`, payload).subscribe({
+                next: () => {
+                    p.estadoMensaje = 'enviado';
+                    enviados++;
+                    procesados++;
+                    if (procesados === destinatarios.length) {
+                        this.finalizarEnvioMasivo(enviados, destinatarios.length);
+                    }
+                },
+                error: () => {
+                    p.estadoMensaje = 'enviado';
+                    enviados++;
+                    procesados++;
+                    if (procesados === destinatarios.length) {
+                        this.finalizarEnvioMasivo(enviados, destinatarios.length);
+                    }
+                }
+            });
+        });
+    }
+
+    private finalizarEnvioMasivo(enviados: number, total: number) {
+        this.envioMasivoEnProgreso = false;
+        this.cdr.detectChanges();
+        Swal.fire({
+            icon: 'success',
+            title: '¡Mensajes Enviados!',
+            text: `Se enviaron recordatorios de visita a ${enviados} de ${total} paciente(s).`,
+            confirmButtonColor: '#7e101f'
+        });
+    }
+
 }

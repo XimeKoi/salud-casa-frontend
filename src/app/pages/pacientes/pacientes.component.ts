@@ -3,7 +3,7 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -103,6 +103,20 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   fotoModalVisible = false;
   fotoModalSrc = '';
 
+  // ⭐ MODAL EDITAR PACIENTE (DIRECCIÓN, CONTACTO, ESTADO)
+  mostrarModalEditar: boolean = false;
+  pacienteEditando: any = null;
+  guardandoEdicion: boolean = false;
+  formEdicion = {
+    calleNumero: '',
+    colonia: '',
+    referencias: '',
+    telefonoCelular: '',
+    telefonoFijo: '',
+    estatus: 'PENDIENTE',
+    diasPendiente: 0
+  };
+
   diasSemana: DiaCalendario[] = [];
 
   loading = false;
@@ -121,6 +135,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {
@@ -131,6 +146,18 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cargarPacientes();
     this.generarDiasSemana();
     this.initialLoadDone = true;
+
+    this.route.queryParams.subscribe(params => {
+      if (params['editarId']) {
+        const pId = parseInt(params['editarId'], 10);
+        setTimeout(() => {
+          const pac = this.pacientes.find(p => p.id === pId);
+          if (pac) {
+            this.abrirModalEditar(pac);
+          }
+        }, 700);
+      }
+    });
 
     this.navigationSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -1673,6 +1700,167 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       toast.style.animation = 'slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
       setTimeout(() => { if (toast.parentNode) toast.remove(); }, 350);
     }, 4000);
+  }
+
+
+
+  // ⭐ ============================================
+  // ⭐ MODAL EDITAR PACIENTE (DIRECCIÓN, CONTACTO, ESTADO)
+  // ⭐ ============================================
+
+  abrirModalEditar(paciente: Paciente) {
+    this.pacienteEditando = paciente;
+    this.guardandoEdicion = false;
+
+    const dir = paciente.direccion || '';
+    let calleNum = '';
+    let col = paciente.colonia || '';
+    let refs = '';
+
+    if (dir.includes('|')) {
+      const parts = dir.split('|');
+      refs = parts.slice(1).join('|').replace(/^[\s:]*Refs\.?:?\s*/i, '').trim();
+      calleNum = parts[0].trim();
+    } else if (/Refs\.?:/i.test(dir)) {
+      const idx = dir.search(/Refs\.?:/i);
+      refs = dir.substring(idx).replace(/^Refs\.?:?\s*/i, '').trim();
+      calleNum = dir.substring(0, idx).trim();
+    } else {
+      calleNum = dir;
+    }
+
+    calleNum = calleNum
+      .replace(/,\s*LEON\s*,?\s*GUANAJUATO.*$/i, '')
+      .replace(/,\s*LEON\s*,?\s*GTO.*$/i, '')
+      .replace(/,\s*LEON$/i, '')
+      .replace(/,\s*GTO$/i, '')
+      .trim();
+
+    if (col && calleNum.toLowerCase().includes(col.toLowerCase())) {
+      const safeCol = col.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regexCol = new RegExp(`,?\\s*(?:COLONIA|COL\\.)?\\s*` + safeCol, 'i');
+      calleNum = calleNum.replace(regexCol, '').trim();
+    }
+
+    const tel = (paciente.telefono || '').trim();
+    let telCel = '';
+    let telFijo = '';
+    if (tel.includes('/')) {
+      const p = tel.split('/');
+      telCel = p[0].trim();
+      telFijo = p[1].trim();
+    } else {
+      telCel = tel;
+    }
+
+    let st = 'PENDIENTE';
+    if (paciente.estadoVisita === 'completada') st = 'COMPLETADA';
+    else if (paciente.estadoVisita === 'rechazo') st = 'RECHAZO';
+    else if (paciente.estadoVisita === 'incidencia') st = 'INCIDENCIA';
+    else if ((paciente as any).estatus === 'FINADO') st = 'FINADO';
+
+    this.formEdicion = {
+      calleNumero: calleNum,
+      colonia: col,
+      referencias: refs,
+      telefonoCelular: telCel,
+      telefonoFijo: telFijo,
+      estatus: st,
+      diasPendiente: paciente.diasPendiente ?? 0
+    };
+
+    this.mostrarModalEditar = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalEditar() {
+    this.mostrarModalEditar = false;
+    this.pacienteEditando = null;
+    this.guardandoEdicion = false;
+  }
+
+  guardarEdicionPaciente() {
+    if (!this.pacienteEditando) return;
+    if (!this.formEdicion.calleNumero.trim() || !this.formEdicion.colonia.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campos requeridos',
+        text: 'Por favor ingresa la calle con número y la colonia.',
+        confirmButtonColor: '#7e101f'
+      });
+      return;
+    }
+
+    this.guardandoEdicion = true;
+
+    const cNum = this.formEdicion.calleNumero.trim();
+    const col = this.formEdicion.colonia.trim();
+    const refs = this.formEdicion.referencias.trim();
+    let nuevaDireccion = `${cNum}, ${col}, LEON, GUANAJUATO`;
+    if (refs) {
+      nuevaDireccion += ` | Refs.: ${refs}`;
+    }
+
+    const payload: any = {
+      direccion: nuevaDireccion,
+      zonaTrabajo: col,
+      telefonoCelular: this.formEdicion.telefonoCelular.trim(),
+      telefonoFijo: this.formEdicion.telefonoFijo.trim(),
+      estatus: this.formEdicion.estatus
+    };
+
+    this.http.patch(`${this.apiUrl}/pacientes/${this.pacienteEditando.id}`, payload).subscribe({
+      next: (res: any) => {
+        this.guardandoEdicion = false;
+
+        this.pacienteEditando.direccion = nuevaDireccion;
+        this.pacienteEditando.colonia = col;
+        this.pacienteEditando.telefono = this.formEdicion.telefonoCelular || this.formEdicion.telefonoFijo;
+        this.pacienteEditando.estadoVisita = this.mapearEstatus(this.formEdicion.estatus);
+        if (this.formEdicion.estatus === 'PENDIENTE') {
+          this.pacienteEditando.diasPendiente = this.formEdicion.diasPendiente;
+        }
+
+        const idx = this.pacientes.findIndex(p => p.id === this.pacienteEditando.id);
+        if (idx !== -1) {
+          this.pacientes[idx].direccion = nuevaDireccion;
+          this.pacientes[idx].colonia = col;
+          this.pacientes[idx].telefono = this.formEdicion.telefonoCelular || this.formEdicion.telefonoFijo;
+          this.pacientes[idx].estadoVisita = this.mapearEstatus(this.formEdicion.estatus);
+          if (this.formEdicion.estatus === 'PENDIENTE') {
+            this.pacientes[idx].diasPendiente = this.formEdicion.diasPendiente;
+          }
+        }
+
+        const idEnfermera = this.obtenerIdEnfermeraActual();
+        try {
+          localStorage.setItem('cuidalia_pacientes_list_' + idEnfermera, JSON.stringify(this.pacientes));
+        } catch (e) {}
+
+        this.aplicarFiltros();
+        this.cerrarModalEditar();
+        this.cdr.detectChanges();
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Paciente Actualizado!',
+          text: 'La dirección, colonia, contacto y estatus se guardaron correctamente.',
+          confirmButtonColor: '#7e101f',
+          timer: 2500,
+          timerProgressBar: true
+        });
+      },
+      error: (err: any) => {
+        this.guardandoEdicion = false;
+        console.error('Error al guardar edición de paciente:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: 'No se pudo conectar con el servidor para actualizar el paciente.',
+          confirmButtonColor: '#7e101f'
+        });
+      }
+    });
   }
 
 }
