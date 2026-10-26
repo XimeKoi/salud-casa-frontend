@@ -580,7 +580,9 @@
               </div>
               <div class="recipient-meta-line">
                 <span class="recipient-tel" [class.sin-celular]="!p.tieneCelularValido">
-                  <i class="fas fa-mobile-screen"></i> {{ p.telefono || 'Sin teléfono celular registrado' }}
+                  <i class="fas fa-mobile-screen"></i>
+                  <span *ngIf="p.telefono">{{ p.telefono }}</span>
+                  <span *ngIf="!p.telefono" class="tel-empty-text">Sin teléfono registrado (Haz clic en WhatsApp o SMS para asignarlo)</span>
                 </span>
                 <span class="recipient-col" *ngIf="p.colonia">
                   <i class="fas fa-location-dot"></i> {{ p.colonia }}
@@ -592,15 +594,19 @@
               </div>
             </div>
 
-            <!-- Botones directos de envío -->
+            <!-- Botones directos de envío (Interactivos siempre) -->
             <div class="recipient-btn-group">
-              <button class="btn-wa-direct" (click)="enviarMensajeWhatsApp(p)" [disabled]="!p.tieneCelularValido"
+              <button class="btn-wa-direct" (click)="enviarMensajeWhatsApp(p)"
                 title="Abrir WhatsApp con este mensaje">
                 <i class="fab fa-whatsapp"></i> WhatsApp
               </button>
-              <button class="btn-sms-direct" (click)="enviarMensajeSMS(p)" [disabled]="!p.tieneCelularValido"
-                title="Abrir SMS con este mensaje">
+              <button class="btn-sms-direct" (click)="enviarMensajeSMS(p)"
+                title="Abrir app de Mensajes SMS del teléfono">
                 <i class="fas fa-comment-sms"></i> SMS
+              </button>
+              <button class="btn-copy-direct" (click)="copiarMensajePaciente(p)"
+                title="Copiar texto del mensaje">
+                <i class="fas fa-copy"></i> Copiar
               </button>
               <span class="badge-enviado-chip" *ngIf="p.estadoMensaje === 'enviado'">
                 <i class="fas fa-check-double"></i> Enviado

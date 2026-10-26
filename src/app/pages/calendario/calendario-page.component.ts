@@ -1262,7 +1262,15 @@ export class CalendarioPageComponent implements OnInit {
         for (const item of visitas) {
             const v = item.visita;
             if (!map.has(v.pacienteId)) {
-                let telLimpio = (v.pacienteTelefono || '').replace(/\D/g, '');
+                // Si la visita no guardó teléfono o nombre, buscar en catálogo de pacientes
+                const pCat = this.todosLosPacientes.find(p => p.id === v.pacienteId);
+                const nombrePaciente = v.pacienteNombre || pCat?.nombreCompleto || pCat?.nombre || 'Paciente';
+                const curpPaciente = v.pacienteCurp || pCat?.curp || '';
+                const colPaciente = v.colonia || pCat?.colonia || '';
+                const dirPaciente = v.pacienteDireccion || pCat?.direccion || '';
+                
+                let telBruto = v.pacienteTelefono || pCat?.telefono || '';
+                let telLimpio = telBruto.replace(/\D/g, '');
                 if (telLimpio.startsWith('52') && telLimpio.length === 12) {
                     telLimpio = telLimpio.substring(2);
                 }
@@ -1388,46 +1396,127 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     enviarMensajeWhatsApp(paciente: any) {
-        if (!paciente.tieneCelularValido) {
+        let tel = (paciente.telefonoLimpio || paciente.telefono || '').replace(/\D/g, '');
+        if (tel.startsWith('52') && tel.length === 12) {
+            tel = tel.substring(2);
+        }
+
+        if (!tel || tel.length < 10) {
             Swal.fire({
-                icon: 'warning',
-                title: 'Teléfono no válido',
-                text: `${paciente.nombre} no tiene un teléfono celular de 10 dígitos válido.`,
-                confirmButtonColor: '#7e101f'
+                title: 'Número Celular de ' + paciente.nombre,
+                text: 'Ingresa el número celular a 10 dígitos para abrir la conversación en WhatsApp:',
+                input: 'tel',
+                inputValue: tel || '',
+                inputPlaceholder: 'Ej: 4771234567',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fab fa-whatsapp"></i> Abrir WhatsApp',
+                confirmButtonColor: '#25d366',
+                cancelButtonText: 'Cancelar'
+            }).then((res) => {
+                if (res.isConfirmed && res.value) {
+                    let num = res.value.replace(/\D/g, '');
+                    if (num.startsWith('52') && num.length === 12) num = num.substring(2);
+                    paciente.telefono = num;
+                    paciente.telefonoLimpio = num;
+                    paciente.tieneCelularValido = num.length === 10;
+                    this.lanzarWhatsApp(num, paciente);
+                }
             });
             return;
         }
+
+        this.lanzarWhatsApp(tel, paciente);
+    }
+
+    lanzarWhatsApp(telefonoLimpio: string, paciente: any) {
         const texto = encodeURIComponent(this.generarTextoMensaje(paciente));
-        const url = `https://api.whatsapp.com/send?phone=52${paciente.telefonoLimpio}&text=${texto}`;
-        window.open(url, '_blank');
+        const url = `https://wa.me/52${telefonoLimpio}?text=${texto}`;
+
+        // Método nativo con elemento anchor a prueba de bloqueadores de ventanas emergentes
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
         paciente.estadoMensaje = 'enviado';
-        this.mostrarToast('WhatsApp', `WhatsApp preparado para ${paciente.nombre}`, 'info');
+        this.mostrarToast('WhatsApp', `Abriendo WhatsApp para ${paciente.nombre}...`, 'success');
     }
 
     enviarMensajeSMS(paciente: any) {
-        if (!paciente.tieneCelularValido) {
+        let tel = (paciente.telefonoLimpio || paciente.telefono || '').replace(/\D/g, '');
+        if (tel.startsWith('52') && tel.length === 12) {
+            tel = tel.substring(2);
+        }
+
+        if (!tel || tel.length < 10) {
             Swal.fire({
-                icon: 'warning',
-                title: 'Teléfono no válido',
-                text: `${paciente.nombre} no tiene un teléfono celular de 10 dígitos válido.`,
-                confirmButtonColor: '#7e101f'
+                title: 'Número Celular de ' + paciente.nombre,
+                text: 'Ingresa el número celular a 10 dígitos para abrir la app de mensajes SMS:',
+                input: 'tel',
+                inputValue: tel || '',
+                inputPlaceholder: 'Ej: 4771234567',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-comment-sms"></i> Abrir Mensajes SMS',
+                confirmButtonColor: '#3b82f6',
+                cancelButtonText: 'Cancelar'
+            }).then((res) => {
+                if (res.isConfirmed && res.value) {
+                    let num = res.value.replace(/\D/g, '');
+                    if (num.startsWith('52') && num.length === 12) num = num.substring(2);
+                    paciente.telefono = num;
+                    paciente.telefonoLimpio = num;
+                    paciente.tieneCelularValido = num.length === 10;
+                    this.lanzarSMS(num, paciente);
+                }
             });
             return;
         }
+
+        this.lanzarSMS(tel, paciente);
+    }
+
+    lanzarSMS(telefonoLimpio: string, paciente: any) {
         const texto = encodeURIComponent(this.generarTextoMensaje(paciente));
-        const url = `sms:+52${paciente.telefonoLimpio}?body=${texto}`;
-        window.open(url, '_blank');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const sep = isIOS ? '&' : '?';
+        const url = `sms:+52${telefonoLimpio}${sep}body=${texto}`;
+
+        // En dispositivos móviles y computadoras window.location.href abre el gestor nativo de SMS de inmediato
+        window.location.href = url;
+
         paciente.estadoMensaje = 'enviado';
-        this.mostrarToast('SMS', `SMS iniciado para ${paciente.nombre}`, 'info');
+        this.mostrarToast('SMS', `Abriendo aplicación de mensajes SMS para ${paciente.nombre}...`, 'success');
+    }
+
+    copiarMensajePaciente(paciente: any) {
+        const texto = this.generarTextoMensaje(paciente);
+        navigator.clipboard.writeText(texto).then(() => {
+            this.mostrarToast('Copiado', 'Mensaje copiado al portapapeles', 'info');
+        }).catch(() => {
+            this.mostrarToast('Mensaje', texto, 'info');
+        });
+    }
+
+    actualizarTelefonoPaciente(paciente: any) {
+        let limpio = (paciente.telefono || '').replace(/\D/g, '');
+        if (limpio.startsWith('52') && limpio.length === 12) {
+            limpio = limpio.substring(2);
+        }
+        paciente.telefonoLimpio = limpio;
+        paciente.tieneCelularValido = limpio.length === 10;
+        this.cdr.detectChanges();
     }
 
     enviarTodosLosSMS() {
         const destinatarios = this.pacientesUnicosParaMensaje.filter(p => p.tieneCelularValido);
         if (destinatarios.length === 0) {
             Swal.fire({
-                icon: 'warning',
-                title: 'Sin números válidos',
-                text: 'Ninguno de los pacientes agendados cuenta con número celular de 10 dígitos.',
+                icon: 'info',
+                title: 'Sin números telefónicos',
+                text: 'Los pacientes de la lista no tienen número registrado. Puedes pulsar el botón WhatsApp o SMS en cada paciente para ingresar su teléfono y enviar.',
                 confirmButtonColor: '#7e101f'
             });
             return;
