@@ -98,18 +98,27 @@ export class CalendarioPageComponent implements OnInit {
     ];
     diasSeleccionadosMap: { [fechaKey: string]: { fecha: Date; fechaStr: string; color: string; diaNum: number } } = {};
     mostrarModalMensajeria: boolean = false;
+    pacientesParaMensajes: any[] = [];
     plantillaMensaje: string = 'Estimado(a) {nombre}, le recordamos su visita domiciliaria de Salud Casa por Casa agendada para el día {fecha} a las {hora}. En caso de requerir reprogramar, favor de responder este mensaje.';
     envioMasivoEnProgreso: boolean = false;
 
     // ⭐ ASIGNACIÓN DE PACIENTES A DÍAS/SEMANAS SELECCIONADAS
     mostrarModalAsignarPacientes: boolean = false;
     busquedaPacienteAsignar: string = '';
-    pacientesParaAsignarSeleccionados: any[] = [];
+    pacientesParaAsignarSeleccionados: {
+        id: number;
+        paciente: any;
+        fechaStr: string;
+        hora: string;          // Opcional: puede dejarse en blanco
+        prioridad: string;     // Opcional: 'alta' | 'media' | 'baja' | ''
+        notas: string;         // Opcional: notas o mensaje individual
+    }[] = [];
     modoDistribucion: 'repartir' | 'mismo_dia' = 'repartir';
     diaEspecificoAsignar: string = '';
-    horaBaseAsignar: string = '09:00';
-    intervaloMinutosAsignar: number = 45;
-    prioridadAsignar: 'alta' | 'media' | 'baja' = 'media';
+    horaBaseAsignar: string = '';             // En blanco por defecto
+    intervaloMinutosAsignar: number = 0;      // 0 = Sin intervalo / en blanco
+    prioridadAsignar: string = '';            // En blanco por defecto
+    mostrarHerramientasHorario: boolean = false;
     guardandoAsignacion: boolean = false;
 
     constructor(
@@ -1244,7 +1253,64 @@ export class CalendarioPageComponent implements OnInit {
         return res;
     }
 
+    
+    calcularPacientesParaMensajes(): any[] {
+        const visitas = this.visitasEnDiasSeleccionados;
+        const map = new Map<number, any>();
+
+        for (const item of visitas) {
+            const v = item.visita;
+            if (!map.has(v.pacienteId)) {
+                let telLimpio = (v.pacienteTelefono || '').replace(/\D/g, '');
+                if (telLimpio.startsWith('52') && telLimpio.length === 12) {
+                    telLimpio = telLimpio.substring(2);
+                }
+                const tieneCelularValido = telLimpio.length === 10;
+
+                // Si ya teníamos una versión con mensaje personalizado previo, conservarla
+                const previo = this.pacientesParaMensajes.find(p => p.pacienteId === v.pacienteId);
+
+                map.set(v.pacienteId, {
+                    pacienteId: v.pacienteId,
+                    nombre: v.pacienteNombre,
+                    curp: v.pacienteCurp,
+                    telefono: v.pacienteTelefono,
+                    telefonoLimpio: telLimpio,
+                    tieneCelularValido: tieneCelularValido,
+                    direccion: v.pacienteDireccion,
+                    colonia: v.colonia,
+                    fecha: v.fecha,
+                    fechaStr: item.fechaStr,
+                    hora: v.horaOriginal || (v.hora && v.hora !== '09:00' ? v.hora : ''),
+                    color: item.color,
+                    prioridad: v.prioridad,
+                    mensajePersonalizado: previo?.mensajePersonalizado || '',
+                    editandoMensaje: previo?.editandoMensaje || false,
+                    estadoMensaje: 'pendiente'
+                });
+            }
+        }
+        return Array.from(map.values());
+    }
+
+    personalizarMensajePaciente(p: any) {
+        if (!p.mensajePersonalizado) {
+            p.mensajePersonalizado = this.generarTextoMensaje(p);
+        }
+        p.editandoMensaje = true;
+        this.cdr.detectChanges();
+    }
+
+    restablecerMensajePaciente(p: any) {
+        p.mensajePersonalizado = '';
+        p.editandoMensaje = false;
+        this.cdr.detectChanges();
+    }
+
     get pacientesUnicosParaMensaje(): any[] {
+        return this.pacientesParaMensajes.length > 0 ? this.pacientesParaMensajes : this.calcularPacientesParaMensajes();
+    }
+    get _unusedPacientesUnicos(): any[] {
         const visitas = this.visitasEnDiasSeleccionados;
         const map = new Map<number, any>();
 
@@ -1284,6 +1350,7 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     abrirModalMensajeria() {
+        this.pacientesParaMensajes = this.calcularPacientesParaMensajes();
         if (this.pacientesUnicosParaMensaje.length === 0) {
             Swal.fire({
                 icon: 'info',
@@ -1306,11 +1373,15 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     generarTextoMensaje(paciente: any): string {
+        if (paciente.mensajePersonalizado && paciente.mensajePersonalizado.trim()) {
+            return paciente.mensajePersonalizado;
+        }
         const fechaFormateada = this.formatearFechaLegible(paciente.fechaStr || paciente.fecha);
-        return this.plantillaMensaje
+        const horaTexto = paciente.hora && paciente.hora !== '09:00' ? ` a las ${paciente.hora}` : '';
+        return (this.plantillaMensaje || '')
             .replace(/{nombre}/g, paciente.nombre)
             .replace(/{fecha}/g, fechaFormateada)
-            .replace(/{hora}/g, paciente.hora)
+            .replace(/{hora}/g, horaTexto)
             .replace(/{colonia}/g, paciente.colonia || '')
             .replace(/{direccion}/g, paciente.direccion || '');
     }
@@ -1416,7 +1487,7 @@ export class CalendarioPageComponent implements OnInit {
 
 
     // ⭐ ============================================
-    // ⭐ ASIGNAR PACIENTES A DÍAS/SEMANA SELECCIONADA
+    // ⭐ ASIGNAR PACIENTES A DÍAS/SEMANA SELECCIONADA (CONFIGURACIÓN INDIVIDUAL Y OPCIONAL)
     // ⭐ ============================================
 
     abrirModalAsignarPacientes() {
@@ -1424,7 +1495,7 @@ export class CalendarioPageComponent implements OnInit {
             Swal.fire({
                 icon: 'warning',
                 title: 'Selecciona días primero',
-                text: 'Selecciona al menos un día o una semana en el calendario para poder asignar pacientes.',
+                text: 'Selecciona al menos un día o una semana en el calendario para poder programar pacientes.',
                 confirmButtonColor: '#7e101f'
             });
             return;
@@ -1433,6 +1504,9 @@ export class CalendarioPageComponent implements OnInit {
         this.diaEspecificoAsignar = lista.length > 0 ? lista[0].fechaStr : '';
         this.busquedaPacienteAsignar = '';
         this.pacientesParaAsignarSeleccionados = [];
+        this.horaBaseAsignar = '';
+        this.intervaloMinutosAsignar = 0;
+        this.prioridadAsignar = '';
         this.guardandoAsignacion = false;
         this.mostrarModalAsignarPacientes = true;
         this.cdr.detectChanges();
@@ -1474,10 +1548,39 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     agregarPacienteALaTanda(p: any) {
-        if (!this.pacientesParaAsignarSeleccionados.some(x => x.id === p.id)) {
-            this.pacientesParaAsignarSeleccionados.push(p);
-            this.cdr.detectChanges();
+        if (this.pacientesParaAsignarSeleccionados.some(x => x.id === p.id)) {
+            return;
         }
+
+        const dias = this.diasSeleccionadosLista;
+        let fechaTarget = dias.length > 0 ? dias[0].fechaStr : '';
+
+        if (this.modoDistribucion === 'repartir' && dias.length > 0) {
+            const idx = this.pacientesParaAsignarSeleccionados.length % dias.length;
+            fechaTarget = dias[idx].fechaStr;
+        } else if (this.modoDistribucion === 'mismo_dia' && this.diaEspecificoAsignar) {
+            fechaTarget = this.diaEspecificoAsignar;
+        }
+
+        // Si el usuario especificó una hora base e intervalo para auto-rellenar:
+        let horaCalculada = '';
+        if (this.horaBaseAsignar && this.intervaloMinutosAsignar > 0) {
+            const pacientesEnMismoDia = this.pacientesParaAsignarSeleccionados.filter(x => x.fechaStr === fechaTarget).length;
+            horaCalculada = this.sumarMinutosAHora(this.horaBaseAsignar, pacientesEnMismoDia * this.intervaloMinutosAsignar);
+        } else if (this.horaBaseAsignar) {
+            horaCalculada = this.horaBaseAsignar;
+        }
+
+        this.pacientesParaAsignarSeleccionados.push({
+            id: p.id,
+            paciente: p,
+            fechaStr: fechaTarget,
+            hora: horaCalculada,                     // Puede dejarse en blanco
+            prioridad: this.prioridadAsignar || '',  // Puede dejarse en blanco
+            notas: ''                               // Notas o mensaje individual
+        });
+
+        this.cdr.detectChanges();
     }
 
     removerPacienteDeLaTanda(pId: number) {
@@ -1486,7 +1589,8 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     private sumarMinutosAHora(horaStr: string, minutosSumar: number): string {
-        const partes = (horaStr || '09:00').split(':').map(Number);
+        if (!horaStr) return '';
+        const partes = horaStr.split(':').map(Number);
         const h = partes[0] || 9;
         const m = partes[1] || 0;
         const totalMins = h * 60 + m + minutosSumar;
@@ -1495,51 +1599,95 @@ export class CalendarioPageComponent implements OnInit {
         return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
     }
 
-    get previsualizacionAsignacion(): { paciente: any; fechaStr: string; hora: string; diaNombre: string; color: string }[] {
-        const pacientes = this.pacientesParaAsignarSeleccionados;
-        const dias = this.diasSeleccionadosLista;
-        if (pacientes.length === 0 || dias.length === 0) return [];
-
-        const res: any[] = [];
-
-        if (this.modoDistribucion === 'repartir') {
-            const conteoPorDia: { [fechaStr: string]: number } = {};
-            dias.forEach(d => conteoPorDia[d.fechaStr] = 0);
-
-            pacientes.forEach((paciente, idx) => {
-                const diaTarget = dias[idx % dias.length];
-                const indexEnDia = conteoPorDia[diaTarget.fechaStr];
-                conteoPorDia[diaTarget.fechaStr]++;
-
-                const hora = this.sumarMinutosAHora(this.horaBaseAsignar || '09:00', indexEnDia * this.intervaloMinutosAsignar);
-                res.push({
-                    paciente,
-                    fechaStr: diaTarget.fechaStr,
-                    hora,
-                    diaNombre: diaTarget.nombreDia,
-                    color: diaTarget.color
-                });
+    // ⭐ AUTO-APLICAR O LIMPIAR HORARIOS EN TODOS LOS PACIENTES
+    aplicarHorariosATodos() {
+        if (!this.horaBaseAsignar) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Hora de inicio requerida',
+                text: 'Indica una hora de inicio si deseas calcular los horarios automáticamente.',
+                confirmButtonColor: '#7e101f'
             });
-        } else {
-            const diaTarget = dias.find(d => d.fechaStr === this.diaEspecificoAsignar) || dias[0];
-            pacientes.forEach((paciente, idx) => {
-                const hora = this.sumarMinutosAHora(this.horaBaseAsignar || '09:00', idx * this.intervaloMinutosAsignar);
-                res.push({
-                    paciente,
-                    fechaStr: diaTarget.fechaStr,
-                    hora,
-                    diaNombre: diaTarget.nombreDia,
-                    color: diaTarget.color
-                });
-            });
+            return;
         }
 
-        return res;
+        const dias = this.diasSeleccionadosLista;
+        const conteoPorDia: { [fecha: string]: number } = {};
+        dias.forEach(d => conteoPorDia[d.fechaStr] = 0);
+
+        this.pacientesParaAsignarSeleccionados.forEach(item => {
+            const diaKey = item.fechaStr;
+            const indexEnDia = conteoPorDia[diaKey] || 0;
+            conteoPorDia[diaKey] = indexEnDia + 1;
+
+            if (this.intervaloMinutosAsignar > 0) {
+                item.hora = this.sumarMinutosAHora(this.horaBaseAsignar, indexEnDia * this.intervaloMinutosAsignar);
+            } else {
+                item.hora = this.horaBaseAsignar;
+            }
+
+            if (this.prioridadAsignar) {
+                item.prioridad = this.prioridadAsignar;
+            }
+        });
+
+        this.cdr.detectChanges();
+        this.mostrarToast('Horarios Asignados', 'Se actualizaron los horarios de los pacientes seleccionados', 'success');
+    }
+
+    limpiarHorariosDeTodos() {
+        this.pacientesParaAsignarSeleccionados.forEach(item => {
+            item.hora = '';
+        });
+        this.horaBaseAsignar = '';
+        this.intervaloMinutosAsignar = 0;
+        this.cdr.detectChanges();
+        this.mostrarToast('Horarios en Blanco', 'Se dejaron todas las horas en blanco (sin horario fijo)', 'info');
+    }
+
+    limpiarPrioridadesDeTodos() {
+        this.pacientesParaAsignarSeleccionados.forEach(item => {
+            item.prioridad = '';
+        });
+        this.prioridadAsignar = '';
+        this.cdr.detectChanges();
+        this.mostrarToast('Prioridades en Blanco', 'Se quitaron las prioridades globales', 'info');
+    }
+
+    
+    obtenerColorDia(fechaStr: string): string {
+        return this.diasSeleccionadosMap[fechaStr]?.color || '#7e101f';
+    }
+
+    obtenerNombreDia(fechaStr: string): string {
+        const item = this.diasSeleccionadosMap[fechaStr];
+        if (!item || !item.fecha) return '';
+        return this.nombreDias[item.fecha.getDay()];
+    }
+
+    limpiarHoraPaciente(item: any) {
+        item.hora = '';
+        this.cdr.detectChanges();
+    }
+
+    limpiarPrioridadPaciente(item: any) {
+        item.prioridad = '';
+        this.cdr.detectChanges();
+    }
+
+    redistribuirDiasEnSemana() {
+        const dias = this.diasSeleccionadosLista;
+        if (dias.length === 0) return;
+
+        this.pacientesParaAsignarSeleccionados.forEach((item, idx) => {
+            item.fechaStr = dias[idx % dias.length].fechaStr;
+        });
+        this.cdr.detectChanges();
+        this.mostrarToast('Días Balanceados', 'Se repartieron los pacientes a lo largo de los días seleccionados', 'info');
     }
 
     confirmarAsignacionPacientes() {
-        const asignaciones = this.previsualizacionAsignacion;
-        if (asignaciones.length === 0) {
+        if (this.pacientesParaAsignarSeleccionados.length === 0) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Sin pacientes seleccionados',
@@ -1552,8 +1700,8 @@ export class CalendarioPageComponent implements OnInit {
         this.guardandoAsignacion = true;
         const { usuarioId } = this.obtenerUsuarioActual();
 
-        const nuevasVisitas: any[] = asignaciones.map((asig, index) => {
-            const p = asig.paciente;
+        const nuevasVisitas: any[] = this.pacientesParaAsignarSeleccionados.map((item, index) => {
+            const p = item.paciente;
             return {
                 id: Date.now() + index,
                 pacienteId: p.id,
@@ -1562,10 +1710,11 @@ export class CalendarioPageComponent implements OnInit {
                 pacienteDireccion: p.direccion || '',
                 pacienteTelefono: p.telefono || '',
                 colonia: p.colonia || 'Sin colonia',
-                fecha: asig.fechaStr,
-                hora: asig.hora,
-                prioridad: this.prioridadAsignar,
-                notas: 'Programación masiva en lote',
+                fecha: item.fechaStr,
+                hora: item.hora || '09:00', // En BD TypeORM guarda valor predeterminado si el usuario lo dejó en blanco
+                horaOriginal: item.hora || '',
+                prioridad: item.prioridad || 'media',
+                notas: item.notas || 'Visita programada',
                 estado: 'pendiente',
                 usuarioId: usuarioId
             };
@@ -1577,7 +1726,7 @@ export class CalendarioPageComponent implements OnInit {
 
         this.http.post(`${this.apiUrl}/calendario/visitas`, { visitas: nuevasVisitas, usuarioId: usuarioId }).subscribe({
             next: () => {
-                console.log('✅ Visitas en lote guardadas en el backend');
+                console.log('✅ Visitas guardadas en el backend');
             },
             error: (err) => {
                 console.warn('ℹ️ Guardado localmente, backend no disponible o error:', err);
@@ -1591,11 +1740,15 @@ export class CalendarioPageComponent implements OnInit {
         Swal.fire({
             icon: 'success',
             title: '¡Visitas Programadas!',
-            text: `Se agendaron con éxito ${nuevasVisitas.length} visita(s) en los días seleccionados. Ahora puedes enviarles mensajes con el botón "Enviar Mensajes".`,
+            text: `Se agendaron con éxito ${nuevasVisitas.length} visita(s). Puedes enviarles mensajes con el botón "Enviar Mensajes".`,
             confirmButtonColor: '#7e101f',
             timer: 3500,
             timerProgressBar: true
         });
+    }
+
+    actualizarMensajeIndividual(paciente: any, nuevoTexto: string) {
+        paciente.mensajePersonalizado = nuevoTexto;
     }
 
 }

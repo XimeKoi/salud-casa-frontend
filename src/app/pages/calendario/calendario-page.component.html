@@ -489,7 +489,7 @@
 <!-- ⭐ MODAL: GESTOR DE MENSAJERÍA CELULAR (SMS / WHATSAPP) -->
 <div class="modal-backdrop-glass" [class.active]="mostrarModalMensajeria" (click)="cerrarModalMensajeria()">
   <div class="modal-dialog-modern modal-dialog-messaging" (click)="$event.stopPropagation()">
-    <!-- Header -->
+    <!-- Header Hero -->
     <div class="dialog-header header-brand">
       <div class="header-title-group">
         <div class="header-icon-circle messaging-icon-bg">
@@ -497,7 +497,7 @@
         </div>
         <div>
           <h3>Recordatorio de Visitas Médicas por Celular</h3>
-          <p class="subtitle">Envía mensajes SMS y WhatsApp a los pacientes agendados en los días seleccionados</p>
+          <p class="subtitle">Redacta libremente el mensaje y envíalo por WhatsApp o SMS a los pacientes agendados</p>
         </div>
       </div>
       <button class="btn-dialog-close" (click)="cerrarModalMensajeria()" title="Cerrar modal">&times;</button>
@@ -530,25 +530,29 @@
         </div>
       </div>
 
-      <!-- Editor de plantilla de mensaje -->
+      <!-- Editor de mensaje libre -->
       <div class="template-editor-card">
         <div class="template-editor-header">
-          <span class="template-title"><i class="fas fa-pen-nib"></i> Plantilla del Mensaje de Texto:</span>
+          <div class="template-title-wrap">
+            <span class="template-title"><i class="fas fa-pen-fancy"></i> Redacción Libre del Mensaje de Texto:</span>
+            <span class="template-hint">Escribe lo que desees. Puedes usar los botones para insertar datos automáticos.</span>
+          </div>
           <div class="template-chips">
-            <span class="template-chip" (click)="insertarVariable('{nombre}')" title="Insertar nombre">+ {{ '{nombre}' }}</span>
-            <span class="template-chip" (click)="insertarVariable('{fecha}')" title="Insertar fecha">+ {{ '{fecha}' }}</span>
-            <span class="template-chip" (click)="insertarVariable('{hora}')" title="Insertar hora">+ {{ '{hora}' }}</span>
-            <span class="template-chip" (click)="insertarVariable('{colonia}')" title="Insertar colonia">+ {{ '{colonia}' }}</span>
+            <button type="button" class="template-chip" (click)="insertarVariable('{nombre}')" title="Insertar nombre">+ {{ '{nombre}' }}</button>
+            <button type="button" class="template-chip" (click)="insertarVariable('{fecha}')" title="Insertar fecha">+ {{ '{fecha}' }}</button>
+            <button type="button" class="template-chip" (click)="insertarVariable('{hora}')" title="Insertar hora">+ {{ '{hora}' }}</button>
+            <button type="button" class="template-chip" (click)="insertarVariable('{colonia}')" title="Insertar colonia">+ {{ '{colonia}' }}</button>
+            <button type="button" class="template-chip" (click)="insertarVariable('{direccion}')" title="Insertar dirección">+ {{ '{direccion}' }}</button>
           </div>
         </div>
         <textarea class="template-textarea" [(ngModel)]="plantillaMensaje" rows="3"
-          placeholder="Escribe la plantilla del mensaje..."></textarea>
+          placeholder="Escribe aquí el mensaje libre que recibirán los pacientes..."></textarea>
       </div>
 
       <!-- Lista de pacientes receptores -->
       <div class="recipients-section">
         <div class="recipients-header">
-          <h4><i class="fas fa-list-check"></i> Destinatarios ({{ pacientesUnicosParaMensaje.length }})</h4>
+          <h4><i class="fas fa-list-check"></i> Destinatarios Agendados ({{ pacientesUnicosParaMensaje.length }})</h4>
           <button class="btn-send-all-sms" (click)="enviarTodosLosSMS()" [disabled]="envioMasivoEnProgreso || contarPacientesConCelular() === 0">
             <i class="fas fa-spinner fa-spin" *ngIf="envioMasivoEnProgreso"></i>
             <i class="fas fa-paper-plane" *ngIf="!envioMasivoEnProgreso"></i>
@@ -568,26 +572,51 @@
               <div class="recipient-name-row">
                 <span class="recipient-name">{{ p.nombre }}</span>
                 <span class="recipient-date-tag">
-                  <i class="fas fa-calendar-day"></i> {{ p.fechaStr }} • {{ p.hora }}
+                  <i class="fas fa-calendar-day"></i> {{ p.fechaStr }} <span *ngIf="p.hora && p.hora !== '09:00'">• {{ p.hora }}</span>
+                </span>
+                <span class="badge-custom-msg" *ngIf="p.mensajePersonalizado && p.mensajePersonalizado.trim()">
+                  <i class="fas fa-sparkles"></i> Mensaje personalizado
                 </span>
               </div>
               <div class="recipient-sub-row">
                 <span class="recipient-phone" [class.no-phone]="!p.tieneCelularValido">
-                  <i class="fas fa-mobile-screen"></i> {{ p.telefono || 'Sin teléfono celular' }}
+                  <i class="fas fa-mobile-screen"></i> {{ p.telefono || 'Sin teléfono celular registrado' }}
                 </span>
                 <span class="recipient-colonia" *ngIf="p.colonia">
                   <i class="fas fa-location-dot"></i> {{ p.colonia }}
                 </span>
               </div>
-              <div class="recipient-msg-preview">
-                <i class="fas fa-quote-left"></i> {{ generarTextoMensaje(p) }}
+
+              <!-- Vista / Editor del mensaje de este paciente -->
+              <div class="recipient-msg-box" *ngIf="!p.editandoMensaje">
+                <div class="msg-content-preview">
+                  <i class="fas fa-quote-left"></i> {{ generarTextoMensaje(p) }}
+                </div>
+                <button type="button" class="btn-toggle-edit-msg" (click)="personalizarMensajePaciente(p)" title="Redactar texto particular para este paciente">
+                  <i class="fas fa-pen-to-square"></i> Personalizar mensaje
+                </button>
+              </div>
+
+              <!-- Editor individual expandido -->
+              <div class="recipient-msg-editor-inline" *ngIf="p.editandoMensaje">
+                <label><i class="fas fa-feather-pointed"></i> Mensaje exclusivo para {{ p.nombre }}:</label>
+                <textarea class="textarea-custom-patient" [(ngModel)]="p.mensajePersonalizado" rows="2"
+                  placeholder="Redacta un texto especial para este paciente..."></textarea>
+                <div class="custom-msg-actions">
+                  <button type="button" class="btn-save-custom-msg" (click)="p.editandoMensaje = false">
+                    <i class="fas fa-check"></i> Listo
+                  </button>
+                  <button type="button" class="btn-reset-custom-msg" (click)="restablecerMensajePaciente(p)">
+                    <i class="fas fa-rotate-left"></i> Usar mensaje general
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- Acciones individuales -->
             <div class="recipient-actions">
               <button class="btn-action-wa" (click)="enviarMensajeWhatsApp(p)" [disabled]="!p.tieneCelularValido"
-                title="Abrir WhatsApp con mensaje precargado">
+                title="Abrir WhatsApp con mensaje">
                 <i class="fab fa-whatsapp"></i> WhatsApp
               </button>
               <button class="btn-action-sms" (click)="enviarMensajeSMS(p)" [disabled]="!p.tieneCelularValido"
@@ -614,8 +643,8 @@
 
 <!-- ⭐ MODAL: ASIGNAR PACIENTES A LOS DÍAS SELECCIONADOS DE LA SEMANA -->
 <div class="modal-backdrop-glass" [class.active]="mostrarModalAsignarPacientes" *ngIf="mostrarModalAsignarPacientes" (click)="cerrarModalAsignarPacientes()">
-  <div class="modal-dialog-modern modal-dialog-asignar" (click)="$event.stopPropagation()">
-    <!-- Header -->
+  <div class="modal-dialog-modern modal-dialog-asignar modal-dialog-asignar-premium" (click)="$event.stopPropagation()">
+    <!-- Header Hero Institucional -->
     <div class="dialog-header header-brand">
       <div class="header-title-group">
         <div class="header-icon-circle assign-icon-bg">
@@ -623,7 +652,7 @@
         </div>
         <div>
           <h3>Asignar Pacientes a Días Seleccionados</h3>
-          <p class="subtitle">Programa pacientes en las fechas seleccionadas distribuyéndolos en la semana</p>
+          <p class="subtitle">Programa visitas con configuración individual de fecha, horario y prioridad (opcional en blanco)</p>
         </div>
       </div>
       <button class="btn-dialog-close" (click)="cerrarModalAsignarPacientes()" title="Cerrar modal">&times;</button>
@@ -631,88 +660,99 @@
 
     <!-- Body -->
     <div class="dialog-body asignar-dialog-body">
-      <!-- 1. Días de destino -->
-      <div class="seccion-bloque">
-        <label class="seccion-label">
-          <i class="fas fa-calendar-days"></i> Días Seleccionados de Destino ({{ totalDiasSeleccionados }}):
-        </label>
+      <!-- 1. Días de destino con chips interactivos -->
+      <div class="seccion-bloque card-modulo-dias">
+        <div class="dias-destino-header">
+          <label class="seccion-label">
+            <i class="fas fa-calendar-days"></i> Días Seleccionados de Destino ({{ totalDiasSeleccionados }}):
+          </label>
+          <button type="button" class="btn-distribuir-auto" (click)="redistribuirDiasEnSemana()" title="Repartir equitativamente los pacientes en los días seleccionados">
+            <i class="fas fa-arrows-split-up-and-left"></i> Balancear en la semana
+          </button>
+        </div>
         <div class="dias-destino-chips">
-          <span *ngFor="let d of diasSeleccionadosLista" class="dia-destino-chip" [style.borderColor]="d.color" [style.backgroundColor]="d.color + '18'">
+          <span *ngFor="let d of diasSeleccionadosLista" class="dia-destino-chip" [style.borderColor]="d.color" [style.backgroundColor]="d.color + '15'">
             <span class="chip-color-dot" [style.backgroundColor]="d.color"></span>
-            <strong>{{ d.nombreDia }} {{ d.diaNum }}</strong> ({{ d.fechaStr }})
+            <strong>{{ d.nombreDia }} {{ d.diaNum }}</strong>
+            <small class="dia-chip-fecha">({{ d.fechaStr }})</small>
           </span>
         </div>
       </div>
 
-      <!-- 2. Configuración de Distribución -->
-      <div class="seccion-bloque">
-        <label class="seccion-label">
-          <i class="fas fa-sliders"></i> Modo de Distribución de Visitas:
-        </label>
-        <div class="modo-distribucion-toggle">
-          <button type="button" class="btn-modo-opt" [class.active]="modoDistribucion === 'repartir'" (click)="modoDistribucion = 'repartir'">
-            <i class="fas fa-arrows-split-up-and-left"></i>
+      <!-- 2. Herramientas Opcionales de Auto-Completado en Lote -->
+      <div class="seccion-bloque card-modulo-herramientas">
+        <div class="herramientas-header" (click)="mostrarHerramientasHorario = !mostrarHerramientasHorario">
+          <div class="herramientas-title">
+            <i class="fas fa-wand-magic-sparkles text-wine"></i>
             <div>
-              <strong>Distribuir en la semana</strong>
-              <small>Reparte los pacientes equitativamente entre los días seleccionados</small>
+              <strong>Llenado Rápido Opcional (Horarios y Prioridades en Lote)</strong>
+              <small class="d-block text-muted">Si prefieres dejarlos en blanco, puedes ignorar esta sección o vaciar campos.</small>
             </div>
-          </button>
-          <button type="button" class="btn-modo-opt" [class.active]="modoDistribucion === 'mismo_dia'" (click)="modoDistribucion = 'mismo_dia'">
-            <i class="fas fa-bullseye"></i>
-            <div>
-              <strong>Asignar a un día específico</strong>
-              <small>Agendar todos los pacientes seleccionados en una sola fecha elegida</small>
-            </div>
+          </div>
+          <button type="button" class="btn-toggle-herramientas">
+            <i class="fas" [class.fa-chevron-down]="!mostrarHerramientasHorario" [class.fa-chevron-up]="mostrarHerramientasHorario"></i>
           </button>
         </div>
 
-        <!-- Si elige día específico -->
-        <div class="sub-opciones-row" *ngIf="modoDistribucion === 'mismo_dia'">
-          <div class="form-group flex-1">
-            <label>Selecciona la fecha destino:</label>
-            <select class="form-control" [(ngModel)]="diaEspecificoAsignar">
-              <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">
-                {{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})
-              </option>
-            </select>
-          </div>
-        </div>
+        <div class="herramientas-body" *ngIf="mostrarHerramientasHorario">
+          <div class="herramientas-grid">
+            <div class="form-group">
+              <label><i class="fas fa-clock"></i> Hora de inicio:</label>
+              <div class="input-clear-group">
+                <input type="time" class="form-control" [(ngModel)]="horaBaseAsignar" placeholder="En blanco" />
+                <button type="button" class="btn-input-clear" *ngIf="horaBaseAsignar" (click)="horaBaseAsignar = ''" title="Dejar en blanco">&times;</button>
+              </div>
+              <small class="hint-blanco" *ngIf="!horaBaseAsignar">Sin hora (se dejará en blanco)</small>
+            </div>
 
-        <!-- Horario base e intervalo -->
-        <div class="sub-opciones-row">
-          <div class="form-group flex-1">
-            <label><i class="fas fa-clock"></i> Hora de inicio:</label>
-            <input type="time" class="form-control" [(ngModel)]="horaBaseAsignar" />
+            <div class="form-group">
+              <label><i class="fas fa-stopwatch"></i> Intervalo entre visitas:</label>
+              <select class="form-control" [(ngModel)]="intervaloMinutosAsignar">
+                <option [value]="0">Sin intervalo (dejar en blanco)</option>
+                <option [value]="30">30 minutos</option>
+                <option [value]="45">45 minutos (Recomendado)</option>
+                <option [value]="60">1 hora</option>
+                <option [value]="90">1 hora 30 min</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label><i class="fas fa-flag"></i> Prioridad en lote:</label>
+              <select class="form-control" [(ngModel)]="prioridadAsignar">
+                <option value="">Sin prioridad (en blanco)</option>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group flex-1">
-            <label><i class="fas fa-stopwatch"></i> Intervalo entre visitas:</label>
-            <select class="form-control" [(ngModel)]="intervaloMinutosAsignar">
-              <option [value]="30">30 minutos</option>
-              <option [value]="45">45 minutos (Recomendado)</option>
-              <option [value]="60">1 hora</option>
-              <option [value]="90">1 hora 30 min</option>
-            </select>
-          </div>
-          <div class="form-group flex-1">
-            <label><i class="fas fa-flag"></i> Prioridad:</label>
-            <select class="form-control" [(ngModel)]="prioridadAsignar">
-              <option value="alta">Alta</option>
-              <option value="media">Media</option>
-              <option value="baja">Baja</option>
-            </select>
+
+          <!-- Botones de acción en lote -->
+          <div class="herramientas-actions-bar">
+            <button type="button" class="btn-tool-act btn-apply-batch" (click)="aplicarHorariosATodos()">
+              <i class="fas fa-bolt"></i> Auto-calcular horarios para todos
+            </button>
+            <button type="button" class="btn-tool-act btn-clear-batch" (click)="limpiarHorariosDeTodos()">
+              <i class="fas fa-eraser"></i> Dejar horas en blanco
+            </button>
+            <button type="button" class="btn-tool-act btn-clear-batch" (click)="limpiarPrioridadesDeTodos()">
+              <i class="fas fa-flag"></i> Dejar prioridades en blanco
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- 3. Buscador y Selección de Pacientes -->
-      <div class="seccion-bloque">
+      <!-- 3. Buscador y Selección de Pacientes Disponibles -->
+      <div class="seccion-bloque card-modulo-buscar">
         <label class="seccion-label">
-          <i class="fas fa-users-viewfinder"></i> Buscar y Agregar Pacientes:
+          <i class="fas fa-user-plus"></i> Buscar y Agregar Pacientes a la Lista:
         </label>
         <div class="search-input-wrap-asignar">
           <i class="fas fa-magnifying-glass"></i>
-          <input type="text" class="form-control" [(ngModel)]="busquedaPacienteAsignar"
+          <input type="text" class="form-control-search" [(ngModel)]="busquedaPacienteAsignar"
             placeholder="Buscar por nombre, CURP, colonia o dirección..." />
+          <button type="button" class="btn-clear-search" *ngIf="busquedaPacienteAsignar" (click)="busquedaPacienteAsignar = ''">&times;</button>
         </div>
 
         <!-- Lista rápida de pacientes disponibles -->
@@ -727,58 +767,119 @@
             </button>
           </div>
           <div *ngIf="pacientesFiltradosParaAsignar.length === 0" class="empty-busqueda-p">
-            <small>No hay más pacientes coincidentes con ese término de búsqueda.</small>
+            <small>No hay pacientes coincidentes con ese término de búsqueda o ya están en la tanda.</small>
           </div>
         </div>
       </div>
 
-      <!-- 4. Pacientes Agregados a la Tanda & Vista Previa -->
-      <div class="seccion-bloque" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+      <!-- 4. Pacientes Agregados a la Tanda (Configuración Individual por Paciente) -->
+      <div class="seccion-bloque card-modulo-tanda">
         <div class="tanda-header">
-          <label class="seccion-label">
-            <i class="fas fa-clipboard-list"></i> Pacientes Listos para Programar ({{ pacientesParaAsignarSeleccionados.length }}):
-          </label>
-          <button type="button" class="btn-clear-tanda" (click)="pacientesParaAsignarSeleccionados = []">
+          <div class="tanda-title-wrap">
+            <label class="seccion-label">
+              <i class="fas fa-users-gear"></i> Pacientes en la Tanda ({{ pacientesParaAsignarSeleccionados.length }}):
+            </label>
+            <span class="tanda-subtitle">Puedes ajustar el día, hora, prioridad y nota de cada uno de forma individual.</span>
+          </div>
+          <button type="button" class="btn-clear-tanda" *ngIf="pacientesParaAsignarSeleccionados.length > 0" (click)="pacientesParaAsignarSeleccionados = []">
             <i class="fas fa-trash-can"></i> Quitar todos
           </button>
         </div>
 
-        <div class="preview-asignacion-table-wrapper">
-          <table class="preview-asignacion-table">
-            <thead>
-              <tr>
-                <th>Día Asignado</th>
-                <th>Hora</th>
-                <th>Paciente</th>
-                <th>Colonia</th>
-                <th>Quitar</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of previsualizacionAsignacion">
-                <td>
-                  <span class="chip-dia-prev" [style.borderColor]="item.color" [style.backgroundColor]="item.color + '18'">
-                    <span class="dot-color-mini" [style.backgroundColor]="item.color"></span>
-                    <strong>{{ item.diaNombre }}</strong> {{ item.fechaStr }}
-                  </span>
-                </td>
-                <td><span class="hora-badge">{{ item.hora }}</span></td>
-                <td><strong>{{ item.paciente.nombreCompleto || item.paciente.nombre }}</strong></td>
-                <td><small>{{ item.paciente.colonia || '—' }}</small></td>
-                <td>
-                  <button type="button" class="btn-remove-p" (click)="removerPacienteDeLaTanda(item.paciente.id)" title="Quitar">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Estado vacío si no hay pacientes agregados -->
+        <div *ngIf="pacientesParaAsignarSeleccionados.length === 0" class="empty-tanda-state">
+          <div class="empty-icon-circle">
+            <i class="fas fa-user-clock"></i>
+          </div>
+          <h4>Sin pacientes en la tanda</h4>
+          <p>Utiliza el buscador superior para agregar a los pacientes que deseas programar en los días seleccionados.</p>
+        </div>
+
+        <!-- Tarjetas individuales de pacientes -->
+        <div class="tanda-cards-list" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+          <div class="patient-assign-card" *ngFor="let item of pacientesParaAsignarSeleccionados; let idx = index">
+            <!-- Barra superior del paciente -->
+            <div class="card-patient-top">
+              <div class="card-patient-info">
+                <span class="patient-order-badge">#{{ idx + 1 }}</span>
+                <span class="patient-name-title">{{ item.paciente.nombreCompleto || item.paciente.nombre }}</span>
+                <span class="patient-meta-pill">
+                  <i class="fas fa-map-pin"></i> {{ item.paciente.colonia || 'Sin colonia' }}
+                </span>
+                <span class="patient-meta-pill" *ngIf="item.paciente.curp">
+                  <i class="fas fa-id-card"></i> {{ item.paciente.curp }}
+                </span>
+                <span class="patient-meta-pill" *ngIf="item.paciente.telefono">
+                  <i class="fas fa-phone"></i> {{ item.paciente.telefono }}
+                </span>
+              </div>
+              <button type="button" class="btn-card-remove" (click)="removerPacienteDeLaTanda(item.id)" title="Quitar de la tanda">
+                <i class="fas fa-trash-can"></i>
+              </button>
+            </div>
+
+            <!-- Fila de configuración individual del paciente -->
+            <div class="card-patient-fields">
+              <!-- Selector de Día Individual -->
+              <div class="field-item">
+                <label><i class="fas fa-calendar-day"></i> Día Asignado:</label>
+                <div class="select-day-wrapper" [style.borderColor]="obtenerColorDia(item.fechaStr)">
+                  <select class="form-control-patient" [(ngModel)]="item.fechaStr">
+                    <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">
+                      {{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Selector de Hora Individual (Opcional / Dejar en blanco) -->
+              <div class="field-item">
+                <label>
+                  <i class="fas fa-clock"></i> Hora de Visita:
+                  <span class="badge-opcional">Opcional</span>
+                </label>
+                <div class="input-time-clearable">
+                  <input type="time" class="form-control-patient" [(ngModel)]="item.hora" placeholder="Sin hora" />
+                  <button type="button" class="btn-clear-time" *ngIf="item.hora" (click)="limpiarHoraPaciente(item)" title="Dejar sin hora (en blanco)">&times;</button>
+                </div>
+                <span class="label-sin-hora" *ngIf="!item.hora">
+                  <i class="fas fa-circle-info"></i> Sin hora fija (Abierta)
+                </span>
+              </div>
+
+              <!-- Selector de Prioridad Individual (Opcional / Dejar en blanco) -->
+              <div class="field-item">
+                <label>
+                  <i class="fas fa-flag"></i> Prioridad:
+                  <span class="badge-opcional">Opcional</span>
+                </label>
+                <select class="form-control-patient" [(ngModel)]="item.prioridad" [class.prioridad-alta]="item.prioridad === 'alta' || item.prioridad === 'urgente'">
+                  <option value="">Sin prioridad (en blanco)</option>
+                  <option value="baja">Baja</option>
+                  <option value="media">Media</option>
+                  <option value="alta">Alta</option>
+                  <option value="urgente">Urgente</option>
+                </select>
+              </div>
+
+              <!-- Nota o Motivo Individual -->
+              <div class="field-item field-item-wide">
+                <label><i class="fas fa-notes-medical"></i> Nota o Motivo de Visita:</label>
+                <input type="text" class="form-control-patient" [(ngModel)]="item.notas"
+                  placeholder="Ej: Toma de signos, control de diabetes, entrega de medicamentos..." />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="dialog-footer">
+      <div class="footer-summary-text" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+        <i class="fas fa-circle-check text-success"></i>
+        <span><strong>{{ pacientesParaAsignarSeleccionados.length }}</strong> paciente(s) listos para agendar</span>
+      </div>
       <button type="button" class="btn-dialog-cancel" (click)="cerrarModalAsignarPacientes()" [disabled]="guardandoAsignacion">
         <i class="fas fa-xmark"></i> Cancelar
       </button>
