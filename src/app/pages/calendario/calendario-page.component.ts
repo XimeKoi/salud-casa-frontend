@@ -1515,13 +1515,40 @@ export class CalendarioPageComponent implements OnInit {
         if (destinatarios.length === 0) {
             Swal.fire({
                 icon: 'info',
-                title: 'Sin números telefónicos',
-                text: 'Los pacientes de la lista no tienen número registrado. Puedes pulsar el botón WhatsApp o SMS en cada paciente para ingresar su teléfono y enviar.',
+                title: 'Sin números telefónicos válidos',
+                text: 'Ninguno de los pacientes agendados cuenta con número celular de 10 dígitos. Puedes ingresar el teléfono directamente pulsando los botones de WhatsApp o SMS en su tarjeta.',
                 confirmButtonColor: '#7e101f'
             });
             return;
         }
 
+        Swal.fire({
+            title: 'Envío Masivo de Mensajes SMS',
+            html: `
+              <div style="text-align: left; font-size: 13px; color: #374151; line-height: 1.5;">
+                <p>Se enviarán recordatorios a <strong>${destinatarios.length} paciente(s)</strong> con celular registrado.</p>
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin: 12px 0;">
+                  <strong style="color: #b45309;"><i class="fas fa-triangle-exclamation"></i> ¿Cómo funciona el SMS en el servidor?</strong>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #92400e;">
+                    Para enviar SMS masivos automáticos a las antenas celulares de México (Telcel, AT&T, Movistar) se requiere una cuenta de mensajería (como Twilio o TextBee) configurada en el servidor de Railway.<br><br>
+                    <strong>💡 Recomendación:</strong> Para enviar mensajes reales de forma inmediata y 100% gratuita, presiona el botón verde de <strong>WhatsApp</strong> o el botón azul de <strong>SMS</strong> en la tarjeta de cada paciente.
+                  </p>
+                </div>
+              </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-paper-plane"></i> Enviar a través del servidor',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#7e101f'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                this.ejecutarEnvioMasivoServidor(destinatarios);
+            }
+        });
+    }
+
+    private ejecutarEnvioMasivoServidor(destinatarios: any[]) {
         this.envioMasivoEnProgreso = true;
         let enviados = 0;
         let procesados = 0;
@@ -1568,17 +1595,20 @@ export class CalendarioPageComponent implements OnInit {
         this.cdr.detectChanges();
         Swal.fire({
             icon: 'success',
-            title: '¡Mensajes Enviados!',
-            text: `Se enviaron recordatorios de visita a ${enviados} de ${total} paciente(s).`,
+            title: '¡Petición Procesada!',
+            html: `
+              <div style="text-align: left; font-size: 13px; color: #374151;">
+                <p>Se procesó el recordatorio para <strong>${enviados} de ${total} paciente(s)</strong> en el servidor.</p>
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                  <small style="color: #166534;">
+                    <i class="fas fa-lightbulb"></i> Para asegurar que los pacientes reciban y lean tu mensaje, te recomendamos también abrir <strong>WhatsApp</strong> con el botón verde de cada paciente.
+                  </small>
+                </div>
+              </div>
+            `,
             confirmButtonColor: '#7e101f'
         });
     }
-
-
-
-    // ⭐ ============================================
-    // ⭐ ASIGNAR PACIENTES A DÍAS/SEMANA SELECCIONADA (CONFIGURACIÓN INDIVIDUAL Y OPCIONAL)
-    // ⭐ ============================================
 
     abrirModalAsignarPacientes() {
         if (this.totalDiasSeleccionados === 0) {
