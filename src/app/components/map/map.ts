@@ -1707,10 +1707,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       ? `https://www.google.com/maps/dir/?api=1&destination=${paciente.lat},${paciente.lng}`
       : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
 
-    const urlStreetViewDirecto = tieneCoords
-      ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${paciente.lat},${paciente.lng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
-
     const estaEnPlan = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
     return `
@@ -1753,12 +1749,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span class="cp-card-label">UBICACIÓN</span>
             <span class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</span>
             <span class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</span>
-            <div style="margin-top: 8px;">
-              <button type="button" class="cp-streetview-tag-btn"
+            <div class="cp-streetview-wrapper">
+              <button type="button" class="cp-streetview-btn-card"
                 onclick="window.__abrirStreetViewPaciente(${paciente.id}, ${paciente.lat || 0}, ${paciente.lng || 0})"
-                title="Ver la fachada de la casa de frente en Google Street View 360°">
-                <i class="fas fa-street-view"></i>
-                <span>Ver Casa de Frente (Fachada 360°)</span>
+                title="Abrir visor interactivo 360° de la fachada del domicilio">
+                <div class="sv-card-main">
+                  <div class="sv-badge-icon">
+                    <i class="fas fa-street-view"></i>
+                  </div>
+                  <div class="sv-info-col">
+                    <span class="sv-title">Ver Casa de Frente</span>
+                    <span class="sv-subtitle">Fachada 360° interactiva</span>
+                  </div>
+                </div>
+                <div class="sv-action-pill">
+                  <span>360°</span>
+                  <i class="fas fa-arrow-up-right-from-square"></i>
+                </div>
               </button>
             </div>
             <span class="cp-zona" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #7c3aed; margin-top: 2px;">
@@ -1814,14 +1821,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span>Ruta</span>
           </a>
 
-          <a class="cp-btn cp-btn-streetview"
-             href="${urlStreetViewDirecto}"
-             target="_blank" rel="noopener noreferrer"
-             title="Abrir vista de fachada Street View 360° en Google Maps">
-            <i class="fas fa-street-view"></i>
-            <span>Fachada</span>
-          </a>
-
           <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
             onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
               pacienteId: ${paciente.id},
@@ -1835,7 +1834,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span>Agendar</span>
           </button>
 
-          <button class="cp-btn cp-btn-reporte" style="color: ${p.main}; border-color: ${p.main};"
+          <button class="cp-btn cp-btn-reporte"
             onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { detail: {
               pacienteId: ${paciente.id},
               nombre: '${nombreEscapado}',
@@ -1844,8 +1843,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
               curp: '${curpEscapado}',
               colonia: '${coloniaEscapada}',
               seccion: '${seccionEscapada}'
-            } }))">
-            <i class="fas fa-flag"></i>
+            } }))" title="Reportar incidencia o alerta médica">
+            <i class="fas fa-triangle-exclamation"></i>
             <span>Reporte</span>
           </button>
 
