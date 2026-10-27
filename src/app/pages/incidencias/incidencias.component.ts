@@ -25,6 +25,20 @@ interface Incidencia {
         telefono: string;
         colonia: string;
         seccion: string;
+        lat?: number;
+        lng?: number;
+    };
+    metadatosEvidencia?: {
+        diaSemana: string;
+        fechaFormateada: string;
+        hora: string;
+        lat: number;
+        lng: number;
+        coordenadas: string;
+        direccion: string;
+        fuenteGPS: string;
+        precision?: string;
+        timestamp?: string;
     };
 }
 
@@ -62,19 +76,26 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     datosPaciente: any = null;
     loading: boolean = false;
     usandoLocalStorage: boolean = false;
+    metadatosEvidencia: any = null;
 
     tiposIncidencias = [
-        { valor: 'no_localizado', label: 'No se localizó al usuario', icono: 'fas fa-search' },
-        { valor: 'direccion_incorrecta', label: 'Dirección incorrecta', icono: 'fas fa-map-marker-alt' },
-        { valor: 'casa_cerrada', label: 'Casa cerrada / Sin acceso', icono: 'fas fa-door-closed' },
-        { valor: 'usuario_rechazo', label: 'Usuario rechazó la visita', icono: 'fas fa-user-slash' },
-        { valor: 'emergencia_medica', label: 'Emergencia médica', icono: 'fas fa-ambulance' },
-        { valor: 'otro', label: 'Otro', icono: 'fas fa-ellipsis-h' }
+        { valor: 'no_localizado', label: 'No se localizó al usuario', icono: 'fas fa-user-xmark', color: '#f59e0b', desc: 'No se encontró a nadie en el domicilio' },
+        { valor: 'casa_cerrada', label: 'Casa cerrada / Sin acceso', icono: 'fas fa-door-closed', color: '#6366f1', desc: 'Vivienda cerrada con portón o candado' },
+        { valor: 'usuario_rechazo', label: 'Usuario rechazó la visita', icono: 'fas fa-user-slash', color: '#ef4444', desc: 'El usuario o familiar no aceptó la atención' },
+        { valor: 'direccion_incorrecta', label: 'Dirección incorrecta', icono: 'fas fa-location-crosshairs', color: '#8b5cf6', desc: 'La dirección no existe o no corresponde' },
+        { valor: 'emergencia_medica', label: 'Emergencia médica', icono: 'fas fa-truck-medical', color: '#dc2626', desc: 'Situación crítica de salud urgente' },
+        { valor: 'otro', label: 'Otro motivo / Observación', icono: 'fas fa-ellipsis', color: '#0ea5e9', desc: 'Cualquier otra circunstancia en campo' }
     ];
 
     get direccionCompleta(): string {
         if (this.datosPaciente) {
-            return `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+            const dir = (this.datosPaciente.direccion || '').trim();
+            const col = (this.datosPaciente.colonia || '').trim();
+            if (!dir && !col) return 'Dirección no asignada';
+            if (col && dir.toLowerCase().includes(col.toLowerCase())) {
+                return dir;
+            }
+            return col ? `${dir}, ${col}` : dir;
         }
         return '';
     }
@@ -116,11 +137,13 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                     direccion: paciente.direccion || '',
                     telefono: paciente.telefono || '',
                     colonia: paciente.colonia || '',
-                    seccion: paciente.seccion || ''
+                    seccion: paciente.seccion || '',
+                    lat: Number(paciente.lat) || 0,
+                    lng: Number(paciente.lng) || 0
                 };
 
                 this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
-                this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+                this.nuevaIncidencia.direccion = this.direccionCompleta;
                 this.mostrarFormulario = true;
 
                 // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE
@@ -151,11 +174,13 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                         direccion: paciente.direccion || '',
                         telefono: paciente.telefono || '',
                         colonia: paciente.colonia || '',
-                        seccion: paciente.seccion || ''
+                        seccion: paciente.seccion || '',
+                        lat: Number(paciente.lat) || 0,
+                        lng: Number(paciente.lng) || 0
                     };
 
                     this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
-                    this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+                    this.nuevaIncidencia.direccion = this.direccionCompleta;
                     this.mostrarFormulario = true;
 
                     // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE
@@ -194,11 +219,13 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                 direccion: paciente.direccion || '',
                 telefono: paciente.telefono || '',
                 colonia: paciente.colonia || '',
-                seccion: paciente.seccion || ''
+                seccion: paciente.seccion || '',
+                lat: Number(paciente.lat) || 0,
+                lng: Number(paciente.lng) || 0
             };
 
             this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
-            this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+            this.nuevaIncidencia.direccion = this.direccionCompleta;
 
             this.mostrarFormulario = true;
 
@@ -241,6 +268,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         };
         this.fotosPreview = [];
         this.procesando = false;
+        this.metadatosEvidencia = null;
     }
 
     // ⭐ ============================================
@@ -250,12 +278,35 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     resetearFormulario() {
         this.limpiarFormulario();
         if (this.datosPaciente) {
-            this.nuevaIncidencia.direccion = `${this.datosPaciente.direccion}, ${this.datosPaciente.colonia}`;
+            this.nuevaIncidencia.direccion = this.direccionCompleta;
             this.nuevaIncidencia.pacienteId = this.datosPaciente.id;
             // ⭐ RELLENAR DESCRIPCIÓN AUTOMÁTICAMENTE AL RESETEAR
             this.onTipoIncidenciaChange();
         }
         this.cdr.detectChanges();
+    }
+
+    seleccionarTipoIncidencia(valor: string) {
+        this.nuevaIncidencia.tipo = valor;
+        this.onTipoIncidenciaChange();
+    }
+
+    agregarNotaRapida(texto: string) {
+        if (!this.nuevaIncidencia.descripcion || this.nuevaIncidencia.descripcion.trim() === '') {
+            this.nuevaIncidencia.descripcion = texto;
+        } else {
+            this.nuevaIncidencia.descripcion = `${this.nuevaIncidencia.descripcion.trim()} ${texto}`;
+        }
+        this.cdr.detectChanges();
+    }
+
+    obtenerIniciales(nombre: string): string {
+        if (!nombre) return 'P';
+        const partes = nombre.trim().split(/\s+/);
+        if (partes.length >= 2) {
+            return (partes[0][0] + partes[1][0]).toUpperCase();
+        }
+        return partes[0].substring(0, 2).toUpperCase();
     }
 
     ngAfterViewInit() {
@@ -582,74 +633,147 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
+    async obtenerGeolocalizacionActual(): Promise<{ lat: number; lng: number; fuente: string; precision?: string }> {
+        const fallbackLat = Number(this.datosPaciente?.lat) || 0;
+        const fallbackLng = Number(this.datosPaciente?.lng) || 0;
+
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+            try {
+                const pos: GeolocationPosition = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 10000
+                    });
+                });
+                return {
+                    lat: Number(pos.coords.latitude.toFixed(6)),
+                    lng: Number(pos.coords.longitude.toFixed(6)),
+                    fuente: 'GPS en Vivo',
+                    precision: pos.coords.accuracy ? `±${Math.round(pos.coords.accuracy)}m` : 'Alta'
+                };
+            } catch (err) {
+                console.warn('⚠️ No se pudo obtener GPS en vivo, usando coordenadas registradas:', err);
+            }
+        }
+
+        if (fallbackLat !== 0 && fallbackLng !== 0) {
+            return {
+                lat: fallbackLat,
+                lng: fallbackLng,
+                fuente: 'Georreferencia Domiciliaria',
+                precision: 'Padrón Georreferenciado'
+            };
+        }
+
+        return {
+            lat: 21.1236,
+            lng: -101.68,
+            fuente: 'Zona Operativa León, Gto.',
+            precision: 'Aproximada'
+        };
+    }
+
+    calcularMetadatosEvidencia(coords: { lat: number; lng: number; fuente: string; precision?: string }) {
+        const ahora = new Date();
+        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const diaSemana = diasSemana[ahora.getDay()];
+
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const fechaFormateada = `${pad(ahora.getDate())}/${pad(ahora.getMonth() + 1)}/${ahora.getFullYear()}`;
+        const horaFormateada = `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())} hrs`;
+
+        this.metadatosEvidencia = {
+            diaSemana: diaSemana,
+            fechaFormateada: fechaFormateada,
+            hora: horaFormateada,
+            lat: coords.lat,
+            lng: coords.lng,
+            coordenadas: `${coords.lat}, ${coords.lng}`,
+            direccion: this.direccionCompleta,
+            fuenteGPS: coords.fuente,
+            precision: coords.precision || 'Normal',
+            timestamp: ahora.toISOString()
+        };
+
+        this.nuevaIncidencia.metadatosEvidencia = { ...this.metadatosEvidencia };
+    }
+
     async procesarFotos(event: any) {
         if (this.procesando) {
             return;
         }
 
+        const files = event.target.files;
+        if (!files || files.length === 0) {
+            return;
+        }
+
         this.procesando = true;
 
-        const files = event.target.files;
+        // ⭐ 1. CALCULAR AUTOMÁTICAMENTE DÍA, FECHA, HORA, LUGAR Y COORDENADAS GPS
+        const coords = await this.obtenerGeolocalizacionActual();
+        this.calcularMetadatosEvidencia(coords);
 
-        if (files && files.length > 0) {
-            let procesadas = 0;
-            const total = files.length;
+        let procesadas = 0;
+        const total = files.length;
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
 
-                    reader.onload = async (e: any) => {
-                        try {
-                            const imagenComprimida = await this.comprimirImagen(e.target.result);
-                            this.fotosPreview.push(imagenComprimida);
-                            this.nuevaIncidencia.fotos.push(imagenComprimida);
-                        } catch (error) {
-                            console.error('Error al comprimir imagen:', error);
-                            this.fotosPreview.push(e.target.result);
-                            this.nuevaIncidencia.fotos.push(e.target.result);
-                        }
+                reader.onload = async (e: any) => {
+                    try {
+                        const imagenComprimida = await this.comprimirYEstamparImagen(
+                            e.target.result,
+                            1000,
+                            this.metadatosEvidencia
+                        );
+                        this.fotosPreview.push(imagenComprimida);
+                        this.nuevaIncidencia.fotos.push(imagenComprimida);
+                    } catch (error) {
+                        console.error('Error al procesar y sellar imagen:', error);
+                        this.fotosPreview.push(e.target.result);
+                        this.nuevaIncidencia.fotos.push(e.target.result);
+                    }
 
-                        procesadas++;
-                        this.cdr.detectChanges();
+                    procesadas++;
+                    this.cdr.detectChanges();
 
-                        if (procesadas === total) {
-                            setTimeout(() => {
-                                if (this.fileInput && this.fileInput.nativeElement) {
-                                    this.fileInput.nativeElement.value = '';
-                                }
-                                this.procesando = false;
-                                this.cdr.detectChanges();
-                                this.mostrarToast(`📸 ${total} foto(s) cargada(s) correctamente`, 'success');
-                            }, 300);
-                        }
-                    };
-
-                    reader.onerror = () => {
-                        procesadas++;
-                        if (procesadas === total) {
+                    if (procesadas === total) {
+                        setTimeout(() => {
+                            if (this.fileInput && this.fileInput.nativeElement) {
+                                this.fileInput.nativeElement.value = '';
+                            }
                             this.procesando = false;
                             this.cdr.detectChanges();
-                            this.mostrarToast(`❌ Error al cargar algunas fotos`, 'error');
-                        }
-                    };
+                            this.mostrarToast(`📸 Foto(s) anexada(s) con coordenadas y fecha/hora calculados`, 'success');
+                        }, 250);
+                    }
+                };
 
-                    reader.readAsDataURL(file);
-                } else {
+                reader.onerror = () => {
                     procesadas++;
                     if (procesadas === total) {
                         this.procesando = false;
                         this.cdr.detectChanges();
+                        this.mostrarToast(`❌ Error al cargar algunas fotos`, 'error');
                     }
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                procesadas++;
+                if (procesadas === total) {
+                    this.procesando = false;
+                    this.cdr.detectChanges();
                 }
             }
-        } else {
-            this.procesando = false;
         }
     }
 
-    comprimirImagen(base64: string, maxWidth: number = 800): Promise<string> {
+    comprimirYEstamparImagen(base64: string, maxWidth: number = 1000, metadatos?: any): Promise<string> {
         return new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
@@ -665,9 +789,44 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
-                ctx!.drawImage(img, 0, 0, width, height);
+                if (!ctx) {
+                    resolve(base64);
+                    return;
+                }
 
-                const compressed = canvas.toDataURL('image/jpeg', 0.6);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // ⭐ SELLAR CON MARCA DE AGUA PROFESIONAL DE CAMPO
+                if (metadatos) {
+                    const barHeight = Math.max(52, Math.round(height * 0.12));
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+                    ctx.fillRect(0, height - barHeight, width, barHeight);
+
+                    // Línea dorada superior
+                    ctx.fillStyle = '#D4AF37';
+                    ctx.fillRect(0, height - barHeight, width, 3);
+
+                    const fontSizeMain = Math.max(11, Math.round(barHeight * 0.28));
+                    const fontSizeSub = Math.max(9, Math.round(barHeight * 0.22));
+
+                    ctx.font = `bold ${fontSizeMain}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textBaseline = 'top';
+
+                    const paddingX = Math.round(width * 0.03);
+                    const line1Y = height - barHeight + 8;
+                    const line2Y = line1Y + fontSizeMain + 5;
+
+                    const line1 = `📅 ${metadatos.diaSemana}, ${metadatos.fechaFormateada} - ${metadatos.hora} | 📍 GPS: ${metadatos.coordenadas}`;
+                    ctx.fillText(line1, paddingX, line1Y);
+
+                    ctx.font = `500 ${fontSizeSub}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                    ctx.fillStyle = '#cbd5e1';
+                    const line2 = `🏠 ${metadatos.direccion || 'Ubicación en territorio'} | 🛡️ CUIDALIA`;
+                    ctx.fillText(line2, paddingX, line2Y);
+                }
+
+                const compressed = canvas.toDataURL('image/jpeg', 0.72);
                 resolve(compressed);
             };
             img.src = base64;
@@ -677,6 +836,12 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     eliminarFoto(index: number) {
         this.fotosPreview.splice(index, 1);
         this.nuevaIncidencia.fotos.splice(index, 1);
+        if (this.fotosPreview.length === 0) {
+            this.metadatosEvidencia = null;
+            if (this.nuevaIncidencia.metadatosEvidencia) {
+                delete this.nuevaIncidencia.metadatosEvidencia;
+            }
+        }
         this.cdr.detectChanges();
         this.mostrarToast('🗑️ Foto eliminada', 'info');
     }
@@ -705,9 +870,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                             <span style="font-weight: 600; color: #7B1D2E;">Paciente:</span>
                             <span style="font-weight: 700; color: #1a1a1a;">${this.datosPaciente.nombre}</span>
                             <span style="font-weight: 600; color: #7B1D2E;">Dirección:</span>
-                            <span style="font-weight: 700; color: #1a1a1a;">${this.datosPaciente.direccion}</span>
-                            <span style="font-weight: 600; color: #7B1D2E;">Colonia:</span>
-                            <span style="font-weight: 700; color: #1a1a1a;">${this.datosPaciente.colonia}</span>
+                            <span style="font-weight: 700; color: #1a1a1a;">${this.direccionCompleta}</span>
                             <span style="font-weight: 600; color: #7B1D2E;">Tipo:</span>
                             <span style="font-weight: 700; color: #1a1a1a;">${this.getTipoLabel(this.nuevaIncidencia.tipo)}</span>
                         </div>
@@ -715,7 +878,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                     <div style="background: #fff3e0; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #e67e22;">
                         <div style="font-size: 13px; color: #666;">
                             <i class="fas fa-info-circle" style="color: #e67e22; margin-right: 8px;"></i>
-                            Se registrará la incidencia y se actualizará el estado del paciente.
+                            Se registrará la incidencia con sello de georreferencia y se actualizará el estado del paciente.
                         </div>
                     </div>
                 </div>
@@ -735,7 +898,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                     fotos: [...this.nuevaIncidencia.fotos],
                     resuelta: false,
                     datosPaciente: { ...this.datosPaciente },
-                    pacienteId: this.datosPaciente?.id
+                    pacienteId: this.datosPaciente?.id,
+                    metadatosEvidencia: this.metadatosEvidencia ? { ...this.metadatosEvidencia } : null
                 };
 
                 this.guardarIncidenciaEnBD(nuevaIncidencia);

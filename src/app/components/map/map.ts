@@ -1842,7 +1842,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
               direccion: '${direccionEscapada}',
               curp: '${curpEscapado}',
               colonia: '${coloniaEscapada}',
-              seccion: '${seccionEscapada}'
+              seccion: '${seccionEscapada}',
+              lat: ${paciente.lat || 0},
+              lng: ${paciente.lng || 0}
             } }))" title="Reportar incidencia o alerta médica">
             <i class="fas fa-triangle-exclamation"></i>
             <span>Reporte</span>
@@ -2388,7 +2390,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           direccion: data.direccion,
           curp: data.curp || '',
           colonia: data.colonia || '',
-          seccion: data.seccion || ''
+          seccion: data.seccion || '',
+          lat: data.lat || 0,
+          lng: data.lng || 0
         };
         localStorage.setItem('incidenciaPaciente', JSON.stringify(pacienteData));
         this.router.navigate(['/incidencias']);

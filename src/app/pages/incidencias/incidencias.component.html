@@ -52,46 +52,50 @@
     <div class="formulario-card" *ngIf="mostrarFormulario">
       <div class="formulario-header">
         <div class="form-header-title">
-          <i class="fas fa-clipboard-list"></i>
-          <span>Nuevo Reporte de Incidencia Operativa</span>
+          <div class="form-header-icon-badge">
+            <i class="fas fa-clipboard-list"></i>
+          </div>
+          <div>
+            <h3>Nuevo Reporte de Incidencia Operativa</h3>
+            <span class="form-header-subtitle">Registro en territorio con georreferencia y sello de evidencia</span>
+          </div>
         </div>
         <button class="btn-close-form" (click)="toggleFormulario()" title="Cerrar formulario">
           <i class="fas fa-xmark"></i>
         </button>
       </div>
 
-      <!-- PACIENTE SELECCIONADO -->
+      <!-- PACIENTE SELECCIONADO: TARJETA DE IDENTIDAD TERRITORIAL -->
       <div class="datos-paciente-card" *ngIf="datosPaciente">
-        <div class="datos-paciente-header">
-          <div class="patient-title-wrap">
-            <i class="fas fa-user-circle"></i>
-            <strong>Paciente Vinculado</strong>
+        <div class="datos-paciente-banner">
+          <div class="patient-avatar-box">
+            <span>{{ obtenerIniciales(datosPaciente.nombre) }}</span>
           </div>
-          <span class="badge-seleccionado">
-            <i class="fas fa-check-circle"></i> Seleccionado
-          </span>
+          <div class="patient-main-info">
+            <div class="patient-header-tags">
+              <span class="badge-vinculado">
+                <i class="fas fa-circle-check"></i> Paciente Vinculado
+              </span>
+              <span class="badge-id" *ngIf="datosPaciente.id">#{{ datosPaciente.id }}</span>
+              <span class="badge-sec" *ngIf="datosPaciente.seccion && datosPaciente.seccion !== 'N/A'">Sec. {{ datosPaciente.seccion }}</span>
+            </div>
+            <h4 class="patient-name-title">{{ datosPaciente.nombre }}</h4>
+            <div class="patient-chips-row">
+              <span class="p-chip p-chip-colonia" *ngIf="datosPaciente.colonia">
+                <i class="fas fa-building"></i> {{ datosPaciente.colonia }}
+              </span>
+              <span class="p-chip p-chip-tel" *ngIf="datosPaciente.telefono">
+                <a [href]="'tel:' + datosPaciente.telefono" class="p-tel-link">
+                  <i class="fas fa-phone-volume"></i> {{ datosPaciente.telefono }}
+                </a>
+              </span>
+            </div>
+          </div>
         </div>
-        <div class="datos-paciente-contenido">
-          <div class="dato-row">
-            <i class="fas fa-user"></i>
-            <span><strong>Paciente:</strong> {{ datosPaciente.nombre }}</span>
-          </div>
-          <div class="dato-row">
-            <i class="fas fa-map-marker-alt"></i>
-            <span><strong>Dirección:</strong> {{ datosPaciente.direccion }}</span>
-          </div>
-          <div class="dato-row">
-            <i class="fas fa-phone"></i>
-            <span><strong>Teléfono:</strong> {{ datosPaciente.telefono || 'Sin teléfono' }}</span>
-          </div>
-          <div class="dato-row">
-            <i class="fas fa-building"></i>
-            <span><strong>Colonia:</strong> {{ datosPaciente.colonia }}</span>
-          </div>
-          <div class="dato-row">
-            <i class="fas fa-hashtag"></i>
-            <span><strong>Sección:</strong> {{ datosPaciente.seccion || 'N/A' }}</span>
-          </div>
+
+        <div class="patient-address-strip">
+          <i class="fas fa-location-dot"></i>
+          <span><strong>Domicilio georreferenciado:</strong> {{ direccionCompleta }}</span>
         </div>
       </div>
 
@@ -109,58 +113,159 @@
       </div>
 
       <div class="form-grid">
-        <div class="form-group">
-          <label>Tipo de Incidencia <span class="required">*</span></label>
-          <select [(ngModel)]="nuevaIncidencia.tipo" class="form-control-custom" (change)="onTipoIncidenciaChange()">
-            <option *ngFor="let tipo of tiposIncidencias" [value]="tipo.valor">
-              {{ tipo.label }}
-            </option>
-          </select>
-        </div>
+        <!-- 1. TIPO DE INCIDENCIA: GRID VISUAL DE TARJETAS SELECTORAS -->
+        <div class="form-group full-span">
+          <div class="label-with-hint">
+            <label>Tipo de Incidencia Operativa <span class="required">*</span></label>
+            <span class="label-hint">Selecciona la condición observada en campo:</span>
+          </div>
 
-        <div class="form-group">
-          <label>Ubicación / Dirección <span class="required">*</span></label>
-          <div class="input-with-icon">
-            <i class="fas fa-location-dot"></i>
-            <input type="text" [value]="direccionCompleta || 'Dirección no asignada'" disabled class="form-control-custom disabled-input">
+          <div class="tipo-incidencia-grid">
+            <button type="button"
+              *ngFor="let tipo of tiposIncidencias"
+              class="tipo-card-btn"
+              [class.active]="nuevaIncidencia.tipo === tipo.valor"
+              (click)="seleccionarTipoIncidencia(tipo.valor)">
+              <div class="tipo-card-icon" [style.background]="tipo.color + '18'" [style.color]="tipo.color">
+                <i [class]="tipo.icono"></i>
+              </div>
+              <div class="tipo-card-info">
+                <span class="tipo-card-title">{{ tipo.label }}</span>
+                <span class="tipo-card-desc">{{ tipo.desc }}</span>
+              </div>
+              <div class="tipo-card-check" *ngIf="nuevaIncidencia.tipo === tipo.valor">
+                <i class="fas fa-check"></i>
+              </div>
+            </button>
           </div>
         </div>
 
+        <!-- 2. UBICACIÓN / DIRECCIÓN -->
         <div class="form-group full-span">
-          <label>Descripción y Observaciones en Campo <span class="required">*</span></label>
+          <label>Ubicación / Dirección en Campo <span class="required">*</span></label>
+          <div class="input-with-icon address-input-box">
+            <i class="fas fa-map-location-dot"></i>
+            <input type="text" [value]="direccionCompleta || 'Dirección no asignada'" disabled class="form-control-custom disabled-input">
+            <span class="address-status-badge">
+              <i class="fas fa-shield-check"></i> Georreferenciada
+            </span>
+          </div>
+        </div>
+
+        <!-- 3. DESCRIPCIÓN Y OBSERVACIONES -->
+        <div class="form-group full-span">
+          <div class="label-with-hint">
+            <label>Descripción y Observaciones en Campo <span class="required">*</span></label>
+            <span class="label-hint">Detalla lo sucedido en la visita:</span>
+          </div>
+
           <textarea rows="3" [(ngModel)]="nuevaIncidencia.descripcion"
             [placeholder]="nuevaIncidencia.tipo === 'otro' ? 'Describe la situación encontrada con el mayor detalle posible...' : getDescripcionPorDefecto()"
             class="form-control-custom textarea-custom">
           </textarea>
-          <span class="hint-text" *ngIf="nuevaIncidencia.tipo !== 'otro'">
-            <i class="fas fa-circle-info"></i> Puedes ajustar el texto sugerido según lo observado.
-          </span>
+
+          <!-- Atajos rápidos para agilizar la captura en campo -->
+          <div class="quick-notes-pills">
+            <span class="quick-notes-label"><i class="fas fa-bolt"></i> Atajos de campo:</span>
+            <button type="button" class="quick-pill" (click)="agregarNotaRapida('Se tocó timbre y nadie abrió.')">+ Nadie abrió</button>
+            <button type="button" class="quick-pill" (click)="agregarNotaRapida('Vecino informó que no habita aquí.')">+ Vecino informa ausencia</button>
+            <button type="button" class="quick-pill" (click)="agregarNotaRapida('Se dejó citatorio formal bajo puerta.')">+ Dejó citatorio</button>
+            <button type="button" class="quick-pill" (click)="agregarNotaRapida('Domicilio deshabitado.')">+ Deshabitado</button>
+          </div>
         </div>
 
-        <!-- Evidencia Fotográfica -->
+        <!-- 4. EVIDENCIA FOTOGRÁFICA CON CÁLCULO AUTOMÁTICO DE METADATOS -->
         <div class="form-group full-span">
-          <label>Evidencia Fotográfica en Campo</label>
+          <div class="label-with-hint">
+            <label>Evidencia Fotográfica en Campo</label>
+            <span class="label-hint">Al subir foto se calcula automáticamente fecha, hora y coordenadas GPS</span>
+          </div>
+
           <div class="foto-upload-area">
             <button type="button" class="btn-subir-foto" (click)="abrirSelector($event)" [disabled]="procesando">
-              <i class="fas fa-camera"></i>
-              <span>{{ procesando ? 'Procesando imágenes...' : 'Subir o Capturar Fotos' }}</span>
+              <div class="upload-btn-icon">
+                <i class="fas" [class.fa-camera]="!procesando" [class.fa-spinner]="procesando" [class.fa-spin]="procesando"></i>
+              </div>
+              <div class="upload-btn-text">
+                <span class="upload-btn-main">{{ procesando ? 'Calculando GPS y sellando imagen...' : 'Subir o Capturar Fotos en Campo' }}</span>
+                <span class="upload-btn-sub">Formatos JPG, PNG • Genera sello digital de geolocalización</span>
+              </div>
             </button>
 
             <input type="file" #fileInput accept="image/*" multiple style="display: none"
               (change)="procesarFotos($event)">
-
-            <span class="foto-hint">
-              <i class="fas fa-circle-info"></i> Formatos JPG, PNG. Puedes anexar fachada, portón o aviso.
-            </span>
           </div>
 
+          <!-- TARJETA DE METADATOS CALCULADOS AUTOMÁTICAMENTE -->
+          <div class="metadatos-evidencia-card" *ngIf="metadatosEvidencia">
+            <div class="meta-header">
+              <div class="meta-title-wrap">
+                <div class="meta-icon-pulse">
+                  <i class="fas fa-satellite-dish"></i>
+                </div>
+                <div>
+                  <strong>Sello de Evidencia en Campo</strong>
+                  <span class="meta-sub">Metadatos calculados automáticamente al subir la foto</span>
+                </div>
+              </div>
+              <span class="meta-badge-gps">
+                <i class="fas fa-check-circle"></i> {{ metadatosEvidencia.fuenteGPS }}
+              </span>
+            </div>
+
+            <div class="meta-grid">
+              <div class="meta-item">
+                <div class="meta-item-icon"><i class="fas fa-calendar-day"></i></div>
+                <div class="meta-item-content">
+                  <span class="meta-label">DÍA Y FECHA</span>
+                  <span class="meta-value">{{ metadatosEvidencia.diaSemana }}, {{ metadatosEvidencia.fechaFormateada }}</span>
+                </div>
+              </div>
+
+              <div class="meta-item">
+                <div class="meta-item-icon"><i class="fas fa-clock"></i></div>
+                <div class="meta-item-content">
+                  <span class="meta-label">HORA EXACTA</span>
+                  <span class="meta-value">{{ metadatosEvidencia.hora }}</span>
+                </div>
+              </div>
+
+              <div class="meta-item">
+                <div class="meta-item-icon"><i class="fas fa-location-crosshairs"></i></div>
+                <div class="meta-item-content">
+                  <span class="meta-label">COORDENADAS GPS</span>
+                  <a class="meta-value meta-coords-link"
+                     [href]="'https://www.google.com/maps?q=' + metadatosEvidencia.lat + ',' + metadatosEvidencia.lng"
+                     target="_blank" rel="noopener noreferrer"
+                     title="Ver punto exacto en Google Maps">
+                    <span>{{ metadatosEvidencia.coordenadas }}</span>
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                  </a>
+                </div>
+              </div>
+
+              <div class="meta-item">
+                <div class="meta-item-icon"><i class="fas fa-map-location-dot"></i></div>
+                <div class="meta-item-content">
+                  <span class="meta-label">LUGAR / DOMICILIO</span>
+                  <span class="meta-value" [title]="metadatosEvidencia.direccion">{{ metadatosEvidencia.direccion }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contador y Galería de Previews -->
           <div class="foto-contador" *ngIf="fotosPreview.length > 0">
-            <i class="fas fa-images"></i> {{ fotosPreview.length }} foto(s) anexada(s)
+            <i class="fas fa-images"></i>
+            <span>{{ fotosPreview.length }} fotografía(s) con sello digital anexada(s)</span>
           </div>
 
           <div class="fotos-preview-grid" *ngIf="fotosPreview.length > 0">
             <div class="foto-item" *ngFor="let foto of fotosPreview; let i = index">
-              <img [src]="foto" alt="Vista previa">
+              <img [src]="foto" alt="Vista previa sellada" (click)="openModal(foto)">
+              <div class="foto-watermark-tag">
+                <i class="fas fa-location-dot"></i> Sellada
+              </div>
               <button type="button" class="btn-eliminar-foto" (click)="eliminarFoto(i)" title="Quitar foto">
                 <i class="fas fa-xmark"></i>
               </button>
@@ -169,12 +274,24 @@
         </div>
       </div>
 
+      <!-- 5. ACCIONES DEL FORMULARIO -->
       <div class="form-actions-bar">
-        <button class="btn-guardar-incidencia" (click)="registrarIncidencia()"
-          [disabled]="loading || !nuevaIncidencia.descripcion || !datosPaciente">
-          <i class="fas" [class.fa-save]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
-          <span>{{ loading ? 'Registrando...' : 'Guardar Incidencia' }}</span>
-        </button>
+        <div class="actions-left-note">
+          <i class="fas fa-shield-halved"></i>
+          <span>El reporte se registrará con sello de fecha, hora y georreferencia oficial</span>
+        </div>
+        <div class="actions-buttons-group">
+          <button type="button" class="btn-cancelar-form" (click)="toggleFormulario()" [disabled]="loading">
+            <i class="fas fa-xmark"></i>
+            <span>Cancelar</span>
+          </button>
+
+          <button type="button" class="btn-guardar-incidencia" (click)="registrarIncidencia()"
+            [disabled]="loading || !nuevaIncidencia.descripcion || !datosPaciente">
+            <i class="fas" [class.fa-floppy-disk]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
+            <span>{{ loading ? 'Registrando...' : 'Guardar Reporte de Incidencia' }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -272,6 +389,19 @@
         <div class="incident-address-row">
           <i class="fas fa-location-dot"></i>
           <span>{{ incidencia.direccion || 'Dirección no especificada' }}</span>
+        </div>
+
+        <!-- Sello de metadatos de evidencia -->
+        <div class="incident-meta-strip" *ngIf="incidencia.metadatosEvidencia">
+          <span class="meta-strip-pill">
+            <i class="fas fa-location-crosshairs"></i> GPS: {{ incidencia.metadatosEvidencia.coordenadas }}
+          </span>
+          <span class="meta-strip-pill" *ngIf="incidencia.metadatosEvidencia.hora">
+            <i class="fas fa-clock"></i> {{ incidencia.metadatosEvidencia.hora }}
+          </span>
+          <span class="meta-strip-pill" *ngIf="incidencia.metadatosEvidencia.diaSemana">
+            <i class="fas fa-calendar-day"></i> {{ incidencia.metadatosEvidencia.diaSemana }}
+          </span>
         </div>
 
         <!-- Descripción -->
