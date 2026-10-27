@@ -115,6 +115,12 @@ export class CalendarioPageComponent implements OnInit {
         hora: string;          // Opcional: puede dejarse en blanco
         prioridad: string;     // Opcional: 'alta' | 'media' | 'baja' | ''
         notas: string;         // Opcional: notas o mensaje individual
+        nombre?: string;
+        telefono?: string;
+        telefonoLimpio?: string;
+        colonia?: string;
+        estadoMensaje?: string;
+        mensajePersonalizado?: string;
     }[] = [];
     modoDistribucion: 'repartir' | 'mismo_dia' = 'repartir';
     diaEspecificoAsignar: string = '';
@@ -1441,39 +1447,73 @@ export class CalendarioPageComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
+    obtenerFechaHoyISO(): string {
+        const d = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    obtenerTelefonoLimpio(paciente: any): string {
+        if (!paciente) return '';
+        const tel = paciente.telefonoLimpio || paciente.telefono || paciente.paciente?.telefono || '';
+        let num = (tel || '').replace(/\D/g, '');
+        if (num.startsWith('52') && num.length === 12) {
+            num = num.substring(2);
+        }
+        return num;
+    }
+
+    obtenerNombrePaciente(paciente: any): string {
+        if (!paciente) return 'Paciente';
+        return paciente.nombreCompleto || paciente.nombre || paciente.paciente?.nombreCompleto || paciente.paciente?.nombre || 'Paciente';
+    }
+
+    contarConCelular(lista: any[]): number {
+        if (!lista) return 0;
+        return lista.filter(x => this.obtenerTelefonoLimpio(x).length === 10).length;
+    }
+
     generarTextoMensaje(paciente: any): string {
+        const p = paciente.paciente ? paciente.paciente : paciente;
+        const nombrePaciente = this.obtenerNombrePaciente(paciente);
+        const coloniaPaciente = p.colonia || paciente.colonia || '';
+        const direccionPaciente = p.direccion || paciente.direccion || '';
+        const fechaVal = paciente.fechaStr || paciente.fecha || p.fechaStr || p.fecha || this.obtenerFechaHoyISO();
+        const horaVal = paciente.hora || p.hora || '';
+        const notaVal = paciente.notas || paciente.mensajePersonalizado || '';
+
         const nombreEnf = (this.nombreEnfermera && this.nombreEnfermera.trim()) 
             ? this.nombreEnfermera.trim() 
             : 'Personal de Salud';
 
         let textoBase = '';
-        if (paciente.mensajePersonalizado && paciente.mensajePersonalizado.trim()) {
-            textoBase = paciente.mensajePersonalizado;
+        if (notaVal && notaVal.trim() && notaVal !== 'Visita programada') {
+            textoBase = `Estimado(a) ${nombrePaciente}, le recordamos su próxima visita domiciliaria de Salud Casa por Casa el día {fecha}{hora}. Motivo: ${notaVal.trim()}. Le atenderá: {enfermera}. Favor de estar atento(a).`;
+        } else if (this.plantillaMensaje && this.plantillaMensaje.trim()) {
+            textoBase = this.plantillaMensaje;
         } else {
-            textoBase = this.plantillaMensaje || '';
+            textoBase = 'Estimado(a) {nombre}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa el día {fecha}{hora}. Le atenderá la enfermera(o) {enfermera}. Favor de estar atento(a).';
         }
 
-        const fechaFormateada = this.formatearFechaLegible(paciente.fechaStr || paciente.fecha);
-        const horaTexto = paciente.hora && paciente.hora !== '09:00' ? ` a las ${paciente.hora}` : '';
+        const fechaFormateada = this.formatearFechaLegible(fechaVal);
+        const horaTexto = horaVal && horaVal !== '09:00' ? ` a las ${horaVal}` : '';
 
         return textoBase
-            .replace(/{nombre}/g, paciente.nombre || 'Paciente')
+            .replace(/{nombre}/g, nombrePaciente)
             .replace(/{fecha}/g, fechaFormateada)
             .replace(/{hora}/g, horaTexto)
             .replace(/{enfermera}/g, nombreEnf)
-            .replace(/{colonia}/g, paciente.colonia || '')
-            .replace(/{direccion}/g, paciente.direccion || '');
+            .replace(/{colonia}/g, coloniaPaciente)
+            .replace(/{direccion}/g, direccionPaciente);
     }
 
     enviarMensajeWhatsApp(paciente: any) {
-        let tel = (paciente.telefonoLimpio || paciente.telefono || '').replace(/\D/g, '');
-        if (tel.startsWith('52') && tel.length === 12) {
-            tel = tel.substring(2);
-        }
+        let tel = this.obtenerTelefonoLimpio(paciente);
+        const nombre = this.obtenerNombrePaciente(paciente);
 
         if (!tel || tel.length < 10) {
             Swal.fire({
-                title: 'Número Celular de ' + paciente.nombre,
+                title: 'Número Celular de ' + nombre,
                 text: 'Ingresa el número celular a 10 dígitos para abrir la conversación en WhatsApp:',
                 input: 'tel',
                 inputValue: tel || '',
@@ -1488,6 +1528,7 @@ export class CalendarioPageComponent implements OnInit {
                     if (num.startsWith('52') && num.length === 12) num = num.substring(2);
                     paciente.telefono = num;
                     paciente.telefonoLimpio = num;
+                    if (paciente.paciente) paciente.paciente.telefono = num;
                     paciente.tieneCelularValido = num.length === 10;
                     this.lanzarWhatsApp(num, paciente);
                 }
@@ -1512,18 +1553,17 @@ export class CalendarioPageComponent implements OnInit {
         document.body.removeChild(a);
 
         paciente.estadoMensaje = 'enviado';
-        this.mostrarToast('WhatsApp', `Abriendo WhatsApp para ${paciente.nombre}...`, 'success');
+        const nombre = this.obtenerNombrePaciente(paciente);
+        this.mostrarToast('WhatsApp', `Abriendo WhatsApp para ${nombre}...`, 'success');
     }
 
     enviarMensajeSMS(paciente: any) {
-        let tel = (paciente.telefonoLimpio || paciente.telefono || '').replace(/\D/g, '');
-        if (tel.startsWith('52') && tel.length === 12) {
-            tel = tel.substring(2);
-        }
+        let tel = this.obtenerTelefonoLimpio(paciente);
+        const nombre = this.obtenerNombrePaciente(paciente);
 
         if (!tel || tel.length < 10) {
             Swal.fire({
-                title: 'Número Celular de ' + paciente.nombre,
+                title: 'Número Celular de ' + nombre,
                 text: 'Ingresa el número celular a 10 dígitos para abrir la app de mensajes SMS:',
                 input: 'tel',
                 inputValue: tel || '',
@@ -1538,6 +1578,7 @@ export class CalendarioPageComponent implements OnInit {
                     if (num.startsWith('52') && num.length === 12) num = num.substring(2);
                     paciente.telefono = num;
                     paciente.telefonoLimpio = num;
+                    if (paciente.paciente) paciente.paciente.telefono = num;
                     paciente.tieneCelularValido = num.length === 10;
                     this.lanzarSMS(num, paciente);
                 }
@@ -1558,7 +1599,8 @@ export class CalendarioPageComponent implements OnInit {
         window.location.href = url;
 
         paciente.estadoMensaje = 'enviado';
-        this.mostrarToast('SMS', `Abriendo aplicación de mensajes SMS para ${paciente.nombre}...`, 'success');
+        const nombre = this.obtenerNombrePaciente(paciente);
+        this.mostrarToast('SMS', `Abriendo aplicación de mensajes SMS para ${nombre}...`, 'success');
     }
 
     copiarMensajePaciente(paciente: any) {
@@ -1567,6 +1609,175 @@ export class CalendarioPageComponent implements OnInit {
             this.mostrarToast('Copiado', 'Mensaje copiado al portapapeles', 'info');
         }).catch(() => {
             this.mostrarToast('Mensaje', texto, 'info');
+        });
+    }
+
+    enviarWhatsAppGlobal(lista: any[]) {
+        const validos = (lista || []).filter(x => this.obtenerTelefonoLimpio(x).length === 10);
+        if (validos.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin números telefónicos válidos',
+                text: 'Ninguno de los pacientes tiene número celular registrado a 10 dígitos. Puedes ingresar el teléfono directamente pulsando el botón de WhatsApp en su tarjeta.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+
+        if (validos.length === 1) {
+            this.enviarMensajeWhatsApp(validos[0]);
+            return;
+        }
+
+        Swal.fire({
+            title: `Envío Global WhatsApp (${validos.length} Pacientes)`,
+            html: `
+              <div style="text-align: left; font-size: 13px; color: #374151; line-height: 1.5;">
+                <p>Se enviarán recordatorios a <strong>${validos.length} paciente(s)</strong> con celular válido.</p>
+                <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; padding: 12px; border-radius: 8px; margin: 12px 0;">
+                  <strong style="color: #166534;"><i class="fab fa-whatsapp"></i> Envío Asistido Secuencial:</strong>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #14532d;">
+                    El asistente te abrirá WhatsApp para cada paciente con el mensaje personalizado listo para enviar.
+                  </p>
+                </div>
+              </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fab fa-whatsapp"></i> Iniciar Envío Asistido',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#25d366'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                this.iniciarAsistenteWhatsApp(validos, 0);
+            }
+        });
+    }
+
+    iniciarAsistenteWhatsApp(lista: any[], index: number) {
+        if (index >= lista.length) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Envío completado!',
+                text: `Se enviaron los mensajes de WhatsApp a los ${lista.length} pacientes seleccionados.`,
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+
+        const p = lista[index];
+        const nombre = this.obtenerNombrePaciente(p);
+        const tel = this.obtenerTelefonoLimpio(p);
+
+        this.lanzarWhatsApp(tel, p);
+
+        if (index + 1 < lista.length) {
+            const sig = this.obtenerNombrePaciente(lista[index + 1]);
+            Swal.fire({
+                title: `Paciente ${index + 1} de ${lista.length}`,
+                html: `
+                  <p>Se abrió WhatsApp para: <strong>${nombre}</strong>.</p>
+                  <p style="font-size: 13px; color: #64748b; margin-top: 8px;">
+                    Siguiente destinatario: <strong>${sig}</strong> (${index + 2} de ${lista.length}).
+                  </p>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: `Siguiente: ${sig} <i class="fas fa-arrow-right"></i>`,
+                cancelButtonText: 'Detener envío',
+                confirmButtonColor: '#25d366'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    this.iniciarAsistenteWhatsApp(lista, index + 1);
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Tanda Completada!',
+                text: `Se abrieron los mensajes para todos los ${lista.length} pacientes.`,
+                confirmButtonColor: '#7e101f'
+            });
+        }
+    }
+
+    enviarSMSGlobal(lista: any[]) {
+        const validos = (lista || []).filter(x => this.obtenerTelefonoLimpio(x).length === 10);
+        if (validos.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin números telefónicos válidos',
+                text: 'Ninguno de los pacientes tiene número celular registrado a 10 dígitos.',
+                confirmButtonColor: '#7e101f'
+            });
+            return;
+        }
+
+        if (validos.length === 1) {
+            this.enviarMensajeSMS(validos[0]);
+            return;
+        }
+
+        const numeros = validos.map(x => this.obtenerTelefonoLimpio(x)).join(',');
+        const texto = encodeURIComponent(this.generarTextoMensaje(validos[0]));
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const sep = isIOS ? '&' : '?';
+        const url = `sms:${numeros}${sep}body=${texto}`;
+
+        Swal.fire({
+            title: `Envío Global SMS (${validos.length} Pacientes)`,
+            html: `
+              <div style="text-align: left; font-size: 13px; color: #374151;">
+                <p>Se abrirá tu app de mensajes SMS con los números de los <strong>${validos.length} pacientes seleccionados</strong>.</p>
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                  <strong style="color: #1e40af;"><i class="fas fa-info-circle"></i> Destinatarios:</strong>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #1e3a8a;">
+                    ${validos.map(v => this.obtenerNombrePaciente(v) + ' (' + this.obtenerTelefonoLimpio(v) + ')').join('<br>')}
+                  </p>
+                </div>
+              </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-comment-sms"></i> Abrir Mensajes SMS',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#3b82f6'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                validos.forEach(p => p.estadoMensaje = 'enviado');
+                window.location.href = url;
+                this.mostrarToast('SMS Masivo', `Abriendo mensajes SMS para ${validos.length} pacientes...`, 'success');
+            }
+        });
+    }
+
+    copiarTodosMensajes(lista: any[]) {
+        if (!lista || lista.length === 0) {
+            this.mostrarToast('Aviso', 'No hay pacientes para copiar mensajes', 'info');
+            return;
+        }
+
+        let textoFinal = `📋 RECORDATORIO DE VISITAS DOMICILIARIAS (${lista.length} Pacientes)\n`;
+        textoFinal += `Programa Salud Casa por Casa\n`;
+        textoFinal += `==============================================\n\n`;
+
+        lista.forEach((item, idx) => {
+            const nombre = this.obtenerNombrePaciente(item);
+            const tel = this.obtenerTelefonoLimpio(item) || 'Sin teléfono';
+            const msg = this.generarTextoMensaje(item);
+            textoFinal += `[${idx + 1}] ${nombre} (Tel: ${tel})\n`;
+            textoFinal += `"${msg}"\n\n`;
+        });
+
+        navigator.clipboard.writeText(textoFinal).then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Mensajes Copiados!',
+                html: `Se copiaron los mensajes de los <strong>${lista.length} paciente(s)</strong> al portapapeles.<br><small style="color: #64748b;">Puedes pegarlos en cualquier chat, correo o documento.</small>`,
+                confirmButtonColor: '#7e101f'
+            });
+        }).catch(() => {
+            this.mostrarToast('Copiado', 'Mensajes copiados al portapapeles', 'info');
         });
     }
 
@@ -1581,41 +1792,7 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     enviarTodosLosSMS() {
-        const destinatarios = this.pacientesUnicosParaMensaje.filter(p => p.tieneCelularValido);
-        if (destinatarios.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Sin números telefónicos válidos',
-                text: 'Ninguno de los pacientes agendados cuenta con número celular de 10 dígitos. Puedes ingresar el teléfono directamente pulsando los botones de WhatsApp o SMS en su tarjeta.',
-                confirmButtonColor: '#7e101f'
-            });
-            return;
-        }
-
-        Swal.fire({
-            title: 'Envío Masivo de Mensajes SMS',
-            html: `
-              <div style="text-align: left; font-size: 13px; color: #374151; line-height: 1.5;">
-                <p>Se enviarán recordatorios a <strong>${destinatarios.length} paciente(s)</strong> con celular registrado.</p>
-                <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin: 12px 0;">
-                  <strong style="color: #b45309;"><i class="fas fa-triangle-exclamation"></i> ¿Cómo funciona el SMS en el servidor?</strong>
-                  <p style="margin: 4px 0 0 0; font-size: 12px; color: #92400e;">
-                    Para enviar SMS masivos automáticos a las antenas celulares de México (Telcel, AT&T, Movistar) se requiere una cuenta de mensajería (como Twilio o TextBee) configurada en el servidor de Railway.<br><br>
-                    <strong>💡 Recomendación:</strong> Para enviar mensajes reales de forma inmediata y 100% gratuita, presiona el botón verde de <strong>WhatsApp</strong> o el botón azul de <strong>SMS</strong> en la tarjeta de cada paciente.
-                  </p>
-                </div>
-              </div>
-            `,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: '<i class="fas fa-paper-plane"></i> Enviar a través del servidor',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#7e101f'
-        }).then((res) => {
-            if (res.isConfirmed) {
-                this.ejecutarEnvioMasivoServidor(destinatarios);
-            }
-        });
+        this.enviarSMSGlobal(this.pacientesUnicosParaMensaje);
     }
 
     private ejecutarEnvioMasivoServidor(destinatarios: any[]) {
@@ -1743,13 +1920,20 @@ export class CalendarioPageComponent implements OnInit {
             return;
         }
 
+        const fechaPorDefecto = this.diasSeleccionadosLista[0]?.fechaStr || this.obtenerFechaHoyISO();
+
         this.pacientesParaAsignarSeleccionados.push({
             id: p.id,
             paciente: p,
-            fechaStr: '',            // Totalmente en blanco como pidió el usuario para que la enfermera lo elija
-            hora: '',                // En blanco
-            prioridad: '',           // En blanco
-            notas: this.mensajeGlobalAsignar || ''
+            fechaStr: fechaPorDefecto,
+            hora: '',
+            prioridad: '',
+            notas: '',
+            nombre: p.nombreCompleto || p.nombre,
+            telefono: p.telefono || '',
+            telefonoLimpio: (p.telefono || '').replace(/\D/g, ''),
+            colonia: p.colonia || '',
+            estadoMensaje: ''
         });
 
         this.cdr.detectChanges();
@@ -1760,7 +1944,6 @@ export class CalendarioPageComponent implements OnInit {
         this.cdr.detectChanges();
     }
 
-    
     aplicarMensajeGlobalATodos() {
         this.pacientesParaAsignarSeleccionados.forEach(item => {
             item.notas = this.mensajeGlobalAsignar;
@@ -1808,22 +1991,13 @@ export class CalendarioPageComponent implements OnInit {
             return;
         }
 
-        const sinDia = this.pacientesParaAsignarSeleccionados.filter(x => !x.fechaStr);
-        if (sinDia.length > 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Día de visita pendiente',
-                text: `Hay ${sinDia.length} paciente(s) sin día de visita asignado. Por favor selecciona el día para cada uno en su tarjeta antes de guardar.`,
-                confirmButtonColor: '#7e101f'
-            });
-            return;
-        }
-
         this.guardandoAsignacion = true;
         const { usuarioId } = this.obtenerUsuarioActual();
+        const fechaFallback = this.diasSeleccionadosLista[0]?.fechaStr || this.obtenerFechaHoyISO();
 
         const nuevasVisitas: any[] = this.pacientesParaAsignarSeleccionados.map((item, index) => {
             const p = item.paciente;
+            const fechaFinal = item.fechaStr || fechaFallback;
             return {
                 id: Date.now() + index,
                 pacienteId: p.id,
@@ -1832,7 +2006,7 @@ export class CalendarioPageComponent implements OnInit {
                 pacienteDireccion: p.direccion || '',
                 pacienteTelefono: p.telefono || '',
                 colonia: p.colonia || 'Sin colonia',
-                fecha: item.fechaStr,
+                fecha: fechaFinal,
                 hora: item.hora || '09:00', // En BD TypeORM guarda valor predeterminado si se dejó en blanco
                 horaOriginal: item.hora || '',
                 prioridad: item.prioridad || '',

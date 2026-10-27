@@ -552,7 +552,7 @@
             </div>
             <div class="nurse-text-meta">
               <span class="nurse-label-title">Enfermera(o) a cargo del mensaje:</span>
-              <span class="nurse-label-sub">Se sustituye automáticamente donde coloques la etiqueta <strong>&#123;enfermera&#125;</strong></span>
+              <span class="nurse-label-sub">Nombre que se incluirá en la firma de atención</span>
             </div>
           </div>
           <div class="nurse-input-action-row">
@@ -566,45 +566,27 @@
                 <i class="fas fa-rotate-left"></i>
               </button>
             </div>
-            <button type="button" class="btn-insert-nurse-chip" (click)="insertarVariable('{enfermera}')"
-              title="Añadir la etiqueta {enfermera} en la redacción del mensaje">
-              <i class="fas fa-plus"></i> Añadir &#123;enfermera&#125;
-            </button>
           </div>
         </div>
 
         <textarea class="general-msg-textarea" [(ngModel)]="plantillaMensaje" rows="3"
           placeholder="Escribe aquí el mensaje general que recibirán todos los pacientes agendados..."></textarea>
 
-        <!-- Etiquetas Dinámicas Rápidas -->
-        <div class="template-chips-ribbon">
-          <span class="chips-title"><i class="fas fa-wand-magic-sparkles"></i> Etiquetas dinámicas:</span>
-          <button type="button" class="chip-action-btn" (click)="insertarVariable('{nombre}')" title="Insertar nombre del paciente">
-            + &#123;nombre&#125;
-          </button>
-          <button type="button" class="chip-action-btn chip-nurse-highlight" (click)="insertarVariable('{enfermera}')" title="Insertar nombre de la enfermera">
-            <i class="fas fa-user-nurse"></i> + &#123;enfermera&#125;
-          </button>
-          <button type="button" class="chip-action-btn" (click)="insertarVariable('{fecha}')" title="Insertar fecha de la visita">
-            + &#123;fecha&#125;
-          </button>
-          <button type="button" class="chip-action-btn" (click)="insertarVariable('{hora}')" title="Insertar hora de la visita">
-            + &#123;hora&#125;
-          </button>
-          <button type="button" class="chip-action-btn" (click)="insertarVariable('{colonia}')" title="Insertar colonia del paciente">
-            + &#123;colonia&#125;
-          </button>
-          <button type="button" class="chip-action-btn chip-sign-btn" (click)="agregarFirmaEnfermera()" title="Añadir firma al final del mensaje">
-            <i class="fas fa-signature"></i> Agregar firma al final
-          </button>
-        </div>
-
         <div class="general-msg-actions">
-          <button class="btn-send-all-sms-hero" (click)="enviarTodosLosSMS()" [disabled]="envioMasivoEnProgreso || contarPacientesConCelular() === 0">
-            <i class="fas fa-spinner fa-spin" *ngIf="envioMasivoEnProgreso"></i>
-            <i class="fas fa-paper-plane" *ngIf="!envioMasivoEnProgreso"></i>
-            {{ envioMasivoEnProgreso ? 'Enviando mensajes...' : 'Enviar SMS a Todos los Pacientes Válidos (' + contarPacientesConCelular() + ')' }}
-          </button>
+          <div class="global-actions-trio">
+            <button type="button" class="btn-global-wa" (click)="enviarWhatsAppGlobal(pacientesUnicosParaMensaje)"
+              [disabled]="contarPacientesConCelular() === 0" title="Enviar WhatsApp a todos los pacientes con teléfono">
+              <i class="fab fa-whatsapp"></i> WhatsApp a Todos ({{ contarPacientesConCelular() }})
+            </button>
+            <button type="button" class="btn-global-sms" (click)="enviarSMSGlobal(pacientesUnicosParaMensaje)"
+              [disabled]="contarPacientesConCelular() === 0" title="Abrir SMS con todos los pacientes con teléfono">
+              <i class="fas fa-comment-sms"></i> SMS a Todos ({{ contarPacientesConCelular() }})
+            </button>
+            <button type="button" class="btn-global-copy" (click)="copiarTodosMensajes(pacientesUnicosParaMensaje)"
+              title="Copiar todos los mensajes de los pacientes seleccionados">
+              <i class="fas fa-copy"></i> Copiar Todos
+            </button>
+          </div>
         </div>
       </div>
 
@@ -746,25 +728,6 @@
         </div>
       </div>
 
-      <!-- 2. Mensaje Global para todos los pacientes seleccionados -->
-      <div class="global-message-banner-pro">
-        <div class="banner-title-line">
-          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 8px;">
-            <span class="banner-title"><i class="fas fa-comment-medical text-primary"></i> Mensaje o Motivo Global para Todos los Pacientes:</span>
-            <span class="banner-nurse-pill" *ngIf="nombreEnfermera" title="Enfermera a cargo">
-              <i class="fas fa-user-nurse"></i> {{ nombreEnfermera }}
-            </span>
-          </div>
-          <span class="banner-subtext">Se aplicará automáticamente a todas las visitas de esta tanda (también puedes personalizarlo individualmente abajo):</span>
-        </div>
-        <div class="banner-input-wrap">
-          <i class="fas fa-pen-nib"></i>
-          <input type="text" class="input-global-msg-pro" [(ngModel)]="mensajeGlobalAsignar" (ngModelChange)="aplicarMensajeGlobalATodos()"
-            placeholder="Escribe el mensaje o motivo general de la visita (ej: Valoración médica mensual, control de signos vitales, entrega de medicamento)..." />
-          <button type="button" class="btn-clear-global-msg" *ngIf="mensajeGlobalAsignar" (click)="mensajeGlobalAsignar = ''; aplicarMensajeGlobalATodos()" title="Borrar mensaje">&times;</button>
-        </div>
-      </div>
-
       <!-- 3. Buscador y Catálogo Rápido de Pacientes -->
       <div class="search-catalog-panel-pro">
         <label class="panel-section-label">
@@ -806,6 +769,31 @@
           </button>
         </div>
 
+        <!-- Barra de Envío Global de Mensajes en Asignar Pacientes -->
+        <div class="asignar-global-msg-bar" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+          <div class="global-msg-bar-info">
+            <i class="fas fa-paper-plane text-primary"></i>
+            <div>
+              <strong>Enviar Mensajes a los Pacientes Seleccionados:</strong>
+              <span class="global-msg-sub">Recordatorios por WhatsApp o SMS para esta tanda ({{ pacientesParaAsignarSeleccionados.length }} pacientes)</span>
+            </div>
+          </div>
+          <div class="global-actions-trio">
+            <button type="button" class="btn-global-wa" (click)="enviarWhatsAppGlobal(pacientesParaAsignarSeleccionados)"
+              [disabled]="contarConCelular(pacientesParaAsignarSeleccionados) === 0" title="Enviar WhatsApp a todos los pacientes con teléfono">
+              <i class="fab fa-whatsapp"></i> WhatsApp a Todos ({{ contarConCelular(pacientesParaAsignarSeleccionados) }})
+            </button>
+            <button type="button" class="btn-global-sms" (click)="enviarSMSGlobal(pacientesParaAsignarSeleccionados)"
+              [disabled]="contarConCelular(pacientesParaAsignarSeleccionados) === 0" title="Abrir SMS con todos los pacientes con teléfono">
+              <i class="fas fa-comment-sms"></i> SMS a Todos ({{ contarConCelular(pacientesParaAsignarSeleccionados) }})
+            </button>
+            <button type="button" class="btn-global-copy" (click)="copiarTodosMensajes(pacientesParaAsignarSeleccionados)"
+              title="Copiar todos los mensajes de los pacientes seleccionados">
+              <i class="fas fa-copy"></i> Copiar Todos
+            </button>
+          </div>
+        </div>
+
         <!-- Estado vacío -->
         <div *ngIf="pacientesParaAsignarSeleccionados.length === 0" class="empty-state-pro">
           <div class="empty-art-icon">
@@ -817,8 +805,7 @@
 
         <!-- Lista de tarjetas de pacientes -->
         <div class="patient-cards-scroll-pro" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
-          <div class="patient-card-pro" *ngFor="let item of pacientesParaAsignarSeleccionados; let idx = index"
-            [class.warning-border]="!item.fechaStr">
+          <div class="patient-card-pro" *ngFor="let item of pacientesParaAsignarSeleccionados; let idx = index">
             
             <!-- Cabecera de la tarjeta del paciente -->
             <div class="card-header-pro">
@@ -836,15 +823,15 @@
 
             <!-- Fila de controles alineada y profesional -->
             <div class="card-controls-row-pro">
-              <!-- 1. Día Asignado (Elige la enfermera) -->
+              <!-- 1. Día Asignado (Opcional) -->
               <div class="ctrl-group ctrl-dia">
                 <label>
                   <i class="fas fa-calendar-day"></i> Día Asignado:
-                  <span class="badge-req" *ngIf="!item.fechaStr">¡Falta elegir día!</span>
+                  <span class="badge-opt">Opcional</span>
                 </label>
-                <div class="ctrl-select-wrap" [class.unassigned-wrap]="!item.fechaStr">
+                <div class="ctrl-select-wrap">
                   <select class="select-field-pro" [(ngModel)]="item.fechaStr">
-                    <option value="">-- Selecciona el día --</option>
+                    <option value="">-- Día sugerido --</option>
                     <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">
                       {{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})
                     </option>
@@ -887,6 +874,28 @@
                 </label>
                 <input type="text" class="input-field-pro" [(ngModel)]="item.notas"
                   placeholder="Mensaje o nota para este paciente..." />
+              </div>
+            </div>
+
+            <!-- Fila de opciones individuales de mensaje (WhatsApp, SMS, Copiar) -->
+            <div class="card-messaging-row-pro">
+              <span class="msg-row-label"><i class="fas fa-paper-plane"></i> Enviar a este paciente:</span>
+              <div class="card-msg-btn-group">
+                <button type="button" class="btn-wa-direct-sm" (click)="enviarMensajeWhatsApp(item)"
+                  title="Abrir WhatsApp para este paciente">
+                  <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <button type="button" class="btn-sms-direct-sm" (click)="enviarMensajeSMS(item)"
+                  title="Abrir app de Mensajes SMS para este paciente">
+                  <i class="fas fa-comment-sms"></i> SMS
+                </button>
+                <button type="button" class="btn-copy-direct-sm" (click)="copiarMensajePaciente(item)"
+                  title="Copiar texto del mensaje de este paciente">
+                  <i class="fas fa-copy"></i> Copiar
+                </button>
+                <span class="badge-enviado-chip" *ngIf="item.estadoMensaje === 'enviado'">
+                  <i class="fas fa-check-double"></i> Enviado
+                </span>
               </div>
             </div>
           </div>

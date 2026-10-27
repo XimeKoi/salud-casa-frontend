@@ -298,7 +298,7 @@ export class LoginComponent implements OnInit {
           </p>
           <div style="background: #FAF2EE; border-left: 4px solid #520D2F; padding: 10px 12px; border-radius: 8px; margin: 10px 0;">
             <p style="margin: 0 0 4px; font-weight: 700; color: #520D2F;">Coordinación y Soporte:</p>
-            <p style="margin: 0; color: #666; font-size: 12px;">soporte@cuidalia.mx</p>
+            <p style="margin: 0; color: #666; font-size: 12px;">soportecuidalia@gmail.com</p>
           </div>
         </div>
       `,

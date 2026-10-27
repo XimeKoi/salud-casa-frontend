@@ -2094,30 +2094,85 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
     justify-content: flex-end;
     margin-top: 10px;
 
-    .btn-send-all-sms-hero {
-      background: linear-gradient(135deg, #059669, #047857);
-      color: #ffffff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 9px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
+    .global-actions-trio {
+      display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3);
-      transition: all 0.2s ease;
+      flex-wrap: wrap;
 
-      &:hover:not(:disabled) {
-        background: linear-gradient(135deg, #047857, #065f46);
-        transform: translateY(-1px);
-        box-shadow: 0 5px 14px rgba(5, 150, 105, 0.4);
+      .btn-global-wa {
+        background: #25d366;
+        color: #ffffff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        box-shadow: 0 2px 8px rgba(37, 211, 102, 0.28);
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: #1eb956;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(37, 211, 102, 0.38);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
       }
 
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
+      .btn-global-sms {
+        background: #3b82f6;
+        color: #ffffff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.28);
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: #2563eb;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.38);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .btn-global-copy {
+        background: #ffffff;
+        color: #334155;
+        border: 1.5px solid #cbd5e1;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+          border-color: #94a3b8;
+        }
       }
     }
   }
@@ -2879,6 +2934,43 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
     }
   }
 
+  // Barra de Envío Global de Mensajes en Asignar Pacientes
+  .asignar-global-msg-bar {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1.5px solid #e2e8f0;
+    border-left: 4.5px solid #25d366;
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+
+    .global-msg-bar-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      i {
+        font-size: 18px;
+        color: #25d366;
+      }
+
+      strong {
+        font-size: 12.5px;
+        color: #0f172a;
+        display: block;
+      }
+
+      .global-msg-sub {
+        font-size: 11px;
+        color: #64748b;
+      }
+    }
+  }
+
   .patient-cards-scroll-pro {
     display: flex;
     flex-direction: column;
@@ -3094,6 +3186,131 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
             &:focus {
               border-color: $primary;
             }
+          }
+        }
+      }
+
+      .card-messaging-row-pro {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed #e2e8f0;
+        margin-top: 4px;
+        flex-wrap: wrap;
+
+        .msg-row-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748b;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+
+          i {
+            color: $primary;
+            font-size: 10px;
+          }
+        }
+
+        .card-msg-btn-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+
+          .btn-wa-direct-sm {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+
+            i {
+              color: #25d366;
+              font-size: 12px;
+            }
+
+            &:hover {
+              background: #25d366;
+              color: #ffffff;
+              border-color: #25d366;
+
+              i {
+                color: #ffffff;
+              }
+            }
+          }
+
+          .btn-sms-direct-sm {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+
+            i {
+              color: #3b82f6;
+              font-size: 11px;
+            }
+
+            &:hover {
+              background: #3b82f6;
+              color: #ffffff;
+              border-color: #3b82f6;
+
+              i {
+                color: #ffffff;
+              }
+            }
+          }
+
+          .btn-copy-direct-sm {
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 4px 9px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+
+            &:hover {
+              background: #e2e8f0;
+              color: #0f172a;
+            }
+          }
+
+          .badge-enviado-chip {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
           }
         }
       }
