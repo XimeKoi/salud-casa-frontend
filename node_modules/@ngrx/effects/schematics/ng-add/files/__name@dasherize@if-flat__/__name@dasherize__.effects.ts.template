@@ -1,7 +1,0 @@
-import { inject, Injectable } from '@angular/core';
-import { Actions, createEffect } from '@ngrx/effects';
-
-@Injectable()
-export class <%= classify(name) %>Effects {
-  private actions$ = inject(Actions);
-}
