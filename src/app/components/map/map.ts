@@ -1,6 +1,7 @@
 // src/app/components/map/map.ts
 
 import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
@@ -100,6 +101,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private clusterGroup: any = null;
   private map: L.Map | null = null;
 
+  // 🏠 STREET VIEW FACHADA
+  public mostrarModalStreetView: boolean = false;
+  public streetViewPaciente: any = null;
+  public streetViewUrl: SafeResourceUrl | null = null;
+  public streetViewExternalUrl: string = '';
+  private _streetViewListener: ((event: any) => void) | null = null;
+
   // 🗺️ CONTROL DE CAPAS ESTILO GOOGLE MAPS
   public capaActualTipo: 'estandar' | 'hibrido' | 'satelite' | 'relieve' | 'osm' = 'estandar';
   public mostrarMenuCapas: boolean = false;
@@ -151,7 +159,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private calendarioService: CalendarioService,
     private http: HttpClient,
-    public visitasHoyService: VisitasHoyService
+    public visitasHoyService: VisitasHoyService,
+    private sanitizer: DomSanitizer
   ) {
     console.log('🏗️ [MapComponent] Constructor ejecutado');
     console.log('🌍 [MapComponent] API URL:', this.apiUrl);
@@ -1621,6 +1630,21 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span class="cp-card-label">UBICACIÓN</span>
             <span class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</span>
             <span class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</span>
+            ${tieneCoords ? `
+            <div style="margin-top: 6px;">
+              <button type="button" class="cp-streetview-tag-btn"
+                onclick="window.dispatchEvent(new CustomEvent('abrirStreetView', { detail: {
+                  pacienteId: ${paciente.id},
+                  nombre: '${nombreEscapado}',
+                  direccion: '${direccionEscapada}',
+                  colonia: '${coloniaEscapada}',
+                  lat: ${paciente.lat},
+                  lng: ${paciente.lng}
+                } }))" title="Ver la fachada de la casa de frente en Street View 360°">
+                <i class="fas fa-street-view"></i>
+                <span>Ver Casa de Frente (Fachada 360°)</span>
+              </button>
+            </div>` : ''}
             <span class="cp-zona" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #7c3aed; margin-top: 2px;">
               <i class="fas fa-layer-group" style="font-size: 10px;"></i> ${zonaEscapada}
             </span>
@@ -1687,6 +1711,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <i class="fas fa-location-arrow"></i>
             <span>Ruta</span>
           </a>
+
+          ${tieneCoords ? `
+          <button class="cp-btn cp-btn-streetview"
+            onclick="window.dispatchEvent(new CustomEvent('abrirStreetView', { detail: {
+              pacienteId: ${paciente.id},
+              nombre: '${nombreEscapado}',
+              direccion: '${direccionEscapada}',
+              colonia: '${coloniaEscapada}',
+              lat: ${paciente.lat},
+              lng: ${paciente.lng}
+            } }))" title="Ver la fachada de la casa en Street View 360°">
+            <i class="fas fa-street-view"></i>
+            <span>Fachada</span>
+          </button>` : ''}
 
           <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
             onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
@@ -2301,6 +2339,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     };
     window.addEventListener('editarPacientePopup', this._editarPacienteListener);
+    if (this._streetViewListener) {
+      window.removeEventListener('abrirStreetView', this._streetViewListener);
+    }
+    this._streetViewListener = (event: any) => {
+      this.ngZone.run(() => {
+        const d = event.detail || {};
+        this.abrirModalStreetView(d.lat, d.lng, d.nombre, d.direccion, d.colonia);
+      });
+    };
+    window.addEventListener('abrirStreetView', this._streetViewListener);
 
     // ⭐ EXPONER TOGGLE RÁPIDO Y SEGURO A NIVEL GLOBAL
     (window as any).__togglePacienteRuta = (pacienteId: number) => {
@@ -2348,6 +2396,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this._enfocarPacienteListener) {
       window.removeEventListener('enfocarPacienteMapa', this._enfocarPacienteListener);
+    }
+    if (this._streetViewListener) {
+      window.removeEventListener('abrirStreetView', this._streetViewListener);
     }
 
     this._enfocarPacienteListener = (event: any) => {
@@ -3240,6 +3291,40 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'relieve': return 'Relieve y Terreno';
       case 'osm': return 'OpenStreetMap Clásico';
       default: return tipo;
+    }
+  }
+
+
+  // 🏠 STREET VIEW FACHADA
+  abrirModalStreetView(lat: number, lng: number, nombre: string, direccion: string, colonia: string): void {
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin coordenadas exactas',
+        text: 'Este paciente aún no cuenta con coordenadas GPS verificadas para cargar la fachada en Street View.',
+        confirmButtonColor: '#7e101f'
+      });
+      return;
+    }
+
+    this.streetViewPaciente = { lat, lng, nombre, direccion, colonia };
+    const embedUrl = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
+    this.streetViewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+    this.streetViewExternalUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+    this.mostrarModalStreetView = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarModalStreetView(): void {
+    this.mostrarModalStreetView = false;
+    this.streetViewUrl = null;
+    this.streetViewPaciente = null;
+    this.cdr.detectChanges();
+  }
+
+  abrirStreetViewApp(): void {
+    if (this.streetViewExternalUrl) {
+      window.open(this.streetViewExternalUrl, '_blank');
     }
   }
 

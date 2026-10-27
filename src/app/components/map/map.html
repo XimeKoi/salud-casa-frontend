@@ -409,4 +409,60 @@
       </div>
     </div>
   </div>
+
+  <!-- ⭐ MODAL VISTA DE FACHADA (GOOGLE STREET VIEW 360°) ⭐ -->
+  <div class="modal-overlay streetview-overlay" *ngIf="mostrarModalStreetView" (click)="cerrarModalStreetView()">
+    <div class="modal-container streetview-modal" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="modal-header streetview-modal-header">
+        <div class="modal-header-left">
+          <div class="modal-header-icon streetview-icon-bg">
+            <i class="fas fa-street-view"></i>
+          </div>
+          <div>
+            <h3>Fachada del Domicilio (Street View 360°)</h3>
+            <p class="modal-subtitle">
+              <strong>{{ streetViewPaciente?.nombre }}</strong> • {{ streetViewPaciente?.direccion }}, {{ streetViewPaciente?.colonia }}
+            </p>
+          </div>
+        </div>
+        <button class="modal-close" type="button" (click)="cerrarModalStreetView()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Body: Visor Interactivo y Controles -->
+      <div class="modal-body streetview-modal-body">
+        <div class="streetview-iframe-container">
+          <iframe *ngIf="streetViewUrl"
+                  [src]="streetViewUrl"
+                  class="streetview-iframe"
+                  allowfullscreen
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="streetview-hint-bar">
+            <span><i class="fas fa-hand-pointer"></i> Puedes arrastrar y rotar la vista 360° para ver la casa, cochera, portón y banquetas.</span>
+          </div>
+        </div>
+
+        <div class="streetview-actions-bar">
+          <button type="button" class="btn-sv-app-open" (click)="abrirStreetViewApp()">
+            <i class="fas fa-up-right-from-square"></i>
+            <span>Abrir en Google Maps / Street View 360°</span>
+          </button>
+          <a class="btn-sv-route"
+             [href]="'https://www.google.com/maps/dir/?api=1&destination=' + streetViewPaciente?.lat + ',' + streetViewPaciente?.lng"
+             target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-location-arrow"></i>
+            <span>Ruta GPS</span>
+          </a>
+          <button type="button" class="btn-sv-close" (click)="cerrarModalStreetView()">
+            <i class="fas fa-times"></i> Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
