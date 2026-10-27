@@ -1741,63 +1741,63 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       <!-- BODY CARDS -->
       <div class="cp-body">
         <!-- Tarjeta Ubicación -->
-        <div class="cp-card">
+        <div class="cp-card cp-card-ubicacion">
           <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
             <i class="fas fa-location-dot"></i>
           </div>
           <div class="cp-card-details">
-            <span class="cp-card-label">UBICACIÓN</span>
-            <span class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</span>
-            <span class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</span>
-            <div class="cp-streetview-wrapper">
-              <button type="button" class="cp-streetview-btn-card"
-                onclick="window.__abrirStreetViewPaciente(${paciente.id}, ${paciente.lat || 0}, ${paciente.lng || 0})"
-                title="Abrir visor interactivo 360° de la fachada del domicilio">
-                <div class="sv-card-main">
-                  <div class="sv-badge-icon">
-                    <i class="fas fa-street-view"></i>
-                  </div>
-                  <div class="sv-info-col">
-                    <span class="sv-title">Ver Casa de Frente</span>
-                    <span class="sv-subtitle">Fachada 360° interactiva</span>
-                  </div>
-                </div>
-                <div class="sv-action-pill">
-                  <span>360°</span>
-                  <i class="fas fa-arrow-up-right-from-square"></i>
-                </div>
-              </button>
-            </div>
-            <span class="cp-zona" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #7c3aed; margin-top: 2px;">
-              <i class="fas fa-layer-group" style="font-size: 10px;"></i> ${zonaEscapada}
-            </span>
-            ${referenciasMostrar ? `
-            <div class="cp-referencias" style="margin-top: 5px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.08); font-size: 11.5px; color: #475569; line-height: 1.35;" title="${referenciasEscapada}">
-              <span style="font-weight: 700; color: #0284c7; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
-                <i class="fas fa-signs-post"></i> Refs:
+            <div class="cp-card-header-line">
+              <span class="cp-card-label">UBICACIÓN</span>
+              <span class="cp-zona-chip" title="Zona: ${zonaEscapada}">
+                <i class="fas fa-layer-group"></i> ${zonaEscapada}
               </span>
-              <span style="display: block; margin-top: 2px; color: #334155;">${referenciasEscapada}</span>
+            </div>
+            <div class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</div>
+            <div class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</div>
+            ${referenciasMostrar ? `
+            <div class="cp-referencias-box" title="${referenciasEscapada}">
+              <span class="cp-ref-lbl"><i class="fas fa-signs-post"></i> Ref:</span>
+              <span class="cp-ref-txt">${referenciasEscapada}</span>
             </div>` : ''}
           </div>
         </div>
 
+        <!-- Botón Fachada 360° -->
+        <button type="button" class="cp-btn-fachada-360"
+          onclick="window.__abrirStreetViewPaciente(${paciente.id}, ${paciente.lat || 0}, ${paciente.lng || 0})"
+          title="Ver fachada de la casa en Street View 360°">
+          <div class="fachada-content-left">
+            <div class="fachada-icon-circle">
+              <i class="fas fa-street-view"></i>
+            </div>
+            <div class="fachada-text-group">
+              <span class="fachada-title">Fachada 360°</span>
+              <span class="fachada-subtitle">Ver casa de frente</span>
+            </div>
+          </div>
+          <div class="fachada-badge-pill">
+            <span>360°</span>
+            <i class="fas fa-arrow-up-right-from-square"></i>
+          </div>
+        </button>
+
         <!-- Tarjeta Teléfono -->
-        <div class="cp-card">
-          <div class="cp-card-icon" style="background: ${p.iconBg}; color: ${p.iconColor};">
+        <div class="cp-card cp-card-telefono">
+          <div class="cp-card-icon cp-icon-tel">
             <i class="fas fa-phone"></i>
           </div>
           <div class="cp-card-details">
             <span class="cp-card-label">TELÉFONO DE CONTACTO</span>
-            <span class="cp-telefono" style="font-weight: 800; color: #1e293b; font-size: 13.5px;">
-              ${telefonoMostrar ? `<a href="tel:${telefonoMostrar}" style="color: #7A192B; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-phone-volume" style="font-size: 11px; color: #22C55E;"></i> ${telefonoMostrar}</a>` : '<em style="color:#94a3b8; font-style:normal; font-size: 11.5px;">Sin número registrado</em>'}
-            </span>
+            <div class="cp-telefono-content">
+              ${telefonoMostrar ? `<a href="tel:${telefonoMostrar}" class="cp-tel-link" title="Llamar a ${telefonoMostrar}"><i class="fas fa-phone-volume"></i> <span>${telefonoMostrar}</span></a>` : '<span class="cp-sin-tel">Sin número registrado</span>'}
+            </div>
           </div>
         </div>
 
         ${paciente.finado ? `
         <div class="cp-finado-banner">
-          <i class="fas fa-skull"></i>
-          <span>Paciente finado</span>
+          <i class="fas fa-cross"></i>
+          <span>Paciente finado (Defunción)</span>
         </div>` : ''}
       </div>
 
@@ -1813,7 +1813,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         </button>
 
         <div class="cp-footer-secondary">
-          <a class="cp-btn cp-btn-ruta"
+          <a class="cp-btn-sec cp-btn-ruta"
              href="${urlRuta}"
              target="_blank" rel="noopener noreferrer"
              title="Cómo llegar con Google Maps">
@@ -1821,7 +1821,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span>Ruta</span>
           </a>
 
-          <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
+          <button class="cp-btn-sec cp-btn-agendar"
             onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
               pacienteId: ${paciente.id},
               nombre: '${nombreEscapado}',
@@ -1829,12 +1829,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
               direccion: '${direccionEscapada}',
               curp: '${curpEscapado}',
               colonia: '${coloniaEscapada}'
-            } }))">
+            } }))" title="Agendar cita en calendario">
             <i class="fas fa-calendar-plus"></i>
             <span>Agendar</span>
           </button>
 
-          <button class="cp-btn cp-btn-reporte"
+          <button class="cp-btn-sec cp-btn-reporte"
             onclick="window.dispatchEvent(new CustomEvent('reportarIncidencia', { detail: {
               pacienteId: ${paciente.id},
               nombre: '${nombreEscapado}',
@@ -1848,7 +1848,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span>Reporte</span>
           </button>
 
-          <button class="cp-btn cp-btn-editar" style="color: #1e40af; border-color: #1e40af;"
+          <button class="cp-btn-sec cp-btn-editar"
             onclick="window.dispatchEvent(new CustomEvent('editarPacientePopup', { detail: {
               pacienteId: ${paciente.id}
             } }))" title="Editar dirección, colonia, teléfonos y estado">
