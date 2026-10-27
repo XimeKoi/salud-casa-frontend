@@ -730,29 +730,57 @@
 
       <!-- 3. Buscador y Catálogo Rápido de Pacientes -->
       <div class="search-catalog-panel-pro">
-        <label class="panel-section-label">
-          <i class="fas fa-user-plus text-primary"></i> Buscar y Agregar Pacientes:
-        </label>
+        <div class="search-header-row">
+          <label class="panel-section-label">
+            <i class="fas fa-magnifying-glass text-primary"></i> Buscar y Agregar Pacientes:
+          </label>
+          <span class="search-results-badge" *ngIf="busquedaPacienteAsignar.trim().length > 0">
+            <i class="fas fa-users"></i> {{ pacientesFiltradosParaAsignar.length }} encontrado(s)
+          </span>
+        </div>
+
         <div class="search-bar-pro">
-          <i class="fas fa-magnifying-glass"></i>
+          <i class="fas fa-search input-search-icon"></i>
           <input type="text" class="input-search-pro" [(ngModel)]="busquedaPacienteAsignar"
             placeholder="Escribe el nombre, CURP o colonia del paciente para agregarlo..." />
-          <button type="button" class="btn-clear-search-pro" *ngIf="busquedaPacienteAsignar" (click)="busquedaPacienteAsignar = ''">&times;</button>
+          <button type="button" class="btn-clear-search-pro" *ngIf="busquedaPacienteAsignar" (click)="busquedaPacienteAsignar = ''" title="Limpiar búsqueda">&times;</button>
         </div>
 
         <!-- Resultados de búsqueda rápidos -->
-        <div class="search-results-grid-pro" *ngIf="busquedaPacienteAsignar.trim().length > 0">
-          <div *ngFor="let p of pacientesFiltradosParaAsignar" class="patient-search-chip">
-            <div class="patient-search-info">
-              <strong>{{ p.nombreCompleto || p.nombre }}</strong>
-              <small><i class="fas fa-map-marker-alt"></i> {{ p.colonia || 'Sin colonia' }} • CURP: {{ p.curp || 'S/N' }}</small>
+        <div class="search-results-wrapper-pro" *ngIf="busquedaPacienteAsignar.trim().length > 0">
+          <div class="search-results-grid-pro" *ngIf="pacientesFiltradosParaAsignar.length > 0">
+            <div *ngFor="let p of pacientesFiltradosParaAsignar" class="patient-search-chip" [class.already-added]="estaEnTanda(p.id)">
+              <div class="patient-avatar-mini">
+                <span>{{ obtenerIniciales(p.nombreCompleto || p.nombre) }}</span>
+              </div>
+              <div class="patient-search-info">
+                <span class="patient-search-name">{{ p.nombreCompleto || p.nombre }}</span>
+                <div class="patient-search-meta">
+                  <span class="meta-tag meta-col" *ngIf="p.colonia && p.colonia.toLowerCase() !== 'sin colonia'">
+                    <i class="fas fa-location-dot"></i> {{ p.colonia }}
+                  </span>
+                  <span class="meta-tag meta-curp" *ngIf="p.curp && p.curp !== 'S/N'">
+                    <i class="fas fa-id-card"></i> {{ p.curp }}
+                  </span>
+                  <span class="meta-tag meta-tel" *ngIf="p.telefono">
+                    <i class="fas fa-phone"></i> {{ p.telefono }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="patient-action-box">
+                <button type="button" class="btn-add-patient-chip" *ngIf="!estaEnTanda(p.id)" (click)="agregarPacienteALaTanda(p)" title="Agregar paciente a la lista">
+                  <i class="fas fa-plus"></i> Agregar
+                </button>
+                <span class="badge-ya-agregado" *ngIf="estaEnTanda(p.id)">
+                  <i class="fas fa-check"></i> Agregado
+                </span>
+              </div>
             </div>
-            <button type="button" class="btn-add-patient-chip" (click)="agregarPacienteALaTanda(p)">
-              <i class="fas fa-plus"></i> Agregar
-            </button>
           </div>
+
           <div *ngIf="pacientesFiltradosParaAsignar.length === 0" class="no-results-chip">
-            <i class="fas fa-search-minus"></i> No se encontraron pacientes con esa búsqueda.
+            <i class="fas fa-search-minus"></i> No se encontraron pacientes con "{{ busquedaPacienteAsignar }}".
           </div>
         </div>
       </div>
@@ -772,7 +800,9 @@
         <!-- Barra de Envío Global de Mensajes en Asignar Pacientes -->
         <div class="asignar-global-msg-bar" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
           <div class="global-msg-bar-info">
-            <i class="fas fa-paper-plane text-primary"></i>
+            <div class="global-msg-icon-box">
+              <i class="fas fa-paper-plane"></i>
+            </div>
             <div>
               <strong>Enviar Mensajes a los Pacientes Seleccionados:</strong>
               <span class="global-msg-sub">Recordatorios por WhatsApp o SMS para esta tanda ({{ pacientesParaAsignarSeleccionados.length }} pacientes)</span>
@@ -812,9 +842,9 @@
               <div class="header-patient-meta">
                 <span class="order-badge-pro">#{{ idx + 1 }}</span>
                 <span class="patient-title-pro">{{ item.paciente.nombreCompleto || item.paciente.nombre }}</span>
-                <span class="pill-meta"><i class="fas fa-map-pin"></i> {{ item.paciente.colonia || 'Sin colonia' }}</span>
-                <span class="pill-meta" *ngIf="item.paciente.curp"><i class="fas fa-id-card"></i> {{ item.paciente.curp }}</span>
-                <span class="pill-meta" *ngIf="item.paciente.telefono"><i class="fas fa-phone"></i> {{ item.paciente.telefono }}</span>
+                <span class="pill-meta" *ngIf="item.paciente.colonia && item.paciente.colonia.toLowerCase() !== 'sin colonia'"><i class="fas fa-map-pin"></i> {{ item.paciente.colonia }}</span>
+                <span class="pill-meta" *ngIf="item.paciente.curp && item.paciente.curp !== 'S/N'"><i class="fas fa-id-card"></i> {{ item.paciente.curp }}</span>
+                <span class="pill-meta pill-tel" *ngIf="item.paciente.telefono"><i class="fas fa-phone"></i> {{ item.paciente.telefono }}</span>
               </div>
               <button type="button" class="btn-remove-row-pro" (click)="removerPacienteDeLaTanda(item.id)" title="Quitar paciente de la lista">
                 <i class="fas fa-trash-can"></i>

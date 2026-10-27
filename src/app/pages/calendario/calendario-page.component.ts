@@ -1453,6 +1453,19 @@ export class CalendarioPageComponent implements OnInit {
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
 
+    estaEnTanda(pId: number): boolean {
+        return this.pacientesParaAsignarSeleccionados.some(x => x.id === pId);
+    }
+
+    obtenerIniciales(nombre: string): string {
+        if (!nombre) return 'P';
+        const partes = nombre.trim().split(/\s+/);
+        if (partes.length >= 2) {
+            return (partes[0][0] + partes[1][0]).toUpperCase();
+        }
+        return partes[0].substring(0, 2).toUpperCase();
+    }
+
     obtenerTelefonoLimpio(paciente: any): string {
         if (!paciente) return '';
         const tel = paciente.telefonoLimpio || paciente.telefono || paciente.paciente?.telefono || '';
