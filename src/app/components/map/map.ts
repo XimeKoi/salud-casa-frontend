@@ -100,6 +100,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private clusterGroup: any = null;
   private map: L.Map | null = null;
 
+  // 🗺️ CONTROL DE CAPAS ESTILO GOOGLE MAPS
+  public capaActualTipo: 'estandar' | 'hibrido' | 'satelite' | 'relieve' | 'osm' = 'estandar';
+  public mostrarMenuCapas: boolean = false;
+  private currentTileLayer: L.TileLayer | null = null;
+  private baseLayers: { [key: string]: L.TileLayer } = {};
+
   private coloresEstatus: { [key: string]: string } = {
     'VISITADO': '#2e7d32',
     'COMPLETADA': '#2e7d32',
@@ -447,10 +453,41 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.mapService.setMap(this.map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(this.map);
+      // 🛰️ CAPAS ESTILO GOOGLE MAPS (ESTÁNDAR, HÍBRIDO, SATÉLITE, RELIEVE Y OSM)
+      this.baseLayers = {
+        estandar: L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+          maxZoom: 20,
+          attribution: '&copy; Google Maps'
+        }),
+        hibrido: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+          maxZoom: 20,
+          attribution: '&copy; Google Maps Satélite'
+        }),
+        satelite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          attribution: '&copy; Maxar & Esri World Imagery'
+        }),
+        relieve: L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+          maxZoom: 20,
+          attribution: '&copy; Google Maps Terreno'
+        }),
+        osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        })
+      };
+
+      const tipoGuardado = (localStorage.getItem('cuidalia_capa_mapa') as any) || 'estandar';
+      this.capaActualTipo = this.baseLayers[tipoGuardado] ? tipoGuardado : 'estandar';
+      this.currentTileLayer = this.baseLayers[this.capaActualTipo];
+      this.currentTileLayer.addTo(this.map);
+
+      this.map.on('click', () => {
+        if (this.mostrarMenuCapas) {
+          this.mostrarMenuCapas = false;
+          this.cdr.detectChanges();
+        }
+      });
 
       if (typeof (L as any).markerClusterGroup === 'function') {
         this.clusterGroup = (L as any).markerClusterGroup({
@@ -3167,4 +3204,43 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.toastTimeout = null;
     }, 100);
   }
+
+  // 🗺️ GESTIÓN DE CAPAS DE MAPA
+  toggleMenuCapas(): void {
+    this.mostrarMenuCapas = !this.mostrarMenuCapas;
+    this.cdr.detectChanges();
+  }
+
+  cambiarCapaMapa(tipo: 'estandar' | 'hibrido' | 'satelite' | 'relieve' | 'osm'): void {
+    if (!this.map || !this.baseLayers[tipo]) return;
+
+    if (this.currentTileLayer) {
+      this.map.removeLayer(this.currentTileLayer);
+    }
+
+    this.capaActualTipo = tipo;
+    this.currentTileLayer = this.baseLayers[tipo];
+    this.currentTileLayer.addTo(this.map);
+    this.currentTileLayer.bringToBack();
+
+    try {
+      localStorage.setItem('cuidalia_capa_mapa', tipo);
+    } catch (e) {}
+
+    this.mostrarToast('Capa de Mapa', `Vista cambiada a ${this.obtenerNombreCapa(tipo)}`, 'info', 1600);
+    this.mostrarMenuCapas = false;
+    this.cdr.detectChanges();
+  }
+
+  obtenerNombreCapa(tipo: string): string {
+    switch (tipo) {
+      case 'estandar': return 'Google Calles (Estándar)';
+      case 'hibrido': return 'Satélite con Calles (Híbrido)';
+      case 'satelite': return 'Satélite de Alta Resolución';
+      case 'relieve': return 'Relieve y Terreno';
+      case 'osm': return 'OpenStreetMap Clásico';
+      default: return tipo;
+    }
+  }
+
 }

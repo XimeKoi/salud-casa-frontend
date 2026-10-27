@@ -50,12 +50,79 @@
         <span class="btn-badge-count" *ngIf="visitasHoyService.totalCount > 0">{{ visitasHoyService.totalCount }}</span>
         <span class="btn-tooltip">Mi Ruta ({{ visitasHoyService.totalCount }})</span>
       </button>
+
+      <!-- ⭐ BOTÓN Y MENÚ DE CAPAS (ESTILO GOOGLE MAPS) -->
+      <div class="capas-selector-wrapper">
+        <button class="btn-action btn-capas" (click)="toggleMenuCapas()"
+          [class.active]="mostrarMenuCapas"
+          title="Cambiar tipo de mapa (Satélite, Relieve, Calles)">
+          <i class="fas fa-layer-group"></i>
+          <span class="btn-tooltip">Capas</span>
+        </button>
+
+        <!-- Dropdown de Capas flotante -->
+        <div class="capas-dropdown-menu" *ngIf="mostrarMenuCapas" (click)="$event.stopPropagation()">
+          <div class="capas-menu-header">
+            <span class="menu-header-title"><i class="fas fa-layer-group"></i> Tipo de Mapa</span>
+            <button type="button" class="btn-close-capas" (click)="mostrarMenuCapas = false" title="Cerrar">&times;</button>
+          </div>
+          <div class="capas-grid">
+            <button type="button" class="capa-card" [class.selected]="capaActualTipo === 'estandar'" (click)="cambiarCapaMapa('estandar')">
+              <div class="capa-thumb thumb-estandar">
+                <i class="fas fa-road"></i>
+              </div>
+              <span class="capa-title">Estándar</span>
+              <span class="capa-desc">Calles Google</span>
+            </button>
+
+            <button type="button" class="capa-card" [class.selected]="capaActualTipo === 'hibrido'" (click)="cambiarCapaMapa('hibrido')">
+              <div class="capa-thumb thumb-hibrido">
+                <i class="fas fa-satellite"></i>
+              </div>
+              <span class="capa-title">Híbrido</span>
+              <span class="capa-desc">Satélite + Calles</span>
+            </button>
+
+            <button type="button" class="capa-card" [class.selected]="capaActualTipo === 'satelite'" (click)="cambiarCapaMapa('satelite')">
+              <div class="capa-thumb thumb-satelite">
+                <i class="fas fa-globe-americas"></i>
+              </div>
+              <span class="capa-title">Satélite</span>
+              <span class="capa-desc">Fotografía real</span>
+            </button>
+
+            <button type="button" class="capa-card" [class.selected]="capaActualTipo === 'relieve'" (click)="cambiarCapaMapa('relieve')">
+              <div class="capa-thumb thumb-relieve">
+                <i class="fas fa-mountain"></i>
+              </div>
+              <span class="capa-title">Relieve</span>
+              <span class="capa-desc">Terreno y montañas</span>
+            </button>
+
+            <button type="button" class="capa-card" [class.selected]="capaActualTipo === 'osm'" (click)="cambiarCapaMapa('osm')">
+              <div class="capa-thumb thumb-osm">
+                <i class="fas fa-map"></i>
+              </div>
+              <span class="capa-title">OpenStreet</span>
+              <span class="capa-desc">Mapa clásico</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
 
   <!-- ⭐ CONTENEDOR DEL MAPA -->
   <div id="leafletMap" class="map"></div>
+
+  <!-- ⭐ BOTÓN FLOTANTE ESTILO GOOGLE MAPS (ESQUINA INFERIOR) -->
+  <div class="google-layers-fab" (click)="toggleMenuCapas()" title="Cambiar tipo de mapa (Satélite, Relieve, Calles)">
+    <div class="layers-fab-preview" [ngClass]="'thumb-' + capaActualTipo">
+      <i class="fas fa-layer-group"></i>
+    </div>
+    <span class="layers-fab-text">Capas</span>
+  </div>
 
   <!-- ⭐ COORDENADAS -->
   <div class="map-info-coords" *ngIf="centerLat && centerLng">
