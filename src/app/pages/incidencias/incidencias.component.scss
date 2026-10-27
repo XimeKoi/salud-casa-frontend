@@ -510,6 +510,14 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
       grid-column: 1 / -1;
     }
 
+    &.form-col-half {
+      grid-column: span 1;
+
+      @media (max-width: 768px) {
+        grid-column: 1 / -1;
+      }
+    }
+
     .label-with-hint {
       display: flex;
       align-items: baseline;
@@ -619,110 +627,114 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
   }
 }
 
-// ⭐ GRID SELECTOR VISUAL DE TIPO DE INCIDENCIA
-.tipo-incidencia-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 4px;
+// ⭐ SELECT PERSONALIZADO ELEGANTE DE TIPO DE INCIDENCIA
+.custom-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 44px;
+  background: #ffffff;
+  border: 1.5px solid #dccfc2;
+  border-radius: 10px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 
-  @media (max-width: 900px) {
-    grid-template-columns: repeat(2, 1fr);
+  &:hover {
+    border-color: #bfaea0;
   }
 
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
+  &:focus-within {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(126, 16, 31, 0.12);
   }
 
-  .tipo-card-btn {
+  .select-icon-box {
+    width: 32px;
+    height: 32px;
+    margin-left: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
-    gap: 11px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: #ffffff;
-    border: 1.5px solid #e2e8f0;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .form-control-select {
+    width: 100%;
+    height: 100%;
+    padding: 0 36px 0 10px;
+    border: none;
+    background: transparent;
+    font-size: 13.5px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #0f172a;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    text-align: left;
-    position: relative;
-    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
 
-    &:hover {
-      border-color: #cbd5e1;
-      background: #f8fafc;
-      transform: translateY(-1px);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-    }
-
-    &.active {
-      border-color: $primary;
-      background: #fff8f8;
-      box-shadow: 0 4px 14px rgba(126, 16, 31, 0.12);
-
-      .tipo-card-title {
-        color: $primary;
-      }
-    }
-
-    .tipo-card-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      flex-shrink: 0;
-      transition: transform 0.2s ease;
-    }
-
-    &:hover .tipo-card-icon {
-      transform: scale(1.08);
-    }
-
-    .tipo-card-info {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .tipo-card-title {
-      font-size: 12px;
-      font-weight: 800;
+    option {
+      background: #ffffff;
       color: #0f172a;
-      line-height: 1.25;
-      letter-spacing: -0.1px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
     }
+  }
 
-    .tipo-card-desc {
-      font-size: 10.5px;
-      color: #64748b;
-      line-height: 1.2;
-    }
+  .select-caret {
+    position: absolute;
+    right: 14px;
+    pointer-events: none;
+    color: #64748b;
+    font-size: 12px;
+  }
+}
 
-    .tipo-card-check {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: $primary;
-      color: #ffffff;
-      font-size: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(126, 16, 31, 0.3);
-    }
+.select-condition-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #475569;
+  font-weight: 600;
+  margin-top: 3px;
+  padding: 4px 9px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+
+  i {
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+}
+
+.field-subtext {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 3px;
+  padding: 4px 2px;
+
+  i {
+    color: #10b981;
+    font-size: 11px;
   }
 }
 
 .form-control-custom {
   width: 100%;
+  height: 44px;
   padding: 10px 14px;
   border-radius: 10px;
   border: 1.5px solid #dccfc2;
@@ -730,6 +742,7 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
   font-size: 13px;
   font-family: inherit;
   color: $text-main;
+  box-sizing: border-box;
   transition: all 0.2s ease;
 
   &:focus {
@@ -746,6 +759,7 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
   }
 
   &.textarea-custom {
+    height: auto;
     resize: vertical;
     min-height: 80px;
     line-height: 1.45;

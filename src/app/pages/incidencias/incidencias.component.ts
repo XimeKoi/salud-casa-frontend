@@ -87,17 +87,30 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         { valor: 'otro', label: 'Otro motivo / Observación', icono: 'fas fa-ellipsis', color: '#0ea5e9', desc: 'Cualquier otra circunstancia en campo' }
     ];
 
+    esColoniaValida(colonia?: string | null): boolean {
+        if (!colonia) return false;
+        const c = colonia.trim().toLowerCase();
+        return c !== '' && c !== 'sin colonia' && c !== 'n/a' && c !== 'null' && c !== 'undefined';
+    }
+
     get direccionCompleta(): string {
-        if (this.datosPaciente) {
-            const dir = (this.datosPaciente.direccion || '').trim();
-            const col = (this.datosPaciente.colonia || '').trim();
-            if (!dir && !col) return 'Dirección no asignada';
-            if (col && dir.toLowerCase().includes(col.toLowerCase())) {
-                return dir;
-            }
-            return col ? `${dir}, ${col}` : dir;
+        if (!this.datosPaciente) return '';
+        let dir = (this.datosPaciente.direccion || '').trim();
+        // Limpiar "Sin colonia" si viene al final de la dirección
+        dir = dir.replace(/,?\s*sin colonia\s*$/i, '').trim();
+
+        const col = (this.datosPaciente.colonia || '').trim();
+        if (!this.esColoniaValida(col)) {
+            return dir || 'Dirección no asignada';
         }
-        return '';
+        if (dir.toLowerCase().includes(col.toLowerCase())) {
+            return dir;
+        }
+        return dir ? `${dir}, ${col}` : col;
+    }
+
+    obtenerTipoSeleccionado(): any {
+        return this.tiposIncidencias.find(t => t.valor === this.nuevaIncidencia.tipo) || this.tiposIncidencias[0];
     }
 
     private apiUrl = environment.apiUrl;
@@ -294,7 +307,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     agregarNotaRapida(texto: string) {
         if (!this.nuevaIncidencia.descripcion || this.nuevaIncidencia.descripcion.trim() === '') {
             this.nuevaIncidencia.descripcion = texto;
-        } else {
+        } else if (!this.nuevaIncidencia.descripcion.includes(texto)) {
             this.nuevaIncidencia.descripcion = `${this.nuevaIncidencia.descripcion.trim()} ${texto}`;
         }
         this.cdr.detectChanges();

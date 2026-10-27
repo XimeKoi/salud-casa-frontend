@@ -77,11 +77,11 @@
                 <i class="fas fa-circle-check"></i> Paciente Vinculado
               </span>
               <span class="badge-id" *ngIf="datosPaciente.id">#{{ datosPaciente.id }}</span>
-              <span class="badge-sec" *ngIf="datosPaciente.seccion && datosPaciente.seccion !== 'N/A'">Sec. {{ datosPaciente.seccion }}</span>
+              <span class="badge-sec" *ngIf="datosPaciente.seccion && datosPaciente.seccion !== 'N/A' && datosPaciente.seccion !== 'Sin sección'">Sec. {{ datosPaciente.seccion }}</span>
             </div>
             <h4 class="patient-name-title">{{ datosPaciente.nombre }}</h4>
             <div class="patient-chips-row">
-              <span class="p-chip p-chip-colonia" *ngIf="datosPaciente.colonia">
+              <span class="p-chip p-chip-colonia" *ngIf="esColoniaValida(datosPaciente.colonia)">
                 <i class="fas fa-building"></i> {{ datosPaciente.colonia }}
               </span>
               <span class="p-chip p-chip-tel" *ngIf="datosPaciente.telefono">
@@ -113,42 +113,52 @@
       </div>
 
       <div class="form-grid">
-        <!-- 1. TIPO DE INCIDENCIA: GRID VISUAL DE TARJETAS SELECTORAS -->
-        <div class="form-group full-span">
+        <!-- 1. TIPO DE INCIDENCIA: SELECT ELEGANTE CON ICONO DINÁMICO -->
+        <div class="form-group form-col-half">
           <div class="label-with-hint">
-            <label>Tipo de Incidencia Operativa <span class="required">*</span></label>
-            <span class="label-hint">Selecciona la condición observada en campo:</span>
+            <label for="selectTipoIncidencia">Tipo de Incidencia Operativa <span class="required">*</span></label>
           </div>
 
-          <div class="tipo-incidencia-grid">
-            <button type="button"
-              *ngFor="let tipo of tiposIncidencias"
-              class="tipo-card-btn"
-              [class.active]="nuevaIncidencia.tipo === tipo.valor"
-              (click)="seleccionarTipoIncidencia(tipo.valor)">
-              <div class="tipo-card-icon" [style.background]="tipo.color + '18'" [style.color]="tipo.color">
-                <i [class]="tipo.icono"></i>
-              </div>
-              <div class="tipo-card-info">
-                <span class="tipo-card-title">{{ tipo.label }}</span>
-                <span class="tipo-card-desc">{{ tipo.desc }}</span>
-              </div>
-              <div class="tipo-card-check" *ngIf="nuevaIncidencia.tipo === tipo.valor">
-                <i class="fas fa-check"></i>
-              </div>
-            </button>
+          <div class="custom-select-wrapper">
+            <div class="select-icon-box" [style.color]="obtenerTipoSeleccionado().color" [style.background]="obtenerTipoSeleccionado().color + '18'">
+              <i [class]="obtenerTipoSeleccionado().icono"></i>
+            </div>
+            <select id="selectTipoIncidencia"
+                    [(ngModel)]="nuevaIncidencia.tipo"
+                    (change)="onTipoIncidenciaChange()"
+                    class="form-control-select">
+              <option *ngFor="let tipo of tiposIncidencias" [value]="tipo.valor">
+                {{ tipo.label }}
+              </option>
+            </select>
+            <div class="select-caret">
+              <i class="fas fa-chevron-down"></i>
+            </div>
+          </div>
+
+          <div class="select-condition-hint" *ngIf="obtenerTipoSeleccionado()">
+            <i class="fas fa-circle-info" [style.color]="obtenerTipoSeleccionado().color"></i>
+            <span>{{ obtenerTipoSeleccionado().desc }}</span>
           </div>
         </div>
 
         <!-- 2. UBICACIÓN / DIRECCIÓN -->
-        <div class="form-group full-span">
-          <label>Ubicación / Dirección en Campo <span class="required">*</span></label>
+        <div class="form-group form-col-half">
+          <div class="label-with-hint">
+            <label>Ubicación / Dirección en Campo <span class="required">*</span></label>
+          </div>
+
           <div class="input-with-icon address-input-box">
             <i class="fas fa-map-location-dot"></i>
-            <input type="text" [value]="direccionCompleta || 'Dirección no asignada'" disabled class="form-control-custom disabled-input">
+            <input type="text" [value]="direccionCompleta || 'Dirección no asignada'" disabled class="form-control-custom disabled-input" title="Ubicación georreferenciada">
             <span class="address-status-badge">
               <i class="fas fa-shield-check"></i> Georreferenciada
             </span>
+          </div>
+
+          <div class="field-subtext">
+            <i class="fas fa-location-crosshairs"></i>
+            <span>Punto geocodificado de atención domiciliaria</span>
           </div>
         </div>
 
@@ -287,9 +297,10 @@
           </button>
 
           <button type="button" class="btn-guardar-incidencia" (click)="registrarIncidencia()"
-            [disabled]="loading || !nuevaIncidencia.descripcion || !datosPaciente">
+            [disabled]="loading || !nuevaIncidencia.descripcion || !datosPaciente"
+            [title]="!datosPaciente ? 'Debes seleccionar un paciente primero' : (!nuevaIncidencia.descripcion ? 'Ingresa una descripción' : 'Guardar incidencia')">
             <i class="fas" [class.fa-floppy-disk]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
-            <span>{{ loading ? 'Registrando...' : 'Guardar Reporte de Incidencia' }}</span>
+            <span>{{ loading ? 'Registrando...' : 'Guardar Incidencia' }}</span>
           </button>
         </div>
       </div>
