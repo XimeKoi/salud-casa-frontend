@@ -83,7 +83,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     numero: '',
     cp: '',
     lat: null,
-    lng: null
+    lng: null,
+    estatusVital: 'vivo',
+    finado: false,
+    fechaFinado: '',
+    numVisita: 1,
+    discapacidades: {
+      motriz: false,
+      visual: false,
+      auditiva: false,
+      intelectual: false,
+      psicosocial: false
+    }
   };
 
   public coloresManzanas: { [key: string]: string } = {};
@@ -132,7 +143,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private pacientesOriginal: any[] = [];
   private _eventListener: ((event: any) => void) | null = null;
   private _incidenciaListener: ((event: any) => void) | null = null;
-  private _capturaListener: ((event: any) => void) | null = null;
   private _editarPacienteListener: ((event: any) => void) | null = null;
   private _toggleVisitaHoyListener: ((event: any) => void) | null = null;
   private _planHoyActualizadoListener: ((event: any) => void) | null = null;
@@ -430,10 +440,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this._editarPacienteListener) {
       window.removeEventListener('editarPacientePopup', this._editarPacienteListener);
       this._editarPacienteListener = null;
-    }
-    if (this._capturaListener) {
-      window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
-      this._capturaListener = null;
     }
     if (this.map) {
       this.map.remove();
@@ -1057,10 +1063,71 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       numero: numLimpio,
       cp: cpLimpio,
       lat: lat || this.centerLat,
-      lng: lng || this.centerLng
+      lng: lng || this.centerLng,
+      estatusVital: 'vivo',
+      finado: false,
+      fechaFinado: '',
+      numVisita: 1,
+      discapacidades: {
+        motriz: false,
+        visual: false,
+        auditiva: false,
+        intelectual: false,
+        psicosocial: false
+      }
     };
     this.actualizarDireccionCompleta();
     this.mostrarModalPaciente = true;
+    this.cdr.detectChanges();
+  }
+
+  onEstatusVivoNuevoPaciente() {
+    this.nuevoPaciente.estatusVital = 'vivo';
+    this.nuevoPaciente.finado = false;
+    if (this.nuevoPaciente.estatus === 'FINADO') {
+      this.nuevoPaciente.estatus = 'PENDIENTE';
+    }
+    this.cdr.detectChanges();
+  }
+
+  onEstatusFinadoNuevoPaciente() {
+    this.nuevoPaciente.estatusVital = 'finado';
+    this.nuevoPaciente.finado = true;
+    this.nuevoPaciente.estatus = 'FINADO';
+    if (!this.nuevoPaciente.fechaFinado) {
+      this.nuevoPaciente.fechaFinado = new Date().toISOString().split('T')[0];
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleDiscapacidadNuevoPaciente(tipo: 'motriz' | 'visual' | 'auditiva' | 'intelectual' | 'psicosocial') {
+    if (this.nuevoPaciente.finado || this.nuevoPaciente.estatusVital === 'finado') {
+      return;
+    }
+    if (!this.nuevoPaciente.discapacidades) {
+      this.nuevoPaciente.discapacidades = {
+        motriz: false,
+        visual: false,
+        auditiva: false,
+        intelectual: false,
+        psicosocial: false
+      };
+    }
+    this.nuevoPaciente.discapacidades[tipo] = !this.nuevoPaciente.discapacidades[tipo];
+
+    const algunaActiva = Object.values(this.nuevoPaciente.discapacidades).some(v => !!v);
+    if (algunaActiva) {
+      this.nuevoPaciente.programa = 'DISCAPACIDAD';
+    } else if (this.nuevoPaciente.programa === 'DISCAPACIDAD') {
+      this.nuevoPaciente.programa = 'PAM';
+    }
+    this.cdr.detectChanges();
+  }
+
+  ajustarNumVisitaNuevoPaciente(delta: number) {
+    const actual = Number(this.nuevoPaciente.numVisita) || 1;
+    const nuevo = Math.max(1, actual + delta);
+    this.nuevoPaciente.numVisita = nuevo;
     this.cdr.detectChanges();
   }
 
@@ -1123,6 +1190,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       telE164 = `+52${soloDigitos}`;
     }
 
+    const tieneAlgunaDiscapacidad = !!(
+      this.nuevoPaciente.discapacidades?.motriz ||
+      this.nuevoPaciente.discapacidades?.visual ||
+      this.nuevoPaciente.discapacidades?.auditiva ||
+      this.nuevoPaciente.discapacidades?.intelectual ||
+      this.nuevoPaciente.discapacidades?.psicosocial
+    );
+
+    const esFinado = this.nuevoPaciente.estatusVital === 'finado' || this.nuevoPaciente.estatus === 'FINADO' || !!this.nuevoPaciente.finado;
+    const estatusFinal = esFinado ? 'FINADO' : (this.nuevoPaciente.estatus || 'PENDIENTE');
+    const programaFinal = tieneAlgunaDiscapacidad ? 'DISCAPACIDAD' : (this.nuevoPaciente.programa || 'PAM');
+    const fechaFinadoFinal = esFinado ? (this.nuevoPaciente.fechaFinado || new Date().toISOString().split('T')[0]) : '';
+    const numVisitaFinal = Math.max(1, Number(this.nuevoPaciente.numVisita) || 1);
+
     const pacienteData = {
       ...this.nuevoPaciente,
       nombre: primerNombre, // Solo el nombre para evitar duplicación con apellidoPaterno y apellidoMaterno
@@ -1134,7 +1215,25 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
       telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
       telefonoE164: telE164,
-      idEnfermera: this.idEnfermera
+      idEnfermera: this.idEnfermera,
+      estatus: estatusFinal,
+      programa: programaFinal,
+      estatusVital: esFinado ? 'finado' : 'vivo',
+      finado: esFinado,
+      fechaFinado: fechaFinadoFinal,
+      numVisita: numVisitaFinal,
+      discapacidadMotriz: !!this.nuevoPaciente.discapacidades?.motriz,
+      discapacidadVisual: !!this.nuevoPaciente.discapacidades?.visual,
+      discapacidadAuditiva: !!this.nuevoPaciente.discapacidades?.auditiva,
+      discapacidadIntelectual: !!this.nuevoPaciente.discapacidades?.intelectual,
+      discapacidadPsicosocial: !!this.nuevoPaciente.discapacidades?.psicosocial,
+      discapacidades: {
+        motriz: !!this.nuevoPaciente.discapacidades?.motriz,
+        visual: !!this.nuevoPaciente.discapacidades?.visual,
+        auditiva: !!this.nuevoPaciente.discapacidades?.auditiva,
+        intelectual: !!this.nuevoPaciente.discapacidades?.intelectual,
+        psicosocial: !!this.nuevoPaciente.discapacidades?.psicosocial
+      }
     };
 
     this.http.post(`${this.apiUrl}/pacientes`, pacienteData).subscribe({
@@ -1162,8 +1261,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           telefono: tel,
           telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
           telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
-          programa: this.nuevoPaciente.programa || 'PAM',
-          estatus: this.nuevoPaciente.estatus || 'PENDIENTE',
+          programa: programaFinal,
+          estatus: estatusFinal,
           seccion: '277',
           genero: 'M',
           direccion: this.nuevoPaciente.direccion || `${this.nuevoPaciente.calle} ${this.nuevoPaciente.numero || ''}, ${this.nuevoPaciente.colonia || ''}`,
@@ -1171,14 +1270,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           lat: Number(this.nuevoPaciente.lat || this.centerLat || 21.1165),
           lng: Number(this.nuevoPaciente.lng || this.centerLng || -101.6865),
           discapacidades: {
-            motriz: false,
-            visual: false,
-            auditiva: false,
-            intelectual: false,
-            psicosocial: false
+            motriz: !!this.nuevoPaciente.discapacidades?.motriz,
+            visual: !!this.nuevoPaciente.discapacidades?.visual,
+            auditiva: !!this.nuevoPaciente.discapacidades?.auditiva,
+            intelectual: !!this.nuevoPaciente.discapacidades?.intelectual,
+            psicosocial: !!this.nuevoPaciente.discapacidades?.psicosocial
           },
-          finado: this.nuevoPaciente.estatus === 'FINADO',
-          fechaFinado: ''
+          finado: esFinado,
+          fechaFinado: fechaFinadoFinal
         };
 
         this.pacientes.unshift(nuevoObj);
@@ -1704,20 +1803,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           title="${estaEnPlan ? 'Quitar de mis visitas de hoy' : 'Agregar a mis visitas de hoy'}">
           <i class="fas ${estaEnPlan ? 'fa-check-circle' : 'fa-star'}"></i>
           <span>${estaEnPlan ? '✓ En Mi Ruta de Hoy' : '+ Agregar a Ruta de Hoy'}</span>
-        </button>
-
-        <button class="cp-btn cp-btn-visita"
-          onclick="window.dispatchEvent(new CustomEvent('capturarVisitaPaciente', { detail: {
-            pacienteId: ${paciente.id},
-            nombre: '${nombreEscapado}',
-            telefono: '${telefonoEscapado}',
-            direccion: '${direccionEscapada}',
-            curp: '${curpEscapado}',
-            colonia: '${coloniaEscapada}',
-            seccion: '${seccionEscapada}'
-          } }))" title="Capturar visita clínica domiciliaria de hoy">
-          <i class="fas fa-stethoscope"></i>
-          <span>Registrar Visita Médica</span>
         </button>
 
         <div class="cp-footer-secondary">
@@ -2313,33 +2398,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     window.addEventListener('reportarIncidencia', this._incidenciaListener);
 
-    if (this._capturaListener) {
-      window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
-    }
-
-    this._capturaListener = (event: any) => {
-      this.ngZone.run(() => {
-        const data = event.detail;
-        const pacienteData = {
-          id: data.pacienteId,
-          nombre: data.nombre,
-          telefono: data.telefono,
-          direccion: data.direccion,
-          curp: data.curp || '',
-          colonia: data.colonia || '',
-          seccion: data.seccion || ''
-        };
-        localStorage.setItem('capturaPaciente', JSON.stringify(pacienteData));
-        this.router.navigate(['/captura'], {
-          queryParams: {
-            pacienteId: data.pacienteId
-          }
-        });
-      });
-    };
-
-    window.addEventListener('capturarVisitaPaciente', this._capturaListener);
-
     if (this._editarPacienteListener) {
       window.removeEventListener('editarPacientePopup', this._editarPacienteListener);
     }
@@ -2470,10 +2528,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this._incidenciaListener) {
       window.removeEventListener('reportarIncidencia', this._incidenciaListener);
       this._incidenciaListener = null;
-    }
-    if (this._capturaListener) {
-      window.removeEventListener('capturarVisitaPaciente', this._capturaListener);
-      this._capturaListener = null;
     }
     if (this._toggleVisitaHoyListener) {
       window.removeEventListener('toggleVisitaHoy', this._toggleVisitaHoyListener);

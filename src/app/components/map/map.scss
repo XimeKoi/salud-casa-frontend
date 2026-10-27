@@ -396,7 +396,7 @@
 .modal-container.paciente-modal {
   background: white;
   border-radius: 20px;
-  max-width: 620px;
+  max-width: 680px;
   width: 95%;
   max-height: 92vh;
   overflow-y: auto;
@@ -1279,7 +1279,7 @@
 .modal-container.paciente-modal {
   background: #ffffff;
   border-radius: 20px;
-  max-width: 580px;
+  max-width: 680px;
   width: 100%;
   max-height: 90vh;
   display: flex;
@@ -1558,6 +1558,334 @@
         color: #475569;
       }
     }
+  }
+
+  // ⭐ ESTILOS DE CONDICIÓN VITAL, NÚMERO DE VISITA Y DISCAPACIDADES EN MODAL ⭐
+  .section-sublabel {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .section-desc-note {
+    font-size: 11.5px;
+    color: #64748b;
+    margin: -4px 0 10px 0;
+    font-style: italic;
+  }
+
+  .vital-visit-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .vital-condition-box {
+    flex: 1.4;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .condition-toggles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    height: 100%;
+  }
+
+  .btn-condition-toggle {
+    flex: 1;
+    min-width: 130px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    background: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    i {
+      font-size: 13px;
+    }
+
+    &:hover {
+      border-color: #16a34a;
+      color: #16a34a;
+      background: #f0fdf4;
+    }
+
+    &.active {
+      border-color: #16a34a;
+      background: #f0fdf4;
+      color: #15803d;
+      box-shadow: 0 2px 8px rgba(22, 163, 74, 0.18);
+    }
+
+    &.btn-finado-toggle {
+      &:hover {
+        border-color: #dc2626;
+        color: #dc2626;
+        background: #fef2f2;
+      }
+
+      &.active {
+        border-color: #dc2626;
+        background: #fef2f2;
+        color: #b91c1c;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.18);
+      }
+    }
+  }
+
+  .visit-number-card {
+    flex: 1;
+    min-width: 170px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .visit-stepper-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    background: #fffbeb;
+    border: 1.5px solid #fcd34d;
+    border-radius: 10px;
+    padding: 6px 8px;
+    box-shadow: 0 1px 3px rgba(245, 158, 11, 0.12);
+    flex: 1;
+
+    .btn-step-counter {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #f59e0b;
+        color: #ffffff;
+        transform: scale(1.05);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .input-visit-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .visit-prefix {
+      font-size: 10px;
+      font-weight: 700;
+      color: #b45309;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-visit-number {
+      width: 50px;
+      border: none;
+      background: transparent;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: #7A192B;
+      outline: none;
+      -moz-appearance: textfield;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+  }
+
+  .finado-alert-box {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-size: 11.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      font-size: 14px;
+      color: #dc2626;
+    }
+  }
+
+  .disabilities-grid-modal {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .disability-modal-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fdfaf8;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+
+    &:hover {
+      border-color: #cbd5e1;
+      background: #ffffff;
+    }
+
+    &.checked {
+      background: #fbf5f6;
+      border-color: #7A192B;
+      box-shadow: 0 2px 8px rgba(122, 25, 43, 0.1);
+
+      .disability-icon-circle {
+        background: #7A192B;
+        color: #ffffff;
+      }
+
+      h4 {
+        color: #7A192B;
+      }
+    }
+
+    .disability-modal-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .disability-icon-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #f1ede8;
+      color: #7A192B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .disability-modal-texts {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        transition: color 0.2s ease;
+      }
+
+      p {
+        font-size: 10.5px;
+        color: #64748b;
+        margin: 2px 0 0 0;
+        line-height: 1.3;
+      }
+    }
+  }
+
+  .modern-switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+    flex-shrink: 0;
+
+    input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+
+      &:checked + .switch-slider {
+        background-color: #7A192B;
+
+        &::before {
+          transform: translateX(16px);
+        }
+      }
+
+      &:disabled + .switch-slider {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #cbd5e1;
+      transition: 0.25s;
+      border-radius: 22px;
+
+      &::before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.25s;
+        border-radius: 50%;
+      }
+    }
+  }
+
+  .is-finado-dimmed {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
   }
 
   .required-indicator {

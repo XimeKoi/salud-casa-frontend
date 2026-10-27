@@ -142,9 +142,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
       case 'perfil':
         this.router.navigate(['/perfil']);
         break;
-      case 'captura':
-        this.router.navigate(['/captura']);
-        break;
       case 'calendario':
         this.router.navigate(['/calendario']);
         break;
@@ -165,11 +162,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   irAlMapa() {
     this.router.navigate(['/dashboard']);
-    this.closeSidebar();
-  }
-
-  irACaptura() {
-    this.router.navigate(['/captura']);
     this.closeSidebar();
   }
 

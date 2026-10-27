@@ -298,6 +298,175 @@
           </div>
         </div>
 
+        <!-- ⭐ CONDICIÓN VITAL Y NÚMERO DE VISITA ⭐ -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="fas fa-heart-pulse"></i>
+            <span>Condición del Paciente y Visita</span>
+          </div>
+
+          <div class="vital-visit-row">
+            <!-- Condición Actual del Paciente -->
+            <div class="vital-condition-box">
+              <label class="section-sublabel">Condición Actual del Paciente</label>
+              <div class="condition-toggles">
+                <button type="button" class="btn-condition-toggle"
+                  [class.active]="nuevoPaciente.estatusVital === 'vivo' && !nuevoPaciente.finado"
+                  (click)="onEstatusVivoNuevoPaciente()">
+                  <i class="fas fa-heart"></i>
+                  <span>VIVO (Atención regular)</span>
+                </button>
+
+                <button type="button" class="btn-condition-toggle btn-finado-toggle"
+                  [class.active]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado"
+                  (click)="onEstatusFinadoNuevoPaciente()">
+                  <i class="fas fa-skull"></i>
+                  <span>FINADO (Registro de defunción)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Número de Visita -->
+            <div class="visit-number-card">
+              <label class="section-sublabel">Número de la visita</label>
+              <div class="visit-stepper-box">
+                <button type="button" class="btn-step-counter"
+                  (click)="ajustarNumVisitaNuevoPaciente(-1)" title="Disminuir visita">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <div class="input-visit-wrapper">
+                  <span class="visit-prefix">Visita N.º</span>
+                  <input type="number" class="input-visit-number"
+                    [(ngModel)]="nuevoPaciente.numVisita" min="1" max="99" />
+                </div>
+                <button type="button" class="btn-step-counter"
+                  (click)="ajustarNumVisitaNuevoPaciente(1)" title="Aumentar visita">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerta visual si está finado -->
+          <div class="finado-alert-box" *ngIf="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>El paciente se registrará como <strong>FINADO</strong> con reporte de defunción oficial.</span>
+          </div>
+        </div>
+
+        <!-- ⭐ VALORACIÓN DE DISCAPACIDADES ⭐ -->
+        <div class="form-section" [class.is-finado-dimmed]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado">
+          <div class="form-section-title">
+            <i class="fas fa-wheelchair"></i>
+            <span>Valoración de Discapacidades</span>
+          </div>
+          <p class="section-desc-note">
+            Marque las condiciones que apliquen al paciente durante la valoración en campo
+          </p>
+
+          <div class="disabilities-grid-modal">
+            <!-- 1. Discapacidad Motriz -->
+            <div class="disability-modal-card"
+              [class.checked]="nuevoPaciente.discapacidades?.motriz"
+              (click)="toggleDiscapacidadNuevoPaciente('motriz')">
+              <div class="disability-modal-info">
+                <div class="disability-icon-circle"><i class="fas fa-wheelchair"></i></div>
+                <div class="disability-modal-texts">
+                  <h4>1. Discapacidad Motriz</h4>
+                  <p>Limitaciones severas de movilidad o desplazamiento</p>
+                </div>
+              </div>
+              <label class="modern-switch" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                  [checked]="nuevoPaciente.discapacidades?.motriz"
+                  (change)="toggleDiscapacidadNuevoPaciente('motriz')"
+                  [disabled]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- 2. Discapacidad Visual -->
+            <div class="disability-modal-card"
+              [class.checked]="nuevoPaciente.discapacidades?.visual"
+              (click)="toggleDiscapacidadNuevoPaciente('visual')">
+              <div class="disability-modal-info">
+                <div class="disability-icon-circle"><i class="fas fa-eye-low-vision"></i></div>
+                <div class="disability-modal-texts">
+                  <h4>2. Discapacidad Visual</h4>
+                  <p>Pérdida de agudeza o campo visual en ambos ojos</p>
+                </div>
+              </div>
+              <label class="modern-switch" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                  [checked]="nuevoPaciente.discapacidades?.visual"
+                  (change)="toggleDiscapacidadNuevoPaciente('visual')"
+                  [disabled]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- 3. Discapacidad Auditiva -->
+            <div class="disability-modal-card"
+              [class.checked]="nuevoPaciente.discapacidades?.auditiva"
+              (click)="toggleDiscapacidadNuevoPaciente('auditiva')">
+              <div class="disability-modal-info">
+                <div class="disability-icon-circle"><i class="fas fa-ear-deaf"></i></div>
+                <div class="disability-modal-texts">
+                  <h4>3. Discapacidad Auditiva</h4>
+                  <p>Pérdida o limitación severa para percibir sonidos</p>
+                </div>
+              </div>
+              <label class="modern-switch" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                  [checked]="nuevoPaciente.discapacidades?.auditiva"
+                  (change)="toggleDiscapacidadNuevoPaciente('auditiva')"
+                  [disabled]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- 4. Discapacidad Intelectual -->
+            <div class="disability-modal-card"
+              [class.checked]="nuevoPaciente.discapacidades?.intelectual"
+              (click)="toggleDiscapacidadNuevoPaciente('intelectual')">
+              <div class="disability-modal-info">
+                <div class="disability-icon-circle"><i class="fas fa-brain"></i></div>
+                <div class="disability-modal-texts">
+                  <h4>4. Discapacidad Intelectual</h4>
+                  <p>Limitaciones en razonamiento, comprensión y aprendizaje</p>
+                </div>
+              </div>
+              <label class="modern-switch" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                  [checked]="nuevoPaciente.discapacidades?.intelectual"
+                  (change)="toggleDiscapacidadNuevoPaciente('intelectual')"
+                  [disabled]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- 5. Discapacidad Psicosocial -->
+            <div class="disability-modal-card"
+              [class.checked]="nuevoPaciente.discapacidades?.psicosocial"
+              (click)="toggleDiscapacidadNuevoPaciente('psicosocial')">
+              <div class="disability-modal-info">
+                <div class="disability-icon-circle"><i class="fas fa-head-side-virus"></i></div>
+                <div class="disability-modal-texts">
+                  <h4>5. Discapacidad Psicosocial</h4>
+                  <p>Alteraciones de la salud mental o trastornos afectivos</p>
+                </div>
+              </div>
+              <label class="modern-switch" (click)="$event.stopPropagation()">
+                <input type="checkbox"
+                  [checked]="nuevoPaciente.discapacidades?.psicosocial"
+                  (change)="toggleDiscapacidadNuevoPaciente('psicosocial')"
+                  [disabled]="nuevoPaciente.estatusVital === 'finado' || nuevoPaciente.finado" />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <!-- ⭐ DIRECCIÓN -->
         <div class="form-section">
           <div class="form-section-title">

@@ -331,27 +331,6 @@ export class MiRutaSheetComponent implements OnInit, OnDestroy {
     window.open(url, '_blank');
   }
 
-  capturarVisita(paciente: PacientePlanHoy, event: Event) {
-    event.stopPropagation();
-    const pacienteData = {
-      id: paciente.id,
-      nombre: paciente.nombre,
-      telefono: paciente.telefono || '',
-      direccion: paciente.direccion || '',
-      curp: paciente.curp || '',
-      colonia: paciente.colonia || '',
-      seccion: paciente.seccion || ''
-    };
-    try {
-      localStorage.setItem('capturaPaciente', JSON.stringify(pacienteData));
-    } catch (e) {}
-
-    this.cerrarSheet();
-    this.router.navigate(['/captura'], {
-      queryParams: { pacienteId: paciente.id }
-    });
-  }
-
   enfocarEnMapa(paciente: PacientePlanHoy) {
     this.cerrarSheet();
     if (typeof window !== 'undefined') {
