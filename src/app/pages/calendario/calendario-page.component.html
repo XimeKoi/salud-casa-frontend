@@ -719,10 +719,11 @@
             </span>
           </div>
         </div>
-        <div class="ribbon-right" *ngIf="pacientesParaAsignarSeleccionados.length > 1">
-          <label class="label-quick-day">Asignar todos al día:</label>
-          <select class="select-quick-day" (change)="asignarMismoDiaATodos($any($event.target).value); $any($event.target).value = ''">
-            <option value="">-- Elige día para todos --</option>
+        <div class="ribbon-right" *ngIf="pacientesParaAsignarSeleccionados.length > 0">
+          <label class="label-quick-day"><i class="fas fa-calendar-check"></i> Asignar todos al día:</label>
+          <select class="select-quick-day" [ngModel]="diaGlobalSeleccionado" (ngModelChange)="asignarMismoDiaATodos($event)">
+            <option value="">-- Elige día para todos (o dejar en blanco) --</option>
+            <option value="__BLANK__">-- En el transcurso de esta semana (en blanco) --</option>
             <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">{{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})</option>
           </select>
         </div>
@@ -861,7 +862,7 @@
                 </label>
                 <div class="ctrl-select-wrap">
                   <select class="select-field-pro" [(ngModel)]="item.fechaStr">
-                    <option value="">-- Día sugerido --</option>
+                    <option value="">-- En el transcurso de esta semana --</option>
                     <option *ngFor="let d of diasSeleccionadosLista" [value]="d.fechaStr">
                       {{ d.nombreDia }} {{ d.diaNum }} ({{ d.fechaStr }})
                     </option>

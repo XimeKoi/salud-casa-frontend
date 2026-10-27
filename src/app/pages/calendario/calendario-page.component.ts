@@ -124,6 +124,7 @@ export class CalendarioPageComponent implements OnInit {
     }[] = [];
     modoDistribucion: 'repartir' | 'mismo_dia' = 'repartir';
     diaEspecificoAsignar: string = '';
+    diaGlobalSeleccionado: string = '';
     horaBaseAsignar: string = '';             // En blanco por defecto
     intervaloMinutosAsignar: number = 0;      // 0 = Sin intervalo / en blanco
     prioridadAsignar: string = '';            // En blanco por defecto
@@ -1491,7 +1492,9 @@ export class CalendarioPageComponent implements OnInit {
         const nombrePaciente = this.obtenerNombrePaciente(paciente);
         const coloniaPaciente = p.colonia || paciente.colonia || '';
         const direccionPaciente = p.direccion || paciente.direccion || '';
-        const fechaVal = paciente.fechaStr || paciente.fecha || p.fechaStr || p.fecha || this.obtenerFechaHoyISO();
+        const fechaVal = (paciente.fechaStr !== undefined)
+            ? paciente.fechaStr
+            : (paciente.fecha || p.fechaStr || p.fecha || '');
         const horaVal = paciente.hora || p.hora || '';
         const notaVal = paciente.notas || paciente.mensajePersonalizado || '';
 
@@ -1499,25 +1502,49 @@ export class CalendarioPageComponent implements OnInit {
             ? this.nombreEnfermera.trim() 
             : 'Personal de Salud';
 
+        const horaTexto = horaVal && horaVal !== '09:00' ? ` a las ${horaVal}` : '';
+        const tieneFecha = Boolean(fechaVal && fechaVal.trim());
+
         let textoBase = '';
-        if (notaVal && notaVal.trim() && notaVal !== 'Visita programada') {
-            textoBase = `Estimado(a) ${nombrePaciente}, le recordamos su próxima visita domiciliaria de Salud Casa por Casa el día {fecha}{hora}. Motivo: ${notaVal.trim()}. Le atenderá: {enfermera}. Favor de estar atento(a).`;
-        } else if (this.plantillaMensaje && this.plantillaMensaje.trim()) {
-            textoBase = this.plantillaMensaje;
+        if (tieneFecha) {
+            const fechaFormateada = this.formatearFechaLegible(fechaVal);
+            if (notaVal && notaVal.trim() && notaVal !== 'Visita programada') {
+                textoBase = `Estimado(a) ${nombrePaciente}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa el día ${fechaFormateada}${horaTexto}. Motivo: ${notaVal.trim()}. Le atenderá: ${nombreEnf}. Favor de estar atento(a).`;
+            } else if (this.plantillaMensaje && this.plantillaMensaje.trim()) {
+                textoBase = this.plantillaMensaje
+                    .replace(/{nombre}/g, nombrePaciente)
+                    .replace(/{fecha}/g, fechaFormateada)
+                    .replace(/{hora}/g, horaTexto)
+                    .replace(/{enfermera}/g, nombreEnf)
+                    .replace(/{colonia}/g, coloniaPaciente)
+                    .replace(/{direccion}/g, direccionPaciente);
+            } else {
+                textoBase = `Estimado(a) ${nombrePaciente}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa el día ${fechaFormateada}${horaTexto}. Le atenderá la enfermera(o) ${nombreEnf}. Favor de estar atento(a).`;
+            }
         } else {
-            textoBase = 'Estimado(a) {nombre}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa el día {fecha}{hora}. Le atenderá la enfermera(o) {enfermera}. Favor de estar atento(a).';
+            // Sin día asignado: en el transcurso de esta semana se te va a visitar
+            const fraseSemana = `en el transcurso de esta semana se te va a visitar${horaTexto}`;
+            if (notaVal && notaVal.trim() && notaVal !== 'Visita programada') {
+                textoBase = `Estimado(a) ${nombrePaciente}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa: ${fraseSemana}. Motivo: ${notaVal.trim()}. Le atenderá: ${nombreEnf}. Favor de estar atento(a).`;
+            } else if (this.plantillaMensaje && this.plantillaMensaje.trim()) {
+                let plantillaSinFecha = this.plantillaMensaje;
+                if (plantillaSinFecha.includes('el día {fecha}')) {
+                    plantillaSinFecha = plantillaSinFecha.replace(/el día {fecha}/g, fraseSemana);
+                } else if (plantillaSinFecha.includes('{fecha}')) {
+                    plantillaSinFecha = plantillaSinFecha.replace(/{fecha}/g, 'en el transcurso de esta semana');
+                }
+                textoBase = plantillaSinFecha
+                    .replace(/{nombre}/g, nombrePaciente)
+                    .replace(/{hora}/g, '')
+                    .replace(/{enfermera}/g, nombreEnf)
+                    .replace(/{colonia}/g, coloniaPaciente)
+                    .replace(/{direccion}/g, direccionPaciente);
+            } else {
+                textoBase = `Estimado(a) ${nombrePaciente}, le recordamos su próxima visita domiciliaria del programa Salud Casa por Casa: ${fraseSemana}. Le atenderá la enfermera(o) ${nombreEnf}. Favor de estar atento(a).`;
+            }
         }
 
-        const fechaFormateada = this.formatearFechaLegible(fechaVal);
-        const horaTexto = horaVal && horaVal !== '09:00' ? ` a las ${horaVal}` : '';
-
-        return textoBase
-            .replace(/{nombre}/g, nombrePaciente)
-            .replace(/{fecha}/g, fechaFormateada)
-            .replace(/{hora}/g, horaTexto)
-            .replace(/{enfermera}/g, nombreEnf)
-            .replace(/{colonia}/g, coloniaPaciente)
-            .replace(/{direccion}/g, direccionPaciente);
+        return textoBase;
     }
 
     enviarMensajeWhatsApp(paciente: any) {
@@ -1882,6 +1909,7 @@ export class CalendarioPageComponent implements OnInit {
         }
         const lista = this.diasSeleccionadosLista;
         this.diaEspecificoAsignar = lista.length > 0 ? lista[0].fechaStr : '';
+        this.diaGlobalSeleccionado = '';
         this.busquedaPacienteAsignar = '';
         this.mensajeGlobalAsignar = '';
         this.pacientesParaAsignarSeleccionados = [];
@@ -1933,12 +1961,13 @@ export class CalendarioPageComponent implements OnInit {
             return;
         }
 
-        const fechaPorDefecto = this.diasSeleccionadosLista[0]?.fechaStr || this.obtenerFechaHoyISO();
+        // Si el usuario ya eligió un día en el selector global se utiliza; de lo contrario inicia en blanco (en el transcurso de esta semana)
+        const fechaInicial = this.diaGlobalSeleccionado || '';
 
         this.pacientesParaAsignarSeleccionados.push({
             id: p.id,
             paciente: p,
-            fechaStr: fechaPorDefecto,
+            fechaStr: fechaInicial,
             hora: '',
             prioridad: '',
             notas: '',
@@ -1965,12 +1994,17 @@ export class CalendarioPageComponent implements OnInit {
     }
 
     asignarMismoDiaATodos(fechaStr: string) {
-        if (!fechaStr) return;
+        const valorFinal = (fechaStr === '__BLANK__' || !fechaStr) ? '' : fechaStr;
+        this.diaGlobalSeleccionado = valorFinal;
         this.pacientesParaAsignarSeleccionados.forEach(item => {
-            item.fechaStr = fechaStr;
+            item.fechaStr = valorFinal;
         });
         this.cdr.detectChanges();
-        this.mostrarToast('Día Asignado', 'Se asignó la fecha a todos los pacientes de la tanda', 'info');
+        if (valorFinal) {
+            this.mostrarToast('Día Asignado', 'Se asignó la fecha a todos los pacientes de la tanda', 'info');
+        } else {
+            this.mostrarToast('En el transcurso de esta semana', 'Se dejaron los pacientes sin fecha fija: se visitarán en el transcurso de esta semana', 'info');
+        }
     }
 
     obtenerColorDia(fechaStr: string): string {
