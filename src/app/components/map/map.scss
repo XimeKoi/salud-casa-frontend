@@ -2392,3 +2392,7 @@
     }
   }
 }
+
+.streetview-overlay {
+  z-index: 99999 !important;
+}

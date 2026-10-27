@@ -171,6 +171,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         this.idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
       }
     } catch (e) { }
+
+    // 🏠 EXPONER FUNCIÓN GLOBAL STREET VIEW INMEDIATAMENTE
+    (window as any).__abrirStreetViewPaciente = (pacienteId: any, lat?: any, lng?: any) => {
+      this.ngZone.run(() => {
+        const idNum = Number(pacienteId);
+        let p = this.pacientes.find((x: any) => Number(x.id) === idNum);
+        if (!p && this.pacientesOriginal) {
+          p = this.pacientesOriginal.find((x: any) => Number(x.id) === idNum);
+        }
+
+        let pLat = (lat !== undefined && lat !== null && lat !== 0 && lat !== '0') ? Number(lat) : (p?.lat ? Number(p.lat) : 0);
+        let pLng = (lng !== undefined && lng !== null && lng !== 0 && lng !== '0') ? Number(lng) : (p?.lng ? Number(p.lng) : 0);
+        let pNom = (p as any)?.nombreCompleto || p?.nombre || 'Paciente #' + idNum;
+        let pDir = p?.direccion || '';
+        let pCol = p?.colonia || '';
+
+        console.log('🏠 [StreetView] Solicitado:', { idNum, pLat, pLng, pNom, pDir });
+        this.abrirModalStreetView(pLat, pLng, pNom, pDir, pCol);
+      });
+    };
   }
 
   cargarPacientesDirectamente(forceRefresh: boolean = false) {
@@ -1588,6 +1608,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       ? `https://www.google.com/maps/dir/?api=1&destination=${paciente.lat},${paciente.lng}`
       : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
 
+    const urlStreetViewDirecto = tieneCoords
+      ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${paciente.lat},${paciente.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
+
     const estaEnPlan = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
     return `
@@ -1630,21 +1654,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span class="cp-card-label">UBICACIÓN</span>
             <span class="cp-colonia" title="${coloniaEscapada}">${coloniaMostrar}</span>
             <span class="cp-direccion" title="${direccionEscapada}">${direccionLimpia}</span>
-            ${tieneCoords ? `
-            <div style="margin-top: 6px;">
+            <div style="margin-top: 8px;">
               <button type="button" class="cp-streetview-tag-btn"
-                onclick="window.dispatchEvent(new CustomEvent('abrirStreetView', { detail: {
-                  pacienteId: ${paciente.id},
-                  nombre: '${nombreEscapado}',
-                  direccion: '${direccionEscapada}',
-                  colonia: '${coloniaEscapada}',
-                  lat: ${paciente.lat},
-                  lng: ${paciente.lng}
-                } }))" title="Ver la fachada de la casa de frente en Street View 360°">
+                onclick="window.__abrirStreetViewPaciente(${paciente.id}, ${paciente.lat || 0}, ${paciente.lng || 0})"
+                title="Ver la fachada de la casa de frente en Google Street View 360°">
                 <i class="fas fa-street-view"></i>
                 <span>Ver Casa de Frente (Fachada 360°)</span>
               </button>
-            </div>` : ''}
+            </div>
             <span class="cp-zona" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #7c3aed; margin-top: 2px;">
               <i class="fas fa-layer-group" style="font-size: 10px;"></i> ${zonaEscapada}
             </span>
@@ -1712,19 +1729,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             <span>Ruta</span>
           </a>
 
-          ${tieneCoords ? `
-          <button class="cp-btn cp-btn-streetview"
-            onclick="window.dispatchEvent(new CustomEvent('abrirStreetView', { detail: {
-              pacienteId: ${paciente.id},
-              nombre: '${nombreEscapado}',
-              direccion: '${direccionEscapada}',
-              colonia: '${coloniaEscapada}',
-              lat: ${paciente.lat},
-              lng: ${paciente.lng}
-            } }))" title="Ver la fachada de la casa en Street View 360°">
+          <a class="cp-btn cp-btn-streetview"
+             href="${urlStreetViewDirecto}"
+             target="_blank" rel="noopener noreferrer"
+             title="Abrir vista de fachada Street View 360° en Google Maps">
             <i class="fas fa-street-view"></i>
             <span>Fachada</span>
-          </button>` : ''}
+          </a>
 
           <button class="cp-btn cp-btn-agendar" style="background: linear-gradient(135deg, ${p.main} 0%, ${p.dark} 100%);"
             onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
@@ -3297,20 +3308,29 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // 🏠 STREET VIEW FACHADA
   abrirModalStreetView(lat: number, lng: number, nombre: string, direccion: string, colonia: string): void {
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+
+    if (!numLat || !numLng || isNaN(numLat) || isNaN(numLng) || (numLat === 0 && numLng === 0)) {
+      if (direccion) {
+        this.mostrarToast('Buscando fachada', 'Abriendo ubicación por dirección...', 'info', 1500);
+        const query = encodeURIComponent(`${direccion}, ${colonia || ''}, León, Guanajuato, Mexico`);
+        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+        return;
+      }
       Swal.fire({
         icon: 'info',
         title: 'Sin coordenadas exactas',
-        text: 'Este paciente aún no cuenta con coordenadas GPS verificadas para cargar la fachada en Street View.',
+        text: 'Este paciente aún no cuenta con coordenadas GPS verificadas ni dirección registrada.',
         confirmButtonColor: '#7e101f'
       });
       return;
     }
 
-    this.streetViewPaciente = { lat, lng, nombre, direccion, colonia };
-    const embedUrl = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`;
+    this.streetViewPaciente = { lat: numLat, lng: numLng, nombre, direccion, colonia };
+    const embedUrl = `https://maps.google.com/maps?q=&layer=c&cbll=${numLat},${numLng}&cbp=11,0,0,0,0&output=svembed`;
     this.streetViewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
-    this.streetViewExternalUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+    this.streetViewExternalUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${numLat},${numLng}`;
     this.mostrarModalStreetView = true;
     this.cdr.detectChanges();
   }
