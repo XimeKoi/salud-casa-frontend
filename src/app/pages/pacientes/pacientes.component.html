@@ -879,8 +879,12 @@
                             <span class="meta-pill" *ngIf="pacienteEditando.seccion">
                                 <i class="fas fa-layer-group"></i> Sección {{ pacienteEditando.seccion }}
                             </span>
-                            <span class="meta-pill pill-programa" *ngIf="pacienteEditando.programa">
-                                <i class="fas fa-hand-holding-medical"></i> {{ pacienteEditando.programa }}
+                            <span class="meta-pill pill-programa" [class.discapacidad-pill]="formEdicion.programa === 'DISCAPACIDAD'">
+                                <i class="fas" [class.fa-wheelchair]="formEdicion.programa === 'DISCAPACIDAD'" [class.fa-hand-holding-medical]="formEdicion.programa !== 'DISCAPACIDAD'"></i>
+                                {{ formEdicion.programa || pacienteEditando.programa || 'PAM' }}
+                            </span>
+                            <span class="meta-pill pill-finado-indicator" *ngIf="formEdicion.estatusVital === 'finado' || formEdicion.finado">
+                                <i class="fas fa-skull"></i> FINADO
                             </span>
                         </div>
                     </div>
@@ -983,7 +987,180 @@
                         </div>
                     </div>
 
-                    <!-- 🩺 TARJETA 3: ESTADO Y CICLO DE ATENCIÓN -->
+                    <!-- 🩺 TARJETA 3: CONDICIÓN VITAL DEL PACIENTE -->
+                    <div class="form-module-card">
+                        <div class="module-header">
+                            <div class="module-icon icon-vital">
+                                <i class="fas fa-heart-pulse"></i>
+                            </div>
+                            <div class="module-title-box">
+                                <h5>Condición Actual del Paciente</h5>
+                                <span class="module-desc">Verificación y registro de estatus vital en campo</span>
+                            </div>
+                        </div>
+
+                        <div class="module-body">
+                            <div class="condition-toggles-modern">
+                                <button type="button" class="btn-condition-toggle-card"
+                                    [class.active]="formEdicion.estatusVital === 'vivo' && !formEdicion.finado"
+                                    (click)="onEstatusVivoEdicion()">
+                                    <div class="condition-toggle-icon vivo">
+                                        <i class="fas fa-heart"></i>
+                                    </div>
+                                    <div class="condition-toggle-info">
+                                        <strong>VIVO (Atención regular)</strong>
+                                        <span>Paciente activo para visitas médicas domiciliarias</span>
+                                    </div>
+                                    <i class="fas fa-circle-check condition-check" *ngIf="formEdicion.estatusVital === 'vivo' && !formEdicion.finado"></i>
+                                </button>
+
+                                <button type="button" class="btn-condition-toggle-card btn-finado-card"
+                                    [class.active]="formEdicion.estatusVital === 'finado' || formEdicion.finado"
+                                    (click)="onEstatusFinadoEdicion()">
+                                    <div class="condition-toggle-icon finado">
+                                        <i class="fas fa-skull"></i>
+                                    </div>
+                                    <div class="condition-toggle-info">
+                                        <strong>FINADO (Registro de defunción)</strong>
+                                        <span>Baja definitiva por reporte de defunción oficial</span>
+                                    </div>
+                                    <i class="fas fa-circle-check condition-check" *ngIf="formEdicion.estatusVital === 'finado' || formEdicion.finado"></i>
+                                </button>
+                            </div>
+
+                            <!-- Banner de advertencia si está finado -->
+                            <div class="finado-warning-banner" *ngIf="formEdicion.estatusVital === 'finado' || formEdicion.finado">
+                                <i class="fas fa-skull-crossbones"></i>
+                                <div class="finado-warning-text">
+                                    <strong>PACIENTE REGISTRADO COMO FINADO</strong>
+                                    <span>Al guardar los cambios, el paciente quedará marcado con estatus <strong>FINADO</strong> y se suspenderán las visitas médicas domiciliarias.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ♿ TARJETA 4: VALORACIÓN DE DISCAPACIDADES -->
+                    <div class="form-module-card" [class.is-finado-dimmed]="formEdicion.estatusVital === 'finado' || formEdicion.finado">
+                        <div class="module-header">
+                            <div class="module-icon icon-disability">
+                                <i class="fas fa-wheelchair"></i>
+                            </div>
+                            <div class="module-title-box">
+                                <h5>Valoración de Discapacidades</h5>
+                                <span class="module-desc">Marque las condiciones que apliquen al paciente durante la valoración en campo</span>
+                            </div>
+                            <span class="programa-auto-badge" [class.badge-discapacidad]="formEdicion.programa === 'DISCAPACIDAD'">
+                                <i class="fas" [class.fa-wheelchair]="formEdicion.programa === 'DISCAPACIDAD'" [class.fa-user]="formEdicion.programa !== 'DISCAPACIDAD'"></i>
+                                {{ formEdicion.programa || 'PAM' }}
+                            </span>
+                        </div>
+
+                        <div class="module-body">
+                            <div class="disabilities-edit-grid">
+                                <!-- 1. Discapacidad Motriz -->
+                                <div class="disability-card-row"
+                                    [class.checked]="formEdicion.discapacidades?.motriz"
+                                    (click)="toggleDiscapacidadEdicion('motriz')">
+                                    <div class="disability-card-left">
+                                        <div class="disability-icon-wrap motriz"><i class="fas fa-wheelchair"></i></div>
+                                        <div class="disability-text-wrap">
+                                            <h6>1. Discapacidad Motriz</h6>
+                                            <p>Limitaciones severas de movilidad o desplazamiento</p>
+                                        </div>
+                                    </div>
+                                    <label class="modern-switch-edit" (click)="$event.stopPropagation()">
+                                        <input type="checkbox"
+                                            [checked]="formEdicion.discapacidades?.motriz"
+                                            (change)="toggleDiscapacidadEdicion('motriz')"
+                                            [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
+                                        <span class="switch-slider-round"></span>
+                                    </label>
+                                </div>
+
+                                <!-- 2. Discapacidad Visual -->
+                                <div class="disability-card-row"
+                                    [class.checked]="formEdicion.discapacidades?.visual"
+                                    (click)="toggleDiscapacidadEdicion('visual')">
+                                    <div class="disability-card-left">
+                                        <div class="disability-icon-wrap visual"><i class="fas fa-eye-low-vision"></i></div>
+                                        <div class="disability-text-wrap">
+                                            <h6>2. Discapacidad Visual</h6>
+                                            <p>Pérdida de agudeza o campo visual en ambos ojos</p>
+                                        </div>
+                                    </div>
+                                    <label class="modern-switch-edit" (click)="$event.stopPropagation()">
+                                        <input type="checkbox"
+                                            [checked]="formEdicion.discapacidades?.visual"
+                                            (change)="toggleDiscapacidadEdicion('visual')"
+                                            [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
+                                        <span class="switch-slider-round"></span>
+                                    </label>
+                                </div>
+
+                                <!-- 3. Discapacidad Auditiva -->
+                                <div class="disability-card-row"
+                                    [class.checked]="formEdicion.discapacidades?.auditiva"
+                                    (click)="toggleDiscapacidadEdicion('auditiva')">
+                                    <div class="disability-card-left">
+                                        <div class="disability-icon-wrap auditiva"><i class="fas fa-ear-deaf"></i></div>
+                                        <div class="disability-text-wrap">
+                                            <h6>3. Discapacidad Auditiva</h6>
+                                            <p>Pérdida o limitación severa para percibir sonidos</p>
+                                        </div>
+                                    </div>
+                                    <label class="modern-switch-edit" (click)="$event.stopPropagation()">
+                                        <input type="checkbox"
+                                            [checked]="formEdicion.discapacidades?.auditiva"
+                                            (change)="toggleDiscapacidadEdicion('auditiva')"
+                                            [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
+                                        <span class="switch-slider-round"></span>
+                                    </label>
+                                </div>
+
+                                <!-- 4. Discapacidad Intelectual -->
+                                <div class="disability-card-row"
+                                    [class.checked]="formEdicion.discapacidades?.intelectual"
+                                    (click)="toggleDiscapacidadEdicion('intelectual')">
+                                    <div class="disability-card-left">
+                                        <div class="disability-icon-wrap intelectual"><i class="fas fa-brain"></i></div>
+                                        <div class="disability-text-wrap">
+                                            <h6>4. Discapacidad Intelectual</h6>
+                                            <p>Limitaciones en razonamiento, comprensión y aprendizaje</p>
+                                        </div>
+                                    </div>
+                                    <label class="modern-switch-edit" (click)="$event.stopPropagation()">
+                                        <input type="checkbox"
+                                            [checked]="formEdicion.discapacidades?.intelectual"
+                                            (change)="toggleDiscapacidadEdicion('intelectual')"
+                                            [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
+                                        <span class="switch-slider-round"></span>
+                                    </label>
+                                </div>
+
+                                <!-- 5. Discapacidad Psicosocial -->
+                                <div class="disability-card-row"
+                                    [class.checked]="formEdicion.discapacidades?.psicosocial"
+                                    (click)="toggleDiscapacidadEdicion('psicosocial')">
+                                    <div class="disability-card-left">
+                                        <div class="disability-icon-wrap psicosocial"><i class="fas fa-head-side-virus"></i></div>
+                                        <div class="disability-text-wrap">
+                                            <h6>5. Discapacidad Psicosocial</h6>
+                                            <p>Alteraciones de la salud mental o trastornos afectivos</p>
+                                        </div>
+                                    </div>
+                                    <label class="modern-switch-edit" (click)="$event.stopPropagation()">
+                                        <input type="checkbox"
+                                            [checked]="formEdicion.discapacidades?.psicosocial"
+                                            (change)="toggleDiscapacidadEdicion('psicosocial')"
+                                            [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
+                                        <span class="switch-slider-round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🩺 TARJETA 5: ESTADO Y CICLO DE ATENCIÓN -->
                     <div class="form-module-card">
                         <div class="module-header">
                             <div class="module-icon icon-status">
@@ -1001,7 +1178,7 @@
                                 <div class="status-selector-grid">
                                     <button type="button" class="btn-status-option opt-pendiente" 
                                         [class.active]="formEdicion.estatus === 'PENDIENTE'"
-                                        (click)="formEdicion.estatus = 'PENDIENTE'">
+                                        (click)="formEdicion.estatus = 'PENDIENTE'; onEstatusVivoEdicion()">
                                         <div class="opt-indicator"></div>
                                         <div class="opt-label-group">
                                             <span class="opt-name">En Espera (Pendiente)</span>
@@ -1012,7 +1189,7 @@
 
                                     <button type="button" class="btn-status-option opt-completada" 
                                         [class.active]="formEdicion.estatus === 'COMPLETADA'"
-                                        (click)="formEdicion.estatus = 'COMPLETADA'">
+                                        (click)="formEdicion.estatus = 'COMPLETADA'; onEstatusVivoEdicion()">
                                         <div class="opt-indicator"></div>
                                         <div class="opt-label-group">
                                             <span class="opt-name">Completada / Visitado</span>
@@ -1023,7 +1200,7 @@
 
                                     <button type="button" class="btn-status-option opt-incidencia" 
                                         [class.active]="formEdicion.estatus === 'INCIDENCIA'"
-                                        (click)="formEdicion.estatus = 'INCIDENCIA'">
+                                        (click)="formEdicion.estatus = 'INCIDENCIA'; onEstatusVivoEdicion()">
                                         <div class="opt-indicator"></div>
                                         <div class="opt-label-group">
                                             <span class="opt-name">Incidencia de Visita</span>
@@ -1034,7 +1211,7 @@
 
                                     <button type="button" class="btn-status-option opt-rechazo" 
                                         [class.active]="formEdicion.estatus === 'RECHAZO'"
-                                        (click)="formEdicion.estatus = 'RECHAZO'">
+                                        (click)="formEdicion.estatus = 'RECHAZO'; onEstatusVivoEdicion()">
                                         <div class="opt-indicator"></div>
                                         <div class="opt-label-group">
                                             <span class="opt-name">Rechazo de Atención</span>
@@ -1045,7 +1222,7 @@
 
                                     <button type="button" class="btn-status-option opt-finado" 
                                         [class.active]="formEdicion.estatus === 'FINADO'"
-                                        (click)="formEdicion.estatus = 'FINADO'">
+                                        (click)="onEstatusFinadoEdicion()">
                                         <div class="opt-indicator"></div>
                                         <div class="opt-label-group">
                                             <span class="opt-name">Finado (Fallecido)</span>

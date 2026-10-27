@@ -2447,7 +2447,7 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
     overflow-x: auto;
   }
 }
-
+
 // ============================================
 // ⭐ ESTILOS BOTÓN Y MODAL EDITAR PACIENTE (REDISEÑO PREMIUM)
 // ============================================
@@ -2720,6 +2720,20 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
           background: rgba(126, 16, 31, 0.08);
           color: $primary;
           i { color: $primary; }
+
+          &.discapacidad-pill {
+            background: #ede9fe;
+            color: #6d28d9;
+            i { color: #6d28d9; }
+          }
+        }
+
+        &.pill-finado-indicator {
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fca5a5;
+          font-weight: 800;
+          i { color: #dc2626; }
         }
       }
     }
@@ -2763,6 +2777,14 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
         background: rgba(126, 16, 31, 0.08);
         color: $primary;
       }
+      &.icon-vital {
+        background: #fdf2f4;
+        color: #e11d48;
+      }
+      &.icon-disability {
+        background: #f5f3ff;
+        color: #7c3aed;
+      }
     }
 
     .module-title-box {
@@ -2779,6 +2801,26 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
       .module-desc {
         font-size: 11px;
         color: #64748b;
+      }
+    }
+
+    .programa-auto-badge {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #fef3c7;
+      color: #92400e;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid #fde68a;
+
+      &.badge-discapacidad {
+        background: #ede9fe;
+        color: #6d28d9;
+        border-color: #ddd6fe;
       }
     }
   }
@@ -3106,6 +3148,301 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
       }
     }
   }
+}
+
+// ⭐ CONDICIÓN VITAL (VIVO / FINADO)
+.condition-toggles-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.btn-condition-toggle-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+
+  .condition-toggle-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+
+    &.vivo {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+
+    &.finado {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+  }
+
+  .condition-toggle-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    strong {
+      font-size: 13px;
+      color: #1e293b;
+      margin-bottom: 2px;
+    }
+
+    span {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.3;
+    }
+  }
+
+  .condition-check {
+    font-size: 18px;
+    color: #16a34a;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    border-color: #16a34a;
+    background: #f0fdf4;
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-color: #16a34a;
+    background: #f0fdf4;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
+
+    .condition-toggle-icon.vivo {
+      background: #16a34a;
+      color: #ffffff;
+    }
+
+    .condition-toggle-info strong {
+      color: #15803d;
+    }
+  }
+
+  &.btn-finado-card {
+    .condition-check {
+      color: #dc2626;
+    }
+
+    &:hover {
+      border-color: #dc2626;
+      background: #fef2f2;
+    }
+
+    &.active {
+      border-color: #dc2626;
+      background: #fef2f2;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+
+      .condition-toggle-icon.finado {
+        background: #dc2626;
+        color: #ffffff;
+      }
+
+      .condition-toggle-info strong {
+        color: #991b1b;
+      }
+    }
+  }
+}
+
+.finado-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 4px;
+  color: #991b1b;
+
+  i {
+    font-size: 22px;
+    color: #dc2626;
+    flex-shrink: 0;
+  }
+
+  .finado-warning-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 12.5px;
+      letter-spacing: 0.3px;
+    }
+
+    span {
+      font-size: 11.5px;
+      line-height: 1.35;
+      color: #7f1d1d;
+    }
+  }
+}
+
+// ⭐ VALORACIÓN DE DISCAPACIDADES
+.disabilities-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.disability-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fdfaf8;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+
+  .disability-card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+
+    .disability-icon-wrap {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f1ede8;
+      color: $primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+
+      &.motriz { color: #2563eb; background: #eff6ff; }
+      &.visual { color: #7c3aed; background: #f5f3ff; }
+      &.auditiva { color: #d97706; background: #fffbeb; }
+      &.intelectual { color: #059669; background: #ecfdf5; }
+      &.psicosocial { color: #db2777; background: #fdf2f8; }
+    }
+
+    .disability-text-wrap {
+      flex: 1;
+      min-width: 0;
+
+      h6 {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        transition: color 0.2s ease;
+      }
+
+      p {
+        font-size: 10.5px;
+        color: #64748b;
+        margin: 2px 0 0 0;
+        line-height: 1.3;
+      }
+    }
+  }
+
+  &:hover {
+    border-color: #cbd5e1;
+    background: #ffffff;
+  }
+
+  &.checked {
+    background: #fbf5f6;
+    border-color: $primary;
+    box-shadow: 0 2px 8px rgba(126, 16, 31, 0.1);
+
+    .disability-card-left .disability-icon-wrap {
+      background: $primary;
+      color: #ffffff;
+    }
+
+    .disability-card-left .disability-text-wrap h6 {
+      color: $primary;
+    }
+  }
+}
+
+.modern-switch-edit {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .switch-slider-round {
+      background-color: $primary;
+
+      &::before {
+        transform: translateX(18px);
+      }
+    }
+
+    &:disabled + .switch-slider-round {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  .switch-slider-round {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.25s;
+    border-radius: 22px;
+
+    &::before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.25s;
+      border-radius: 50%;
+    }
+  }
+}
+
+.is-finado-dimmed {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 // Footer Moderno

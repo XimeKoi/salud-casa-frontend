@@ -38,6 +38,21 @@ interface Paciente {
   fechaPendiente?: Date | null;
   diasPendiente?: number | null;
   visitasCompletadas?: number;
+  estatus?: string;
+  finado?: boolean;
+  fechaFinado?: string | null;
+  discapacidadMotriz?: boolean;
+  discapacidadVisual?: boolean;
+  discapacidadAuditiva?: boolean;
+  discapacidadIntelectual?: boolean;
+  discapacidadPsicosocial?: boolean;
+  discapacidades?: {
+    motriz: boolean;
+    visual: boolean;
+    auditiva: boolean;
+    intelectual: boolean;
+    psicosocial: boolean;
+  };
 }
 
 interface Visita {
@@ -114,7 +129,18 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     telefonoCelular: '',
     telefonoFijo: '',
     estatus: 'PENDIENTE',
-    diasPendiente: 0
+    diasPendiente: 0,
+    estatusVital: 'vivo',
+    finado: false,
+    fechaFinado: '',
+    programa: 'PAM',
+    discapacidades: {
+      motriz: false,
+      visual: false,
+      auditiva: false,
+      intelectual: false,
+      psicosocial: false
+    }
   };
 
   diasSemana: DiaCalendario[] = [];
@@ -353,7 +379,14 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         next: (data: any[]) => {
           if (Array.isArray(data) && data.length > 0) {
             this.pacientes = data.map((p: any) => {
-              const paciente = {
+              const discMotriz = !!(p.discapacidadMotriz || p.discapacidades?.motriz);
+              const discVisual = !!(p.discapacidadVisual || p.discapacidades?.visual);
+              const discAuditiva = !!(p.discapacidadAuditiva || p.discapacidades?.auditiva);
+              const discIntelectual = !!(p.discapacidadIntelectual || p.discapacidades?.intelectual);
+              const discPsicosocial = !!(p.discapacidadPsicosocial || p.discapacidades?.psicosocial);
+              const esFinado = p.finado === true || (p.estatus || '').toUpperCase() === 'FINADO';
+
+              const paciente: Paciente = {
                 id: p.id,
                 nombre: this.construirNombreCompleto(p),
                 direccion: p.direccion || '',
@@ -366,12 +399,27 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
                 apellidoPaterno: p.apellidoPaterno || '',
                 apellidoMaterno: p.apellidoMaterno || '',
                 nombres: p.nombre || '',
-                programa: p.programa,
+                programa: p.programa || (discMotriz || discVisual || discAuditiva || discIntelectual || discPsicosocial ? 'DISCAPACIDAD' : 'PAM'),
                 curp: p.curp,
                 nivelRiesgo: p.nivelRiesgo || this.obtenerNivelRiesgoPorEstatus(p.estatus),
                 fechaPendiente: null,
                 diasPendiente: null,
-                visitasCompletadas: 0
+                visitasCompletadas: 0,
+                estatus: p.estatus || 'PENDIENTE',
+                finado: esFinado,
+                fechaFinado: p.fechaFinado || (esFinado ? new Date().toISOString().split('T')[0] : null),
+                discapacidadMotriz: discMotriz,
+                discapacidadVisual: discVisual,
+                discapacidadAuditiva: discAuditiva,
+                discapacidadIntelectual: discIntelectual,
+                discapacidadPsicosocial: discPsicosocial,
+                discapacidades: {
+                  motriz: discMotriz,
+                  visual: discVisual,
+                  auditiva: discAuditiva,
+                  intelectual: discIntelectual,
+                  psicosocial: discPsicosocial
+                }
               };
               return paciente;
             });
@@ -403,27 +451,51 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe({
         next: (data: any[]) => {
           if (Array.isArray(data) && data.length > 0) {
-            this.pacientes = data.map((p: any) => ({
-              id: p.id,
-              nombre: this.construirNombreCompleto(p),
-              direccion: p.direccion || '',
-              telefono: p.telefonoCelular || p.telefonoFijo || '',
-              colonia: this.extraerColonia(p.direccion, p.zonaTrabajo),
-              seccion: p.zonaTrabajo?.split('-').pop() || '',
-              estadoVisita: this.mapearEstatus(p.estatus),
-              fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
-              tieneIncidencia: ['INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
-              historialVisitas: [],
-              apellidoPaterno: p.apellidoPaterno || '',
-              apellidoMaterno: p.apellidoMaterno || '',
-              nombres: p.nombre || '',
-              programa: p.programa,
-              curp: p.curp,
-              nivelRiesgo: this.obtenerNivelRiesgoPorEstatus(p.estatus),
-              fechaPendiente: null,
-              diasPendiente: null,
-              visitasCompletadas: 0
-            }));
+            this.pacientes = data.map((p: any) => {
+              const discMotriz = !!(p.discapacidadMotriz || p.discapacidades?.motriz);
+              const discVisual = !!(p.discapacidadVisual || p.discapacidades?.visual);
+              const discAuditiva = !!(p.discapacidadAuditiva || p.discapacidades?.auditiva);
+              const discIntelectual = !!(p.discapacidadIntelectual || p.discapacidades?.intelectual);
+              const discPsicosocial = !!(p.discapacidadPsicosocial || p.discapacidades?.psicosocial);
+              const esFinado = p.finado === true || (p.estatus || '').toUpperCase() === 'FINADO';
+
+              return {
+                id: p.id,
+                nombre: this.construirNombreCompleto(p),
+                direccion: p.direccion || '',
+                telefono: p.telefonoCelular || p.telefonoFijo || '',
+                colonia: this.extraerColonia(p.direccion, p.zonaTrabajo),
+                seccion: p.zonaTrabajo?.split('-').pop() || '',
+                estadoVisita: this.mapearEstatus(p.estatus),
+                fechaProgramada: p.fechaProgramada ? new Date(p.fechaProgramada) : new Date(),
+                tieneIncidencia: ['INCIDENCIA', 'CAMBIO DE DOMICILIO'].includes((p.estatus || '').toUpperCase()),
+                historialVisitas: [],
+                apellidoPaterno: p.apellidoPaterno || '',
+                apellidoMaterno: p.apellidoMaterno || '',
+                nombres: p.nombre || '',
+                programa: p.programa || (discMotriz || discVisual || discAuditiva || discIntelectual || discPsicosocial ? 'DISCAPACIDAD' : 'PAM'),
+                curp: p.curp,
+                nivelRiesgo: this.obtenerNivelRiesgoPorEstatus(p.estatus),
+                fechaPendiente: null,
+                diasPendiente: null,
+                visitasCompletadas: 0,
+                estatus: p.estatus || 'PENDIENTE',
+                finado: esFinado,
+                fechaFinado: p.fechaFinado || (esFinado ? new Date().toISOString().split('T')[0] : null),
+                discapacidadMotriz: discMotriz,
+                discapacidadVisual: discVisual,
+                discapacidadAuditiva: discAuditiva,
+                discapacidadIntelectual: discIntelectual,
+                discapacidadPsicosocial: discPsicosocial,
+                discapacidades: {
+                  motriz: discMotriz,
+                  visual: discVisual,
+                  auditiva: discAuditiva,
+                  intelectual: discIntelectual,
+                  psicosocial: discPsicosocial
+                }
+              };
+            });
           }
           this.cargarHistorialDesdeLocalStorage();
           this.cargarPendientesDesdeLocalStorage();
@@ -1759,17 +1831,83 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     else if (paciente.estadoVisita === 'incidencia') st = 'INCIDENCIA';
     else if ((paciente as any).estatus === 'FINADO') st = 'FINADO';
 
+    const esFinado = (paciente as any).estatus === 'FINADO' || paciente.finado === true || paciente.estadoVisita === ('finado' as any);
+    const estatusVital = esFinado ? 'finado' : 'vivo';
+
+    const discMotriz = !!(paciente.discapacidadMotriz || (paciente as any).discapacidades?.motriz);
+    const discVisual = !!(paciente.discapacidadVisual || (paciente as any).discapacidades?.visual);
+    const discAuditiva = !!(paciente.discapacidadAuditiva || (paciente as any).discapacidades?.auditiva);
+    const discIntelectual = !!(paciente.discapacidadIntelectual || (paciente as any).discapacidades?.intelectual);
+    const discPsicosocial = !!(paciente.discapacidadPsicosocial || (paciente as any).discapacidades?.psicosocial);
+
+    const tieneAlgunaDisc = discMotriz || discVisual || discAuditiva || discIntelectual || discPsicosocial;
+    const prog = paciente.programa || (tieneAlgunaDisc ? 'DISCAPACIDAD' : 'PAM');
+
     this.formEdicion = {
       calleNumero: calleNum,
       colonia: col,
       referencias: refs,
       telefonoCelular: telCel,
       telefonoFijo: telFijo,
-      estatus: st,
-      diasPendiente: paciente.diasPendiente ?? 0
+      estatus: esFinado ? 'FINADO' : st,
+      diasPendiente: paciente.diasPendiente ?? 0,
+      estatusVital: estatusVital,
+      finado: esFinado,
+      fechaFinado: paciente.fechaFinado || (esFinado ? new Date().toISOString().split('T')[0] : ''),
+      programa: prog,
+      discapacidades: {
+        motriz: discMotriz,
+        visual: discVisual,
+        auditiva: discAuditiva,
+        intelectual: discIntelectual,
+        psicosocial: discPsicosocial
+      }
     };
 
     this.mostrarModalEditar = true;
+    this.cdr.detectChanges();
+  }
+
+  onEstatusVivoEdicion() {
+    this.formEdicion.estatusVital = 'vivo';
+    this.formEdicion.finado = false;
+    if (this.formEdicion.estatus === 'FINADO') {
+      this.formEdicion.estatus = 'PENDIENTE';
+    }
+    this.cdr.detectChanges();
+  }
+
+  onEstatusFinadoEdicion() {
+    this.formEdicion.estatusVital = 'finado';
+    this.formEdicion.finado = true;
+    this.formEdicion.estatus = 'FINADO';
+    if (!this.formEdicion.fechaFinado) {
+      this.formEdicion.fechaFinado = new Date().toISOString().split('T')[0];
+    }
+    this.cdr.detectChanges();
+  }
+
+  toggleDiscapacidadEdicion(tipo: 'motriz' | 'visual' | 'auditiva' | 'intelectual' | 'psicosocial') {
+    if (this.formEdicion.finado || this.formEdicion.estatusVital === 'finado') {
+      return;
+    }
+    if (!this.formEdicion.discapacidades) {
+      this.formEdicion.discapacidades = {
+        motriz: false,
+        visual: false,
+        auditiva: false,
+        intelectual: false,
+        psicosocial: false
+      };
+    }
+    this.formEdicion.discapacidades[tipo] = !this.formEdicion.discapacidades[tipo];
+
+    const algunaActiva = Object.values(this.formEdicion.discapacidades).some(v => !!v);
+    if (algunaActiva) {
+      this.formEdicion.programa = 'DISCAPACIDAD';
+    } else if (this.formEdicion.programa === 'DISCAPACIDAD') {
+      this.formEdicion.programa = 'PAM';
+    }
     this.cdr.detectChanges();
   }
 
@@ -1801,12 +1939,40 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       nuevaDireccion += ` | Refs.: ${refs}`;
     }
 
+    const tieneAlgunaDiscapacidad = !!(
+      this.formEdicion.discapacidades?.motriz ||
+      this.formEdicion.discapacidades?.visual ||
+      this.formEdicion.discapacidades?.auditiva ||
+      this.formEdicion.discapacidades?.intelectual ||
+      this.formEdicion.discapacidades?.psicosocial
+    );
+
+    const esFinado = this.formEdicion.estatusVital === 'finado' || this.formEdicion.estatus === 'FINADO' || !!this.formEdicion.finado;
+    const estatusFinal = esFinado ? 'FINADO' : (this.formEdicion.estatus || 'PENDIENTE');
+    const programaFinal = tieneAlgunaDiscapacidad ? 'DISCAPACIDAD' : (this.formEdicion.programa || 'PAM');
+    const fechaFinadoFinal = esFinado ? (this.formEdicion.fechaFinado || new Date().toISOString().split('T')[0]) : null;
+
     const payload: any = {
       direccion: nuevaDireccion,
       zonaTrabajo: col,
       telefonoCelular: this.formEdicion.telefonoCelular.trim(),
       telefonoFijo: this.formEdicion.telefonoFijo.trim(),
-      estatus: this.formEdicion.estatus
+      estatus: estatusFinal,
+      programa: programaFinal,
+      finado: esFinado,
+      fechaFinado: fechaFinadoFinal,
+      discapacidadMotriz: !!this.formEdicion.discapacidades?.motriz,
+      discapacidadVisual: !!this.formEdicion.discapacidades?.visual,
+      discapacidadAuditiva: !!this.formEdicion.discapacidades?.auditiva,
+      discapacidadIntelectual: !!this.formEdicion.discapacidades?.intelectual,
+      discapacidadPsicosocial: !!this.formEdicion.discapacidades?.psicosocial,
+      discapacidades: {
+        motriz: !!this.formEdicion.discapacidades?.motriz,
+        visual: !!this.formEdicion.discapacidades?.visual,
+        auditiva: !!this.formEdicion.discapacidades?.auditiva,
+        intelectual: !!this.formEdicion.discapacidades?.intelectual,
+        psicosocial: !!this.formEdicion.discapacidades?.psicosocial
+      }
     };
 
     this.http.patch(`${this.apiUrl}/pacientes/${this.pacienteEditando.id}`, payload).subscribe({
@@ -1816,8 +1982,18 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.pacienteEditando.direccion = nuevaDireccion;
         this.pacienteEditando.colonia = col;
         this.pacienteEditando.telefono = this.formEdicion.telefonoCelular || this.formEdicion.telefonoFijo;
-        this.pacienteEditando.estadoVisita = this.mapearEstatus(this.formEdicion.estatus);
-        if (this.formEdicion.estatus === 'PENDIENTE') {
+        this.pacienteEditando.estadoVisita = this.mapearEstatus(estatusFinal);
+        this.pacienteEditando.estatus = estatusFinal;
+        this.pacienteEditando.finado = esFinado;
+        this.pacienteEditando.fechaFinado = fechaFinadoFinal;
+        this.pacienteEditando.programa = programaFinal;
+        this.pacienteEditando.discapacidadMotriz = payload.discapacidadMotriz;
+        this.pacienteEditando.discapacidadVisual = payload.discapacidadVisual;
+        this.pacienteEditando.discapacidadAuditiva = payload.discapacidadAuditiva;
+        this.pacienteEditando.discapacidadIntelectual = payload.discapacidadIntelectual;
+        this.pacienteEditando.discapacidadPsicosocial = payload.discapacidadPsicosocial;
+        this.pacienteEditando.discapacidades = { ...payload.discapacidades };
+        if (estatusFinal === 'PENDIENTE') {
           this.pacienteEditando.diasPendiente = this.formEdicion.diasPendiente;
         }
 
@@ -1826,8 +2002,18 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
           this.pacientes[idx].direccion = nuevaDireccion;
           this.pacientes[idx].colonia = col;
           this.pacientes[idx].telefono = this.formEdicion.telefonoCelular || this.formEdicion.telefonoFijo;
-          this.pacientes[idx].estadoVisita = this.mapearEstatus(this.formEdicion.estatus);
-          if (this.formEdicion.estatus === 'PENDIENTE') {
+          this.pacientes[idx].estadoVisita = this.mapearEstatus(estatusFinal);
+          this.pacientes[idx].estatus = estatusFinal;
+          this.pacientes[idx].finado = esFinado;
+          this.pacientes[idx].fechaFinado = fechaFinadoFinal;
+          this.pacientes[idx].programa = programaFinal;
+          this.pacientes[idx].discapacidadMotriz = payload.discapacidadMotriz;
+          this.pacientes[idx].discapacidadVisual = payload.discapacidadVisual;
+          this.pacientes[idx].discapacidadAuditiva = payload.discapacidadAuditiva;
+          this.pacientes[idx].discapacidadIntelectual = payload.discapacidadIntelectual;
+          this.pacientes[idx].discapacidadPsicosocial = payload.discapacidadPsicosocial;
+          this.pacientes[idx].discapacidades = { ...payload.discapacidades };
+          if (estatusFinal === 'PENDIENTE') {
             this.pacientes[idx].diasPendiente = this.formEdicion.diasPendiente;
           }
         }
@@ -1844,7 +2030,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         Swal.fire({
           icon: 'success',
           title: '¡Paciente Actualizado!',
-          text: 'La dirección, colonia, contacto y estatus se guardaron correctamente.',
+          text: 'La dirección, condición vital, discapacidades y estatus se guardaron correctamente.',
           confirmButtonColor: '#7e101f',
           timer: 2500,
           timerProgressBar: true
