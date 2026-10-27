@@ -1535,26 +1535,95 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
     gap: 6px;
   }
 
-  .btn-resolve-incident {
+  .incident-card-actions {
     margin-left: auto;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 7px 16px;
-    background: #f0fdf4;
-    color: #15803d;
-    border: 1.5px solid #bbf7d0;
-    border-radius: $radius-sm;
-    font-size: 12.5px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    gap: 8px;
+    flex-wrap: wrap;
 
-    &:hover {
-      background: #16a34a;
-      color: #ffffff;
-      border-color: #16a34a;
-      box-shadow: 0 3px 10px rgba(22, 163, 74, 0.25);
+    .btn-notify-wa-sm {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #6ee7b7;
+      border-radius: $radius-sm;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      i {
+        color: #25d366;
+        font-size: 13px;
+      }
+
+      &:hover {
+        background: #25d366;
+        color: #ffffff;
+        border-color: #25d366;
+        box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
+
+        i {
+          color: #ffffff;
+        }
+      }
+    }
+
+    .btn-notify-sms-sm {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #93c5fd;
+      border-radius: $radius-sm;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      i {
+        color: #3b82f6;
+        font-size: 12px;
+      }
+
+      &:hover {
+        background: #3b82f6;
+        color: #ffffff;
+        border-color: #3b82f6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+
+        i {
+          color: #ffffff;
+        }
+      }
+    }
+
+    .btn-resolve-incident {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 16px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #bbf7d0;
+      border-radius: $radius-sm;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #16a34a;
+        color: #ffffff;
+        border-color: #16a34a;
+        box-shadow: 0 3px 10px rgba(22, 163, 74, 0.25);
+      }
     }
   }
 }

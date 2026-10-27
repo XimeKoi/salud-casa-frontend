@@ -449,13 +449,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                         this.actualizarEstadoPaciente(incidencia.pacienteId, nuevoEstatus);
                     }
 
-                    this.limpiarDatosPaciente();
-                    this.datosPaciente = null;
-                    this.mostrarFormulario = false;
-
-                    setTimeout(() => {
-                        this.router.navigate(['/pacientes']);
-                    }, 1500);
+                    // ⭐ Mostrar diálogo con aviso por WhatsApp y SMS para el paciente
+                    this.mostrarDialogoNotificarPaciente(nuevaIncidencia);
                 },
                 error: (error) => {
                     console.error('❌ Error al guardar incidencia en BD:', error);
@@ -469,13 +464,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.usandoLocalStorage = true;
                     this.cdr.detectChanges();
 
-                    this.limpiarDatosPaciente();
-                    this.datosPaciente = null;
-                    this.mostrarFormulario = false;
-
-                    setTimeout(() => {
-                        this.router.navigate(['/pacientes']);
-                    }, 1500);
+                    // ⭐ Mostrar diálogo con aviso por WhatsApp y SMS para el paciente
+                    this.mostrarDialogoNotificarPaciente(nuevaIncidencia);
                 }
             });
     }
@@ -916,8 +906,6 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                 };
 
                 this.guardarIncidenciaEnBD(nuevaIncidencia);
-
-                this.limpiarDatosPaciente();
                 this.resetearFormulario();
                 this.mostrarFormulario = false;
                 this.cdr.detectChanges();
@@ -970,6 +958,235 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
 
     closeModal() {
         this.fotoModal = null;
+    }
+
+    // ⭐ ============================================
+    // ⭐ NOTIFICACIÓN DE INCIDENCIA AL PACIENTE (WHATSAPP / SMS)
+    // ⭐ ============================================
+
+    construirMensajeIncidencia(incidencia: Incidencia): string {
+        const datosP = (incidencia.datosPaciente as any) || (this.datosPaciente as any) || {};
+        const nombrePaciente = datosP.nombre || 'Paciente';
+        const tipoLabel = this.getTipoLabel(incidencia.tipo);
+        const detalle = (incidencia.descripcion || '').trim();
+
+        const nombreEnfermera = 'Enfermera Ana Guerrero';
+        const telefonoEnfermera = '4777092580';
+
+        let motivoTexto = tipoLabel;
+        if (detalle && detalle.toLowerCase() !== tipoLabel.toLowerCase()) {
+            const detalleLimpio = detalle.length > 120 ? detalle.substring(0, 117) + '...' : detalle;
+            motivoTexto += `: "${detalleLimpio}"`;
+        }
+
+        return `Estimado(a) ${nombrePaciente}, le informamos que el personal del programa Salud Casa por Casa acudió a su domicilio y se registró la siguiente eventualidad: ${motivoTexto}. Por favor comuníquese con su ${nombreEnfermera} al teléfono ${telefonoEnfermera} para reagendar una nueva cita de visita médica. Favor de estar al pendiente.`;
+    }
+
+    lanzarWhatsAppIncidencia(telefonoLimpio: string, mensaje: string) {
+        let num = (telefonoLimpio || '').replace(/\D/g, '');
+        if (num.startsWith('52') && num.length === 12) {
+            num = num.substring(2);
+        }
+        const texto = encodeURIComponent(mensaje);
+        const url = `https://wa.me/52${num}?text=${texto}`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        this.mostrarToast('Abriendo WhatsApp para notificar al paciente...', 'success');
+    }
+
+    lanzarSMSIncidencia(telefonoLimpio: string, mensaje: string) {
+        let num = (telefonoLimpio || '').replace(/\D/g, '');
+        if (num.startsWith('52') && num.length === 12) {
+            num = num.substring(2);
+        }
+        const texto = encodeURIComponent(mensaje);
+        const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const sep = isIOS ? '&' : '?';
+        const url = `sms:+52${num}${sep}body=${texto}`;
+
+        window.location.href = url;
+        this.mostrarToast('Abriendo aplicación de mensajes SMS...', 'success');
+    }
+
+    notificarIncidenciaWhatsApp(incidencia: Incidencia) {
+        const datosP = (incidencia.datosPaciente as any) || {};
+        let tel = (datosP.telefono || '').replace(/\D/g, '');
+        if (tel.startsWith('52') && tel.length === 12) tel = tel.substring(2);
+        const msg = this.construirMensajeIncidencia(incidencia);
+
+        if (!tel || tel.length < 10) {
+            Swal.fire({
+                title: 'Teléfono del Paciente',
+                text: 'Ingresa el número celular a 10 dígitos para enviar WhatsApp:',
+                input: 'tel',
+                inputValue: tel,
+                inputPlaceholder: 'Ej: 4771234567',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fab fa-whatsapp"></i> Abrir WhatsApp',
+                confirmButtonColor: '#25d366',
+                cancelButtonText: 'Cancelar'
+            }).then((res) => {
+                if (res.isConfirmed && res.value) {
+                    this.lanzarWhatsAppIncidencia(res.value, msg);
+                }
+            });
+            return;
+        }
+
+        this.lanzarWhatsAppIncidencia(tel, msg);
+    }
+
+    notificarIncidenciaSMS(incidencia: Incidencia) {
+        const datosP = (incidencia.datosPaciente as any) || {};
+        let tel = (datosP.telefono || '').replace(/\D/g, '');
+        if (tel.startsWith('52') && tel.length === 12) tel = tel.substring(2);
+        const msg = this.construirMensajeIncidencia(incidencia);
+
+        if (!tel || tel.length < 10) {
+            Swal.fire({
+                title: 'Teléfono del Paciente',
+                text: 'Ingresa el número celular a 10 dígitos para enviar SMS:',
+                input: 'tel',
+                inputValue: tel,
+                inputPlaceholder: 'Ej: 4771234567',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-comment-sms"></i> Abrir SMS',
+                confirmButtonColor: '#3b82f6',
+                cancelButtonText: 'Cancelar'
+            }).then((res) => {
+                if (res.isConfirmed && res.value) {
+                    this.lanzarSMSIncidencia(res.value, msg);
+                }
+            });
+            return;
+        }
+
+        this.lanzarSMSIncidencia(tel, msg);
+    }
+
+    mostrarDialogoNotificarPaciente(incidencia: Incidencia) {
+        const datosP = (incidencia.datosPaciente as any) || (this.datosPaciente as any) || {};
+        const nombrePaciente = datosP.nombre || 'Paciente';
+        let telPaciente = (datosP.telefono || '').replace(/\D/g, '');
+        if (telPaciente.startsWith('52') && telPaciente.length === 12) {
+            telPaciente = telPaciente.substring(2);
+        }
+
+        const nombreEnfermera = 'Enfermera Ana Guerrero';
+        const telefonoEnfermera = '4777092580';
+        const textoMensaje = this.construirMensajeIncidencia(incidencia);
+
+        Swal.fire({
+            title: '¡Incidencia Registrada con Éxito!',
+            html: `
+                <div style="text-align: left; font-size: 13px; color: #1e293b; line-height: 1.5;">
+                    <div style="background: #f0fdf4; border: 1.5px solid #86efac; padding: 12px 14px; border-radius: 10px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <i class="fas fa-check-circle" style="color: #16a34a; font-size: 16px;"></i>
+                            <strong style="color: #166534; font-size: 13.5px;">Incidencia guardada y georreferenciada</strong>
+                        </div>
+                        <div style="font-size: 12px; color: #15803d;">
+                            Envía un aviso inmediato a <strong>${nombrePaciente}</strong> sobre el motivo de la incidencia para reagendar su cita.
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">
+                            <i class="fas fa-phone"></i> Teléfono del Paciente (10 dígitos):
+                        </label>
+                        <input id="swal-tel-paciente" type="tel" value="${telPaciente}" placeholder="Ej: 4771234567"
+                            style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #1e293b; outline: none;" />
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">
+                            <i class="fas fa-comment-dots"></i> Mensaje de Notificación al Paciente:
+                        </label>
+                        <textarea id="swal-msg-paciente" rows="4"
+                            style="width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 12px; line-height: 1.4; color: #334155; resize: vertical; outline: none; background: #f8fafc;">${textoMensaje}</textarea>
+                    </div>
+
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 11.5px; color: #1e40af;">
+                        <i class="fas fa-user-nurse"></i> Contacto para reagendar: <strong>${nombreEnfermera}</strong> (${telefonoEnfermera})
+                    </div>
+
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                        <button type="button" id="btn-swal-wa"
+                            style="flex: 1; min-width: 130px; background: linear-gradient(135deg, #25d366 0%, #16a34a 100%); color: #ffffff; border: none; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,211,102,0.3);">
+                            <i class="fab fa-whatsapp" style="font-size: 15px;"></i> WhatsApp
+                        </button>
+                        <button type="button" id="btn-swal-sms"
+                            style="flex: 1; min-width: 130px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #ffffff; border: none; padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(59,130,246,0.3);">
+                            <i class="fas fa-comment-sms" style="font-size: 14px;"></i> Mensaje SMS
+                        </button>
+                        <button type="button" id="btn-swal-copiar"
+                            style="background: #ffffff; color: #334155; border: 1.5px solid #cbd5e1; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: true,
+            confirmButtonText: 'Finalizar y volver a Pacientes',
+            confirmButtonColor: '#701f2f',
+            allowOutsideClick: false,
+            didOpen: () => {
+                const btnWa = document.getElementById('btn-swal-wa');
+                const btnSms = document.getElementById('btn-swal-sms');
+                const btnCopy = document.getElementById('btn-swal-copiar');
+                const inputTel = document.getElementById('swal-tel-paciente') as HTMLInputElement;
+                const areaMsg = document.getElementById('swal-msg-paciente') as HTMLTextAreaElement;
+
+                if (btnWa) {
+                    btnWa.onclick = () => {
+                        const tel = (inputTel?.value || '').replace(/\D/g, '');
+                        const msg = areaMsg?.value || textoMensaje;
+                        if (!tel || tel.length < 10) {
+                            this.mostrarToast('Ingresa un número celular a 10 dígitos', 'warning');
+                            inputTel?.focus();
+                            return;
+                        }
+                        this.lanzarWhatsAppIncidencia(tel, msg);
+                    };
+                }
+
+                if (btnSms) {
+                    btnSms.onclick = () => {
+                        const tel = (inputTel?.value || '').replace(/\D/g, '');
+                        const msg = areaMsg?.value || textoMensaje;
+                        if (!tel || tel.length < 10) {
+                            this.mostrarToast('Ingresa un número celular a 10 dígitos', 'warning');
+                            inputTel?.focus();
+                            return;
+                        }
+                        this.lanzarSMSIncidencia(tel, msg);
+                    };
+                }
+
+                if (btnCopy) {
+                    btnCopy.onclick = () => {
+                        const msg = areaMsg?.value || textoMensaje;
+                        navigator.clipboard.writeText(msg).then(() => {
+                            this.mostrarToast('Mensaje copiado al portapapeles', 'info');
+                        }).catch(() => {
+                            this.mostrarToast('No se pudo copiar', 'error');
+                        });
+                    };
+                }
+            }
+        }).then(() => {
+            this.limpiarDatosPaciente();
+            this.datosPaciente = null;
+            this.mostrarFormulario = false;
+            this.router.navigate(['/pacientes']);
+        });
     }
 
     // ⭐ ============================================
