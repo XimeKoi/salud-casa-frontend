@@ -287,8 +287,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.mapInicializado) {
           console.log('🔄 Forzando recreación de marcadores...');
           this.limpiarMarcadoresPacientes();
-          this.agregarMarcadoresPacientes();
+          this.agregarMarcadoresPacientes(false);
           this.dibujarTodasLasZonas();
+          this.enfocarZonaConMasPacientes(false);
         }
 
         this.cdr.detectChanges();
@@ -333,8 +334,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.datosCargados = true;
           if (this.mapInicializado) {
             this.limpiarMarcadoresPacientes();
-            this.agregarMarcadoresPacientes();
+            this.agregarMarcadoresPacientes(false);
             this.dibujarTodasLasZonas();
+            this.enfocarZonaConMasPacientes(false);
           }
           this.mostrarToast('Modo sin conexión', `Mostrando ${pacientesConCoords.length} pacientes guardados`, 'info');
           this.cdr.detectChanges();
@@ -409,8 +411,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.map && this.pacientes.length > 0) {
           console.log('🔄 Forzando recreación de marcadores en afterViewInit...');
           this.limpiarMarcadoresPacientes();
-          this.agregarMarcadoresPacientes();
+          this.agregarMarcadoresPacientes(false);
           this.dibujarTodasLasZonas();
+          this.enfocarZonaConMasPacientes(false);
         }
       }, 800);
     }, 300);
@@ -588,7 +591,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       try {
         if (this.pacientes && this.pacientes.length > 0) {
-          this.agregarMarcadoresPacientes();
+          this.agregarMarcadoresPacientes(false);
+          this.enfocarZonaConMasPacientes(false);
         }
         this.dibujarTodasLasZonas();
       } catch (markersErr) {
@@ -732,6 +736,75 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         (this.grupoTodasLasZonas as any).bringToBack();
       }
       console.log(`✅ Visualizadas ${zonasMap.size} zonas territoriales en el mapa`);
+    }
+  }
+
+  // ⭐⭐⭐ ENFOCAR AUTOMÁTICAMENTE LA ZONA CON MAYOR CANTIDAD DE PACIENTES ⭐⭐⭐
+  enfocarZonaConMasPacientes(animar: boolean = false) {
+    if (!this.map || !this.mapInicializado) {
+      console.warn('⚠️ No se puede enfocar zona: mapa no inicializado');
+      return;
+    }
+
+    const pacientesBase = (this.pacientesOriginal && this.pacientesOriginal.length > 0)
+      ? this.pacientesOriginal
+      : this.pacientes;
+
+    if (!pacientesBase || pacientesBase.length === 0) {
+      console.log('ℹ️ No hay pacientes disponibles para enfocar zona');
+      return;
+    }
+
+    // 1. Agrupar coordenadas por zona
+    const zonasMap = new Map<string, L.LatLng[]>();
+
+    pacientesBase.forEach((p: any) => {
+      if (!p.lat || !p.lng || p.lat === 0 || p.lng === 0) return;
+      const zona = this.determinarZona(p) || this.obtenerColonia(p.direccion || '', p.colonia || '') || 'Zona General';
+      if (!zonasMap.has(zona)) {
+        zonasMap.set(zona, []);
+      }
+      zonasMap.get(zona)!.push(L.latLng(p.lat, p.lng));
+    });
+
+    if (zonasMap.size === 0) {
+      console.warn('⚠️ No hay coordenadas válidas para enfocar zona');
+      return;
+    }
+
+    // 2. Encontrar la zona con más pacientes
+    let topZona = '';
+    let maxPacientes = -1;
+    let topCoords: L.LatLng[] = [];
+
+    zonasMap.forEach((coords, zona) => {
+      if (coords.length > maxPacientes) {
+        maxPacientes = coords.length;
+        topZona = zona;
+        topCoords = coords;
+      }
+    });
+
+    console.log(`📍 [Enfocar Zona] Zona top con más pacientes: "${topZona}" (${maxPacientes} pacientes)`);
+
+    if (topCoords.length > 0) {
+      try {
+        const bounds = L.latLngBounds(topCoords);
+        if (bounds.isValid()) {
+          this.map.fitBounds(bounds, {
+            padding: [60, 60],
+            maxZoom: 16,
+            animate: animar
+          });
+          const centro = bounds.getCenter();
+          this.centerLat = centro.lat;
+          this.centerLng = centro.lng;
+          this.currentZoom = this.map.getZoom();
+          this.cdr.detectChanges();
+        }
+      } catch (err) {
+        console.warn('⚠️ Error al ajustar bounds de la zona con más pacientes:', err);
+      }
     }
   }
 
@@ -2067,66 +2140,82 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   // ⭐⭐⭐ CREACIÓN DE GRUPO DE CLÚSTERES DE ALTO RENDIMIENTO (60 FPS MÓVIL) ⭐⭐⭐
   private crearClusterGroup(): any {
     try {
-      const LeafletLib = (typeof window !== 'undefined' && (window as any).L) ? (window as any).L : L;
+      const win = typeof window !== 'undefined' ? (window as any) : null;
+      const LeafletLib = win?.L || L;
+      const clusterFn = LeafletLib.markerClusterGroup
+        || (L as any).markerClusterGroup
+        || win?.L?.markerClusterGroup;
 
-      if (typeof LeafletLib.markerClusterGroup === 'function') {
-        return LeafletLib.markerClusterGroup({
-          maxClusterRadius: 45,
-          spiderfyOnMaxZoom: true,
-          spiderfyDistanceMultiplier: 1.6,
-          showCoverageOnHover: false,
-          zoomToBoundsOnClick: true,
-          removeOutsideVisibleBounds: true,
-          chunkedLoading: true,
-          chunkInterval: 100,
-          chunkDelay: 20,
-          animate: true,
-          iconCreateFunction: (cluster: any) => {
-            const childCount = cluster.getChildCount();
-            let color = '#7E101F';
-            let shadow = 'rgba(126, 16, 31, 0.45)';
-            let size = 42;
+      const ClusterClass = LeafletLib.MarkerClusterGroup
+        || (L as any).MarkerClusterGroup
+        || win?.L?.MarkerClusterGroup;
 
-            if (childCount < 10) {
-              color = '#10B981';
-              shadow = 'rgba(16, 185, 129, 0.45)';
-              size = 36;
-            } else if (childCount < 30) {
-              color = '#F59E0B';
-              shadow = 'rgba(245, 158, 11, 0.45)';
-              size = 40;
-            } else if (childCount < 100) {
-              color = '#FF6B55';
-              shadow = 'rgba(255, 107, 85, 0.5)';
-              size = 46;
-            } else {
-              color = '#520D2F';
-              shadow = 'rgba(82, 13, 47, 0.6)';
-              size = 52;
-            }
+      const clusterConfig: any = {
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        spiderfyDistanceMultiplier: 1.5,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        removeOutsideVisibleBounds: true,
+        chunkedLoading: true,
+        chunkInterval: 100,
+        chunkDelay: 20,
+        animate: true,
+        iconCreateFunction: (cluster: any) => {
+          const childCount = cluster.getChildCount();
+          let color = '#7E101F';
+          let shadow = 'rgba(126, 16, 31, 0.45)';
+          let size = 42;
 
-            return LeafletLib.divIcon({
-              html: `<div class="cuidalia-cluster-bubble" style="
-                background: ${color};
-                width: ${size}px;
-                height: ${size}px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 800;
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: ${size > 42 ? 15 : 13}px;
-                border: 3px solid #FFFFFF;
-                box-shadow: 0 4px 14px ${shadow}, 0 2px 6px rgba(0,0,0,0.25);
-              ">${childCount}</div>`,
-              className: 'cuidalia-marker-cluster-icon',
-              iconSize: [size, size],
-              iconAnchor: [size / 2, size / 2]
-            });
+          if (childCount < 10) {
+            color = '#10B981';
+            shadow = 'rgba(16, 185, 129, 0.45)';
+            size = 36;
+          } else if (childCount < 30) {
+            color = '#F59E0B';
+            shadow = 'rgba(245, 158, 11, 0.45)';
+            size = 40;
+          } else if (childCount < 100) {
+            color = '#FF6B55';
+            shadow = 'rgba(255, 107, 85, 0.5)';
+            size = 46;
+          } else {
+            color = '#520D2F';
+            shadow = 'rgba(82, 13, 47, 0.6)';
+            size = 52;
           }
-        });
+
+          return LeafletLib.divIcon({
+            html: `<div class="cuidalia-cluster-bubble" style="
+              background: ${color};
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: 800;
+              font-family: 'Plus Jakarta Sans', sans-serif;
+              font-size: ${size > 42 ? 15 : 13}px;
+              border: 3px solid #FFFFFF;
+              box-shadow: 0 4px 14px ${shadow}, 0 2px 6px rgba(0,0,0,0.25);
+            ">${childCount}</div>`,
+            className: 'cuidalia-marker-cluster-icon',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          });
+        }
+      };
+
+      if (typeof clusterFn === 'function') {
+        console.log('✅ Utilizando markerClusterGroup de Leaflet');
+        return clusterFn(clusterConfig);
+      }
+
+      if (typeof ClusterClass === 'function') {
+        console.log('✅ Instanciando new MarkerClusterGroup de Leaflet');
+        return new ClusterClass(clusterConfig);
       }
     } catch (err) {
       console.warn('⚠️ Error al crear markerClusterGroup:', err);

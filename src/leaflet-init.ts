@@ -1,10 +1,19 @@
 // src/leaflet-init.ts
-// ⭐ Garantizar que Leaflet esté registrado en window antes de que cualquier plugin (como markercluster) se ejecute
+// ⭐ Registrar Leaflet en window para plugins globales (como Leaflet MarkerCluster)
 
 import * as L from 'leaflet';
 
 if (typeof window !== 'undefined') {
-  (window as any).L = L;
+  const win = window as any;
+  if (!win.L) {
+    win.L = { ...L };
+  } else {
+    try {
+      Object.assign(win.L, L);
+    } catch (e) {
+      console.warn('⚠️ No se pudo asignar L a win.L:', e);
+    }
+  }
 }
 
 export default L;
