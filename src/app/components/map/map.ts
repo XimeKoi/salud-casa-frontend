@@ -19,6 +19,11 @@ import {
 } from '../../store/app.selectors';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
+
+// ⭐ Garantizar que Leaflet y MarkerCluster estén disponibles globalmente
+if (typeof window !== 'undefined') {
+  (window as any).L = (window as any).L || L;
+}
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { CalendarioService, VisitaData } from '../../services/calendario.service';
@@ -483,7 +488,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         zoomControl: true,
         fadeAnimation: true,
         zoomAnimation: true,
-        attributionControl: true
+        attributionControl: true,
+        preferCanvas: true
       });
 
       this.mapService.setMap(this.map);
@@ -524,49 +530,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-      if (typeof (L as any).markerClusterGroup === 'function') {
-        this.clusterGroup = (L as any).markerClusterGroup({
-          maxClusterRadius: 40,
-          spiderfyOnMaxZoom: true,
-          showCoverageOnHover: false,
-          zoomToBoundsOnClick: true,
-          iconCreateFunction: (cluster: any) => {
-            const childCount = cluster.getChildCount();
-            let color = '#6c5ce7';
-            let size = 40;
-
-            if (childCount < 10) {
-              color = '#00b894';
-              size = 35;
-            } else if (childCount < 30) {
-              color = '#fdcb6e';
-              size = 40;
-            } else if (childCount < 100) {
-              color = '#e17055';
-              size = 45;
-            } else {
-              color = '#6c5ce7';
-              size = 50;
-            }
-
-            return L.divIcon({
-              html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${size > 40 ? 16 : 14}px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                ${childCount}
-              </div>`,
-              className: 'marker-cluster',
-              iconSize: [size, size],
-              iconAnchor: [size / 2, size / 2]
-            });
-          }
-        });
-
+      this.clusterGroup = this.crearClusterGroup();
+      if (this.clusterGroup && typeof this.clusterGroup.addTo === 'function') {
         this.clusterGroup.addTo(this.map);
-        this.mapInicializado = true;
-        console.log('✅ Mapa inicializado correctamente');
-      } else {
-        console.warn('⚠️ markerClusterGroup no disponible, usando marcadores sin cluster');
-        this.mapInicializado = true;
       }
+      this.mapInicializado = true;
+      console.log('✅ Mapa y MarkerCluster inicializados');
 
       this.map.on('moveend', () => {
         const center = this.map?.getCenter();
@@ -1961,6 +1930,80 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 500);
   }
 
+  // ⭐⭐⭐ CREACIÓN DE GRUPO DE CLÚSTERES DE ALTO RENDIMIENTO (60 FPS MÓVIL) ⭐⭐⭐
+  private crearClusterGroup(): any {
+    const LeafletLib = (typeof window !== 'undefined' && (window as any).L) ? (window as any).L : L;
+
+    if (typeof LeafletLib.markerClusterGroup === 'function') {
+      return LeafletLib.markerClusterGroup({
+        maxClusterRadius: 45,
+        spiderfyOnMaxZoom: true,
+        spiderfyDistanceMultiplier: 1.6,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        removeOutsideVisibleBounds: true,
+        chunkedLoading: true,
+        chunkInterval: 100,
+        chunkDelay: 20,
+        animate: true,
+        iconCreateFunction: (cluster: any) => {
+          const childCount = cluster.getChildCount();
+          let color = '#7E101F';
+          let shadow = 'rgba(126, 16, 31, 0.45)';
+          let size = 42;
+
+          if (childCount < 10) {
+            color = '#10B981';
+            shadow = 'rgba(16, 185, 129, 0.45)';
+            size = 36;
+          } else if (childCount < 30) {
+            color = '#F59E0B';
+            shadow = 'rgba(245, 158, 11, 0.45)';
+            size = 40;
+          } else if (childCount < 100) {
+            color = '#FF6B55';
+            shadow = 'rgba(255, 107, 85, 0.5)';
+            size = 46;
+          } else {
+            color = '#520D2F';
+            shadow = 'rgba(82, 13, 47, 0.6)';
+            size = 52;
+          }
+
+          return LeafletLib.divIcon({
+            html: `<div class="cuidalia-cluster-bubble" style="
+              background: ${color};
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: 800;
+              font-family: 'Plus Jakarta Sans', sans-serif;
+              font-size: ${size > 42 ? 15 : 13}px;
+              border: 3px solid #FFFFFF;
+              box-shadow: 0 4px 14px ${shadow}, 0 2px 6px rgba(0,0,0,0.25);
+            ">${childCount}</div>`,
+            className: 'cuidalia-marker-cluster-icon',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          });
+        }
+      });
+    }
+
+    console.warn('⚠️ markerClusterGroup no disponible, usando fallback directo');
+    return {
+      addLayer: (layer: any) => { this.map?.addLayer(layer); },
+      addTo: (map: any) => { },
+      getBounds: () => null,
+      eachLayer: (fn: any) => { },
+      zoomToShowLayer: (layer: any, cb: any) => { if (cb) cb(); }
+    };
+  }
+
   // ⭐⭐⭐ AGREGAR MARCADORES DE PACIENTES ⭐⭐⭐
   agregarMarcadoresPacientes(ajustarZoom: boolean = true) {
     if (!this.map) {
@@ -1979,55 +2022,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const hayFiltrosRiesgo = this.filtrosRiesgos.g1 || this.filtrosRiesgos.g2 ||
       this.filtrosRiesgos.g3 || this.filtrosRiesgos.g4;
     const hayFiltros = hayFiltrosPerfil || hayFiltrosRiesgo;
-
     const esBusqueda = this.pacientes.length < 50;
 
-    if (typeof (L as any).markerClusterGroup === 'function') {
-      this.clusterGroup = (L as any).markerClusterGroup({
-        maxClusterRadius: 40,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        iconCreateFunction: (cluster: any) => {
-          const childCount = cluster.getChildCount();
-          let color = '#6c5ce7';
-          let size = 40;
-
-          if (childCount < 10) {
-            color = '#00b894';
-            size = 35;
-          } else if (childCount < 30) {
-            color = '#fdcb6e';
-            size = 40;
-          } else if (childCount < 100) {
-            color = '#e17055';
-            size = 45;
-          } else {
-            color = '#6c5ce7';
-            size = 50;
-          }
-
-          return L.divIcon({
-            html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${size > 40 ? 16 : 14}px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-            ${childCount}
-          </div>`,
-            className: 'marker-cluster',
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2]
-          });
-        }
-      });
-    } else {
-      this.clusterGroup = {
-        addLayer: (layer: any) => { this.map?.addLayer(layer); },
-        addTo: (map: any) => { },
-        getBounds: () => { return null; }
-      };
-    }
+    this.clusterGroup = this.crearClusterGroup();
 
     let marcadoresAgregados = 0;
     const markers: L.Marker[] = [];
     this.coordsPacientesFiltrados = [];
+    const coordFreq = new Map<string, number>();
 
     this.pacientes.forEach((paciente) => {
       if (!paciente.lat || !paciente.lng || paciente.lat === 0 || paciente.lng === 0) {
@@ -2093,9 +2095,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      if (cumpleFiltros) {
-        this.coordsPacientesFiltrados.push(L.latLng(paciente.lat, paciente.lng));
+      // ⭐ SI HAY FILTROS ACTIVOS Y NO CUMPLE, EXCLUIR PARA MÁXIMA VELOCIDAD Y LIMPIEZA
+      if (hayFiltros && !cumpleFiltros) {
+        return;
       }
+
+      this.coordsPacientesFiltrados.push(L.latLng(paciente.lat, paciente.lng));
 
       const estaEnPlanHoy = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
@@ -2292,7 +2297,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const popupContent = this.generarPopupHTML(paciente, colorForPopup, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
 
-      const marker = L.marker([paciente.lat, paciente.lng], {
+      // ⭐ PREVENCIÓN DE MARCACIONES ENCIMADAS EN COORDENADAS IDÉNTICAS
+      const keyCoord = `${paciente.lat.toFixed(5)},${paciente.lng.toFixed(5)}`;
+      const repeticion = coordFreq.get(keyCoord) || 0;
+      coordFreq.set(keyCoord, repeticion + 1);
+
+      let latAjustada = paciente.lat;
+      let lngAjustada = paciente.lng;
+
+      if (repeticion > 0) {
+        // Desplazamiento sutil en espiral / roseta (~3 metros) para que nunca se tapen
+        const angulo = repeticion * 0.785398; // 45 grados por cada repetición
+        const radio = 0.000035 * Math.ceil(repeticion / 8);
+        latAjustada += Math.sin(angulo) * radio;
+        lngAjustada += Math.cos(angulo) * radio;
+      }
+
+      const marker = L.marker([latAjustada, lngAjustada], {
         icon: markerIcon,
         zIndexOffset: zIndexOffset
       })
@@ -2306,10 +2327,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       (marker as any)._pacienteId = paciente.id;
 
-      // ⭐ CRUCIAL: SI CUMPLE EL FILTRO ACTIVO, AGREGAR DIRECTO AL MAPA PARA QUE NUNCA SE ENCAPSULE EN CLÚSTERES
-      if (hayFiltros && cumpleFiltros) {
-        this.map?.addLayer(marker);
-      } else if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
+      if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
         this.clusterGroup.addLayer(marker);
       } else {
         this.map?.addLayer(marker);
@@ -2477,13 +2495,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.ngZone.run(() => {
         const { pacienteId, lat, lng } = event.detail;
         if (lat && lng && this.map) {
-          this.map.flyTo([lat, lng], 18, { animate: true, duration: 1.2 });
-          setTimeout(() => {
-            const m = this.marcadoresPacientes.find((marker: any) => marker._pacienteId === pacienteId);
-            if (m) {
+          const m = this.marcadoresPacientes.find((marker: any) => marker._pacienteId === pacienteId);
+          if (m && this.clusterGroup && typeof this.clusterGroup.zoomToShowLayer === 'function') {
+            this.clusterGroup.zoomToShowLayer(m, () => {
               m.openPopup();
-            }
-          }, 1300);
+            });
+          } else {
+            this.map.flyTo([lat, lng], 18, { animate: true, duration: 1.2 });
+            setTimeout(() => {
+              if (m) {
+                m.openPopup();
+              }
+            }, 1300);
+          }
         }
       });
     };

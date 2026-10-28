@@ -2683,3 +2683,53 @@
 .streetview-overlay {
   z-index: 99999 !important;
 }
+
+// ============================================
+// ⭐ ESTILOS DE CLÚSTERES CUIDALIA (ALTO RENDIMIENTO Y PREVENCIÓN DE COLISIONES)
+// ============================================
+.cuidalia-cluster-bubble {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  box-sizing: border-box;
+  letter-spacing: -0.2px;
+  animation: clusterPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    transform: scale(1.12);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+@keyframes clusterPop {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.leaflet-cluster-anim .leaflet-marker-icon,
+.leaflet-cluster-anim .leaflet-marker-shadow {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-in;
+}
+
+// Patas de spiderfy elegantes
+.leaflet-cluster-spider-leg {
+  stroke: #7E101F !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 4, 4 !important;
+  opacity: 0.65 !important;
+}
