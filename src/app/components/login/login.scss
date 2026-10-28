@@ -178,8 +178,7 @@ $cuidalia-border-light: #E8DFDC;
   }
 
   @media (max-width: 960px) {
-    padding: 38px 24px 30px;
-    min-height: 480px;
+    display: none !important;
   }
 
   // Decoración Planetaria / Órbita
