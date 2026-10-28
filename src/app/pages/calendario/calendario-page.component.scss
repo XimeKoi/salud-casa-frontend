@@ -3917,6 +3917,97 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 // ⭐ RESPONSIVIDAD INTEGRAL: MODAL ASIGNAR PACIENTES Y LISTA DE AGREGADOS
 // ============================================
 @media (max-width: 768px) {
+
+  // ⭐ BARRA MODO SELECCIÓN RESPONSIVA ULTRA COMPLETA (NO SE SALE ASIGNAR PACIENTES)
+  .selection-mode-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+
+    .selection-bar-left {
+      width: 100% !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+
+      .selection-badge-title {
+        font-size: 11.5px !important;
+      }
+
+      .color-palette-group {
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+
+        .color-dot-btn {
+          width: 25px !important;
+          height: 25px !important;
+        }
+      }
+
+      .selection-quick-actions {
+        margin-left: 0 !important;
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+
+        .btn-quick-select,
+        .btn-quick-clear {
+          width: 100% !important;
+          justify-content: center !important;
+          padding: 7px 8px !important;
+          font-size: 11px !important;
+          white-space: nowrap !important;
+        }
+
+        .btn-quick-clear {
+          grid-column: 1 / -1 !important;
+        }
+      }
+    }
+
+    .selection-bar-right {
+      width: 100% !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+      margin-top: 2px !important;
+
+      .selection-summary-pill {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 6px 10px !important;
+        font-size: 11.5px !important;
+      }
+
+      .action-buttons-group {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        flex-shrink: 1 !important;
+        white-space: normal !important;
+
+        .btn-assign-action,
+        .btn-messaging-action {
+          width: 100% !important;
+          justify-content: center !important;
+          height: 42px !important;
+          padding: 0 14px !important;
+          font-size: 12.5px !important;
+          white-space: nowrap !important;
+
+          .btn-text {
+            font-size: 12.5px !important;
+          }
+        }
+      }
+    }
+  }
+
   .modal-dialog-asignar-pro {
     width: 98% !important;
     max-width: 100% !important;

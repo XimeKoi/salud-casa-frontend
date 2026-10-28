@@ -1,6 +1,9 @@
 // src/main.ts
 
 import 'zone.js';
+import './leaflet-init';
+import 'leaflet.markercluster';
+
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';

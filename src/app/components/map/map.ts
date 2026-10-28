@@ -17,6 +17,7 @@ import {
   selectFiltrosPerfiles,
   selectFiltrosRiesgos
 } from '../../store/app.selectors';
+import '../../../leaflet-init';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
 
@@ -115,6 +116,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private subscriptions: any[] = [];
   private clusterGroup: any = null;
+  private grupoTodasLasZonas: L.FeatureGroup | null = null;
   private map: L.Map | null = null;
 
   // 🏠 STREET VIEW FACHADA
@@ -286,6 +288,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           console.log('🔄 Forzando recreación de marcadores...');
           this.limpiarMarcadoresPacientes();
           this.agregarMarcadoresPacientes();
+          this.dibujarTodasLasZonas();
         }
 
         this.cdr.detectChanges();
@@ -331,6 +334,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           if (this.mapInicializado) {
             this.limpiarMarcadoresPacientes();
             this.agregarMarcadoresPacientes();
+            this.dibujarTodasLasZonas();
           }
           this.mostrarToast('Modo sin conexión', `Mostrando ${pacientesConCoords.length} pacientes guardados`, 'info');
           this.cdr.detectChanges();
@@ -406,6 +410,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           console.log('🔄 Forzando recreación de marcadores en afterViewInit...');
           this.limpiarMarcadoresPacientes();
           this.agregarMarcadoresPacientes();
+          this.dibujarTodasLasZonas();
         }
       }, 800);
     }, 300);
@@ -446,6 +451,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       window.removeEventListener('editarPacientePopup', this._editarPacienteListener);
       this._editarPacienteListener = null;
     }
+    if (this.grupoTodasLasZonas) {
+      try { this.map?.removeLayer(this.grupoTodasLasZonas); } catch (e) { }
+      this.grupoTodasLasZonas = null;
+    }
     if (this.map) {
       this.map.remove();
       this.map = null;
@@ -477,6 +486,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       console.error('❌ Elemento #leafletMap no encontrado');
       setTimeout(() => this.inicializarMapa(), 500);
       return;
+    }
+
+    if ((mapElement as any)._leaflet_id) {
+      (mapElement as any)._leaflet_id = null;
     }
 
     try {
@@ -573,8 +586,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }, 200);
 
-      if (this.pacientes && this.pacientes.length > 0) {
-        this.agregarMarcadoresPacientes();
+      try {
+        if (this.pacientes && this.pacientes.length > 0) {
+          this.agregarMarcadoresPacientes();
+        }
+        this.dibujarTodasLasZonas();
+      } catch (markersErr) {
+        console.warn('⚠️ Error al agregar marcadores/zonas iniciales:', markersErr);
       }
 
     } catch (error: any) {
@@ -612,6 +630,111 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ⭐ ACTIVAR COLONIA Y DIBUJAR CÍRCULO
+  // ⭐⭐⭐ DIBUJAR TODAS LAS ZONAS AUTOMÁTICAMENTE AL INICIAR EL MAPA ⭐⭐⭐
+  dibujarTodasLasZonas() {
+    if (!this.map || !this.mapInicializado) return;
+
+    if (this.grupoTodasLasZonas) {
+      try { this.map.removeLayer(this.grupoTodasLasZonas); } catch (e) { }
+      this.grupoTodasLasZonas = null;
+    }
+
+    const pacientesBase = (this.pacientesOriginal && this.pacientesOriginal.length > 0)
+      ? this.pacientesOriginal
+      : this.pacientes;
+
+    if (!pacientesBase || pacientesBase.length === 0) return;
+
+    // Agrupar pacientes por zona/colonia
+    const zonasMap = new Map<string, any[]>();
+    pacientesBase.forEach((p: any) => {
+      const z = this.obtenerColonia(p.direccion || '', p.colonia || '').toUpperCase().trim();
+      if (z && z !== '' && z !== 'SIN COLONIA') {
+        if (!zonasMap.has(z)) {
+          zonasMap.set(z, []);
+        }
+        zonasMap.get(z)!.push(p);
+      }
+    });
+
+    if (zonasMap.size === 0) return;
+
+    this.grupoTodasLasZonas = L.featureGroup();
+
+    zonasMap.forEach((pacs, zona) => {
+      const pacsConCoords = pacs.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
+      if (pacsConCoords.length === 0) return;
+
+      const latLngs = pacsConCoords.map((p: any) => L.latLng(p.lat, p.lng));
+      const bounds = L.latLngBounds(latLngs);
+      const center = bounds.getCenter();
+
+      let maxDistance = 0;
+      latLngs.forEach((ll: any) => {
+        const d = center.distanceTo(ll);
+        if (d > maxDistance) maxDistance = d;
+      });
+
+      const radius = Math.max(maxDistance * 1.05, 260);
+      const color = (this.coloresManzanas && this.coloresManzanas[zona]) ? this.coloresManzanas[zona] : '#7E101F';
+
+      const circle = L.circle(center, {
+        radius: radius,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.12,
+        weight: 2.5,
+        dashArray: '6, 6'
+      });
+
+      const tooltipContent = `<div class="zona-badge-tag" style="
+        background: #ffffff;
+        border-left: 4px solid ${color};
+        color: #1e293b;
+        padding: 3px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+      ">
+        <span style="color: ${color};"><i class="fas fa-layer-group"></i></span>
+        <span>${zona}</span>
+        <span style="background: ${color}; color: #ffffff; padding: 1px 5px; border-radius: 10px; font-size: 9.5px;">${pacsConCoords.length}</span>
+      </div>`;
+
+      circle.bindTooltip(tooltipContent, {
+        permanent: true,
+        direction: 'center',
+        className: 'zona-leaflet-tooltip'
+      });
+
+      circle.on('click', () => {
+        this.ngZone.run(() => {
+          this.activarColoniaEnMapa({
+            nombre: zona,
+            colonia: zona,
+            pacientes: pacsConCoords,
+            color: color
+          });
+        });
+      });
+
+      this.grupoTodasLasZonas!.addLayer(circle);
+    });
+
+    if (this.grupoTodasLasZonas && this.map) {
+      this.grupoTodasLasZonas.addTo(this.map);
+      if (typeof (this.grupoTodasLasZonas as any).bringToBack === 'function') {
+        (this.grupoTodasLasZonas as any).bringToBack();
+      }
+      console.log(`✅ Visualizadas ${zonasMap.size} zonas territoriales en el mapa`);
+    }
+  }
+
   activarColoniaEnMapa(detail: any) {
     if (!this.map || !this.mapInicializado) {
       console.warn('⚠️ Mapa no disponible para activar colonia');
@@ -633,6 +756,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.limpiarCapaProximidad();
 
+    if (this.grupoTodasLasZonas) {
+      try { this.map?.removeLayer(this.grupoTodasLasZonas); } catch (e) { }
+      this.grupoTodasLasZonas = null;
+    }
     if (this.capaManzanaSeleccionada) {
       try {
         this.map?.removeLayer(this.capaManzanaSeleccionada);
@@ -705,6 +832,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ultimaManzanaSeleccionada = null;
     this.pacientes = [...this.pacientesOriginal];
     this.aplicarFiltrosYEnfocar();
+    this.dibujarTodasLasZonas();
   }
 
   // ⭐ ACTIVAR FILTRO POR PROXIMIDAD GPS (GEOCERCA)
