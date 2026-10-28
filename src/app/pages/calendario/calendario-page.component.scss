@@ -1632,9 +1632,10 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(16, 185, 129, 0.1);
-  color: #065f46;
-  border: 1.5px solid rgba(16, 185, 129, 0.3);
+  background: #ffffff;
+  color: #1e293b;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   padding: 8px 16px;
   border-radius: $radius-md;
   font-size: 13px;
@@ -1644,22 +1645,29 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
 
   i {
     font-size: 14px;
-    color: #10b981;
+    color: #059669;
   }
 
   &:hover {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: #10b981;
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
     transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   }
 
   &.active {
-    background: #10b981;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: #ffffff;
-    border-color: #059669;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    border-color: #047857;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
 
     i {
+      color: #ffffff;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
       color: #ffffff;
     }
   }
@@ -3902,4 +3910,423 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+
+// ============================================
+// ⭐ RESPONSIVIDAD INTEGRAL: MODAL ASIGNAR PACIENTES Y LISTA DE AGREGADOS
+// ============================================
+@media (max-width: 768px) {
+  .modal-dialog-asignar-pro {
+    width: 98% !important;
+    max-width: 100% !important;
+    margin: 4px auto !important;
+    border-radius: 14px !important;
+    max-height: 95vh !important;
+  }
+
+  .modal-header-pro {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+
+    .header-left-content {
+      gap: 8px !important;
+
+      .header-icon-badge {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 14px !important;
+        border-radius: 8px !important;
+      }
+
+      .header-texts {
+        h3 {
+          font-size: 13.5px !important;
+          line-height: 1.2 !important;
+        }
+
+        p {
+          font-size: 10px !important;
+          line-height: 1.2 !important;
+        }
+      }
+    }
+
+    .header-right-actions {
+      gap: 6px !important;
+
+      .days-counter-pill {
+        padding: 3px 7px !important;
+        font-size: 10px !important;
+      }
+
+      .btn-close-pro {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 18px !important;
+      }
+    }
+  }
+
+  .dialog-body-pro {
+    padding: 10px 8px !important;
+    gap: 10px !important;
+    max-height: calc(95vh - 115px) !important;
+  }
+
+  .dias-ribbon-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 8px 10px !important;
+    gap: 8px !important;
+
+    .ribbon-left {
+      min-width: 0 !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+
+      .ribbon-label {
+        font-size: 11px !important;
+      }
+
+      .ribbon-chips-scroll {
+        width: 100% !important;
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        padding-bottom: 4px !important;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    .ribbon-right {
+      width: 100% !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 4px !important;
+
+      .label-quick-day {
+        font-size: 10.5px !important;
+      }
+
+      .select-quick-day {
+        width: 100% !important;
+        padding: 7px 10px !important;
+        font-size: 12px !important;
+      }
+    }
+  }
+
+  .global-message-banner-pro {
+    padding: 10px !important;
+
+    .banner-title-line {
+      flex-direction: column !important;
+      gap: 3px !important;
+      margin-bottom: 6px !important;
+
+      .banner-title {
+        font-size: 11.5px !important;
+      }
+
+      .banner-subtext {
+        font-size: 10px !important;
+      }
+    }
+
+    .banner-input-wrap {
+      .input-global-msg-pro {
+        font-size: 11.5px !important;
+        padding: 7px 28px 7px 30px !important;
+      }
+    }
+  }
+
+  .search-catalog-panel-pro {
+    padding: 10px !important;
+
+    .search-header-row {
+      .panel-section-label {
+        font-size: 12px !important;
+      }
+
+      .search-results-badge {
+        font-size: 10px !important;
+      }
+    }
+
+    .search-bar-pro {
+      .input-search-pro {
+        padding: 7px 32px !important;
+        font-size: 12px !important;
+      }
+    }
+
+    .search-results-wrapper-pro {
+      padding: 6px !important;
+      max-height: 200px !important;
+
+      .search-results-grid-pro {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+
+        .patient-search-chip {
+          padding: 8px !important;
+          gap: 8px !important;
+
+          .patient-avatar-mini {
+            width: 30px !important;
+            height: 30px !important;
+            font-size: 10px !important;
+          }
+
+          .patient-search-name {
+            font-size: 11.5px !important;
+          }
+
+          .patient-action-box {
+            .btn-add-patient-chip {
+              padding: 4px 8px !important;
+              font-size: 10px !important;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Tanda Panel & Pacientes Agregados a la Lista
+  .tanda-panel-pro {
+    padding: 10px 8px !important;
+
+    .tanda-panel-header {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+
+      .panel-header-left {
+        h4 {
+          font-size: 12.5px !important;
+          line-height: 1.3 !important;
+        }
+
+        .panel-sub {
+          font-size: 10px !important;
+          line-height: 1.3 !important;
+        }
+      }
+
+      .btn-clean-tanda-pro {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+      }
+    }
+
+    // Barra de Mensajes Globales
+    .asignar-global-msg-bar {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+      padding: 10px !important;
+
+      .global-msg-bar-info {
+        gap: 8px !important;
+
+        .global-msg-icon-box {
+          width: 32px !important;
+          height: 32px !important;
+          font-size: 13px !important;
+        }
+
+        strong {
+          font-size: 11.5px !important;
+        }
+
+        .global-msg-sub {
+          font-size: 10px !important;
+        }
+      }
+
+      .global-actions-trio {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        width: 100% !important;
+
+        .btn-global-wa,
+        .btn-global-sms,
+        .btn-global-copy {
+          width: 100% !important;
+          justify-content: center !important;
+          padding: 8px 10px !important;
+          font-size: 11.5px !important;
+        }
+      }
+    }
+
+    // Tarjetas de Pacientes Agregados
+    .patient-cards-scroll-pro {
+      max-height: 52vh !important;
+      padding-right: 0 !important;
+      gap: 10px !important;
+
+      .patient-card-pro {
+        padding: 10px 8px !important;
+        gap: 8px !important;
+        border-radius: 10px !important;
+
+        .card-header-pro {
+          align-items: flex-start !important;
+
+          .header-patient-meta {
+            gap: 4px !important;
+            width: calc(100% - 32px) !important;
+
+            .order-badge-pro {
+              font-size: 9.5px !important;
+              padding: 1px 5px !important;
+            }
+
+            .patient-title-pro {
+              font-size: 12px !important;
+              width: 100% !important;
+              line-height: 1.25 !important;
+            }
+
+            .pill-meta {
+              font-size: 9.5px !important;
+              padding: 1px 6px !important;
+            }
+          }
+
+          .btn-remove-row-pro {
+            padding: 4px 6px !important;
+            font-size: 13px !important;
+          }
+        }
+
+        // ⭐ Fila de Controles Ultra Responsiva (Día 100%, Hora 50%, Prio 50%, Nota 100%)
+        .card-controls-row-pro {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 8px !important;
+
+          .ctrl-dia {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+
+            .select-field-pro {
+              width: 100% !important;
+              font-size: 11.5px !important;
+              padding: 6px 8px !important;
+            }
+          }
+
+          .ctrl-hora {
+            grid-column: 1 / 2 !important;
+            width: 100% !important;
+
+            .input-field-pro {
+              width: 100% !important;
+              font-size: 11.5px !important;
+              padding: 6px 6px !important;
+            }
+          }
+
+          .ctrl-prio {
+            grid-column: 2 / 3 !important;
+            width: 100% !important;
+
+            .select-field-pro {
+              width: 100% !important;
+              font-size: 11.5px !important;
+              padding: 6px 6px !important;
+            }
+          }
+
+          .ctrl-nota {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+
+            .input-field-pro {
+              width: 100% !important;
+              font-size: 11.5px !important;
+              padding: 6px 8px !important;
+            }
+          }
+
+          .ctrl-group label {
+            font-size: 10px !important;
+          }
+        }
+
+        // Fila de mensajería individual (WhatsApp, SMS, Copiar)
+        .card-messaging-row-pro {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 6px !important;
+          padding-top: 6px !important;
+
+          .msg-row-label {
+            font-size: 10.5px !important;
+          }
+
+          .card-msg-btn-group {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
+            gap: 5px !important;
+            width: 100% !important;
+
+            .btn-wa-direct-sm,
+            .btn-sms-direct-sm,
+            .btn-copy-direct-sm {
+              width: 100% !important;
+              justify-content: center !important;
+              padding: 7px 2px !important;
+              font-size: 10.5px !important;
+              gap: 3px !important;
+            }
+
+            .badge-enviado-chip {
+              grid-column: 1 / -1 !important;
+              justify-content: center !important;
+              text-align: center !important;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Footer Pro
+  .dialog-footer-pro {
+    flex-direction: column-reverse !important;
+    padding: 10px !important;
+    gap: 8px !important;
+
+    .footer-buttons-pro {
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column-reverse !important;
+      gap: 6px !important;
+      margin-left: 0 !important;
+
+      .btn-cancel-pro,
+      .btn-save-pro {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 10px 14px !important;
+        font-size: 12.5px !important;
+      }
+    }
+
+    .footer-stats-pro {
+      width: 100% !important;
+      justify-content: center !important;
+      font-size: 10.5px !important;
+      text-align: center !important;
+    }
+  }
 }

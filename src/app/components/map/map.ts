@@ -485,6 +485,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.map = L.map('leafletMap', {
         center: [this.centerLat, this.centerLng],
         zoom: this.currentZoom,
+        minZoom: 3,
+        maxZoom: 20,
         zoomControl: true,
         fadeAnimation: true,
         zoomAnimation: true,
@@ -530,9 +532,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-      this.clusterGroup = this.crearClusterGroup();
-      if (this.clusterGroup && typeof this.clusterGroup.addTo === 'function') {
-        this.clusterGroup.addTo(this.map);
+      try {
+        this.clusterGroup = this.crearClusterGroup();
+        if (this.clusterGroup && typeof this.clusterGroup.addTo === 'function') {
+          this.clusterGroup.addTo(this.map);
+        }
+      } catch (clusterInitErr) {
+        console.warn('⚠️ Advertencia al adjuntar cluster inicial:', clusterInitErr);
       }
       this.mapInicializado = true;
       console.log('✅ Mapa y MarkerCluster inicializados');
@@ -1932,69 +1938,73 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ⭐⭐⭐ CREACIÓN DE GRUPO DE CLÚSTERES DE ALTO RENDIMIENTO (60 FPS MÓVIL) ⭐⭐⭐
   private crearClusterGroup(): any {
-    const LeafletLib = (typeof window !== 'undefined' && (window as any).L) ? (window as any).L : L;
+    try {
+      const LeafletLib = (typeof window !== 'undefined' && (window as any).L) ? (window as any).L : L;
 
-    if (typeof LeafletLib.markerClusterGroup === 'function') {
-      return LeafletLib.markerClusterGroup({
-        maxClusterRadius: 45,
-        spiderfyOnMaxZoom: true,
-        spiderfyDistanceMultiplier: 1.6,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        removeOutsideVisibleBounds: true,
-        chunkedLoading: true,
-        chunkInterval: 100,
-        chunkDelay: 20,
-        animate: true,
-        iconCreateFunction: (cluster: any) => {
-          const childCount = cluster.getChildCount();
-          let color = '#7E101F';
-          let shadow = 'rgba(126, 16, 31, 0.45)';
-          let size = 42;
+      if (typeof LeafletLib.markerClusterGroup === 'function') {
+        return LeafletLib.markerClusterGroup({
+          maxClusterRadius: 45,
+          spiderfyOnMaxZoom: true,
+          spiderfyDistanceMultiplier: 1.6,
+          showCoverageOnHover: false,
+          zoomToBoundsOnClick: true,
+          removeOutsideVisibleBounds: true,
+          chunkedLoading: true,
+          chunkInterval: 100,
+          chunkDelay: 20,
+          animate: true,
+          iconCreateFunction: (cluster: any) => {
+            const childCount = cluster.getChildCount();
+            let color = '#7E101F';
+            let shadow = 'rgba(126, 16, 31, 0.45)';
+            let size = 42;
 
-          if (childCount < 10) {
-            color = '#10B981';
-            shadow = 'rgba(16, 185, 129, 0.45)';
-            size = 36;
-          } else if (childCount < 30) {
-            color = '#F59E0B';
-            shadow = 'rgba(245, 158, 11, 0.45)';
-            size = 40;
-          } else if (childCount < 100) {
-            color = '#FF6B55';
-            shadow = 'rgba(255, 107, 85, 0.5)';
-            size = 46;
-          } else {
-            color = '#520D2F';
-            shadow = 'rgba(82, 13, 47, 0.6)';
-            size = 52;
+            if (childCount < 10) {
+              color = '#10B981';
+              shadow = 'rgba(16, 185, 129, 0.45)';
+              size = 36;
+            } else if (childCount < 30) {
+              color = '#F59E0B';
+              shadow = 'rgba(245, 158, 11, 0.45)';
+              size = 40;
+            } else if (childCount < 100) {
+              color = '#FF6B55';
+              shadow = 'rgba(255, 107, 85, 0.5)';
+              size = 46;
+            } else {
+              color = '#520D2F';
+              shadow = 'rgba(82, 13, 47, 0.6)';
+              size = 52;
+            }
+
+            return LeafletLib.divIcon({
+              html: `<div class="cuidalia-cluster-bubble" style="
+                background: ${color};
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 800;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: ${size > 42 ? 15 : 13}px;
+                border: 3px solid #FFFFFF;
+                box-shadow: 0 4px 14px ${shadow}, 0 2px 6px rgba(0,0,0,0.25);
+              ">${childCount}</div>`,
+              className: 'cuidalia-marker-cluster-icon',
+              iconSize: [size, size],
+              iconAnchor: [size / 2, size / 2]
+            });
           }
-
-          return LeafletLib.divIcon({
-            html: `<div class="cuidalia-cluster-bubble" style="
-              background: ${color};
-              width: ${size}px;
-              height: ${size}px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-weight: 800;
-              font-family: 'Plus Jakarta Sans', sans-serif;
-              font-size: ${size > 42 ? 15 : 13}px;
-              border: 3px solid #FFFFFF;
-              box-shadow: 0 4px 14px ${shadow}, 0 2px 6px rgba(0,0,0,0.25);
-            ">${childCount}</div>`,
-            className: 'cuidalia-marker-cluster-icon',
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2]
-          });
-        }
-      });
+        });
+      }
+    } catch (err) {
+      console.warn('⚠️ Error al crear markerClusterGroup:', err);
     }
 
-    console.warn('⚠️ markerClusterGroup no disponible, usando fallback directo');
+    console.warn('⚠️ markerClusterGroup no disponible o falló, usando fallback directo');
     return {
       addLayer: (layer: any) => { this.map?.addLayer(layer); },
       addTo: (map: any) => { },
