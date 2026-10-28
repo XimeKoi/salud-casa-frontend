@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { HttpClient } from '@angular/common/http';
+import { retry } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AppState } from '../../store/app.state';
 import * as AppActions from '../../store/app.actions';
@@ -140,7 +141,9 @@ export class LoginComponent implements OnInit {
     this.http.post(`${this.apiUrl}/auth/login`, {
       usuario: usuarioLimpio,
       password: passwordLimpio
-    }).subscribe({
+    }).pipe(
+      retry({ count: 2, delay: 1500 })
+    ).subscribe({
       next: (response: any) => {
         this.loading = false;
 
@@ -217,7 +220,13 @@ export class LoginComponent implements OnInit {
           console.error('Error en validación offline:', e);
         }
 
-        this.errorMsg = 'Sin conexión con el servidor. Revisa tu conexión a internet o verifica que tus credenciales sean correctas.';
+        if (err.status === 0) {
+          this.errorMsg = 'El servidor se está iniciando en la nube. Por favor intenta presionar de nuevo "Ingresar al Sistema".';
+        } else if (err.status === 401 || err.status === 403) {
+          this.errorMsg = 'Usuario o contraseña incorrectos. Revisa mayúsculas y minúsculas.';
+        } else {
+          this.errorMsg = err.error?.message || 'Sin conexión con el servidor. Revisa tu conexión a internet o verifica que tus credenciales sean correctas.';
+        }
       }
     });
   }

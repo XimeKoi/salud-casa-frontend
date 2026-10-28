@@ -116,6 +116,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private subscriptions: any[] = [];
   private clusterGroup: any = null;
+  private pacientesLayerGroup: L.FeatureGroup | null = null;
   private grupoTodasLasZonas: L.FeatureGroup | null = null;
   private map: L.Map | null = null;
 
@@ -548,16 +549,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-      try {
-        this.clusterGroup = this.crearClusterGroup();
-        if (this.clusterGroup && typeof this.clusterGroup.addTo === 'function') {
-          this.clusterGroup.addTo(this.map);
-        }
-      } catch (clusterInitErr) {
-        console.warn('⚠️ Advertencia al adjuntar cluster inicial:', clusterInitErr);
+      if (!this.pacientesLayerGroup) {
+        this.pacientesLayerGroup = L.featureGroup();
       }
+      this.pacientesLayerGroup.addTo(this.map);
       this.mapInicializado = true;
-      console.log('✅ Mapa y MarkerCluster inicializados');
+      console.log('✅ Mapa y grupo de pacientes inicializados');
 
       this.map.on('moveend', () => {
         const center = this.map?.getCenter();
@@ -1989,14 +1986,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         </button>
 
         <div class="cp-footer-secondary">
-          <a class="cp-btn-sec cp-btn-ruta"
-             href="${urlRuta}"
-             target="_blank" rel="noopener noreferrer"
-             title="Cómo llegar con Google Maps">
-            <i class="fas fa-location-arrow"></i>
-            <span>Ruta</span>
-          </a>
-
           <button class="cp-btn-sec cp-btn-agendar"
             onclick="window.dispatchEvent(new CustomEvent('agregarAlCalendario', { detail: {
               pacienteId: ${paciente.id},
@@ -2251,7 +2240,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const hayFiltros = hayFiltrosPerfil || hayFiltrosRiesgo;
     const esBusqueda = this.pacientes.length < 50;
 
-    this.clusterGroup = this.crearClusterGroup();
+    if (!this.pacientesLayerGroup) {
+      this.pacientesLayerGroup = L.featureGroup();
+    }
+    if (this.map && !this.map.hasLayer(this.pacientesLayerGroup)) {
+      this.pacientesLayerGroup.addTo(this.map);
+    }
 
     let marcadoresAgregados = 0;
     const markers: L.Marker[] = [];
@@ -2524,8 +2518,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const popupContent = this.generarPopupHTML(paciente, colorForPopup, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
 
-      // ⭐ PREVENCIÓN DE MARCACIONES ENCIMADAS EN COORDENADAS IDÉNTICAS
-      const keyCoord = `${paciente.lat.toFixed(5)},${paciente.lng.toFixed(5)}`;
+      // ⭐ PREVENCIÓN DE MARCACIONES ENCIMADAS EN COORDENADAS IDÉNTICAS O MUY CERCANAS
+      const keyCoord = `${paciente.lat.toFixed(4)},${paciente.lng.toFixed(4)}`;
       const repeticion = coordFreq.get(keyCoord) || 0;
       coordFreq.set(keyCoord, repeticion + 1);
 
@@ -2533,9 +2527,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       let lngAjustada = paciente.lng;
 
       if (repeticion > 0) {
-        // Desplazamiento sutil en espiral / roseta (~3 metros) para que nunca se tapen
-        const angulo = repeticion * 0.785398; // 45 grados por cada repetición
-        const radio = 0.000035 * Math.ceil(repeticion / 8);
+        // Distribución uniforme de girasol / roseta (Ángulo Dorado ~137.5°)
+        // Separa los puntos ~20 metros para que NUNCA se tapen ni se encimen
+        const phi = 2.3999632;
+        const angulo = repeticion * phi;
+        const radio = 0.00018 * Math.sqrt(repeticion);
         latAjustada += Math.sin(angulo) * radio;
         lngAjustada += Math.cos(angulo) * radio;
       }
@@ -2554,8 +2550,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       (marker as any)._pacienteId = paciente.id;
 
-      if (this.clusterGroup && typeof this.clusterGroup.addLayer === 'function') {
-        this.clusterGroup.addLayer(marker);
+      if (this.pacientesLayerGroup) {
+        this.pacientesLayerGroup.addLayer(marker);
       } else {
         this.map?.addLayer(marker);
       }
@@ -2565,17 +2561,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     if (marcadoresAgregados > 0) {
-      if (this.clusterGroup && typeof this.clusterGroup.addTo === 'function') {
-        this.clusterGroup.addTo(this.map);
-      }
-
       this.marcadoresPacientes = markers;
-      console.log(`✅ ${marcadoresAgregados} marcadores agregados al mapa`);
+      console.log(`✅ ${marcadoresAgregados} marcadores de pacientes agregados y visibles en el mapa`);
 
       if (ajustarZoom) {
         try {
-          if (this.clusterGroup && typeof this.clusterGroup.getBounds === 'function') {
-            const bounds = this.clusterGroup.getBounds();
+          if (this.pacientesLayerGroup && typeof this.pacientesLayerGroup.getBounds === 'function') {
+            const bounds = this.pacientesLayerGroup.getBounds();
             if (bounds && bounds.isValid()) {
               this.map.fitBounds(bounds, { padding: [80, 80] });
             }
@@ -2747,6 +2739,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.map) {
       this.map.closePopup();
+
+      if (this.pacientesLayerGroup) {
+        try { this.pacientesLayerGroup.clearLayers(); } catch (e) { }
+      }
 
       if (this.clusterGroup) {
         try { this.map.removeLayer(this.clusterGroup); } catch (e) { }
