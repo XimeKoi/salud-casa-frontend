@@ -760,6 +760,9 @@
                   <span class="meta-tag meta-col" *ngIf="p.colonia && p.colonia.toLowerCase() !== 'sin colonia'">
                     <i class="fas fa-location-dot"></i> {{ p.colonia }}
                   </span>
+                  <span class="meta-tag meta-zona" *ngIf="p.zonaTrabajo">
+                    <i class="fas fa-location-crosshairs"></i> {{ p.zonaTrabajo }}
+                  </span>
                   <span class="meta-tag meta-curp" *ngIf="p.curp && p.curp !== 'S/N'">
                     <i class="fas fa-id-card"></i> {{ p.curp }}
                   </span>
@@ -843,8 +846,9 @@
               <div class="header-patient-meta">
                 <span class="order-badge-pro">#{{ idx + 1 }}</span>
                 <span class="patient-title-pro">{{ item.paciente.nombreCompleto || item.paciente.nombre }}</span>
-                <span class="pill-meta" *ngIf="item.paciente.colonia && item.paciente.colonia.toLowerCase() !== 'sin colonia'"><i class="fas fa-map-pin"></i> {{ item.paciente.colonia }}</span>
-                <span class="pill-meta" *ngIf="item.paciente.curp && item.paciente.curp !== 'S/N'"><i class="fas fa-id-card"></i> {{ item.paciente.curp }}</span>
+                <span class="pill-meta pill-colonia" *ngIf="item.paciente.colonia && item.paciente.colonia.toLowerCase() !== 'sin colonia'"><i class="fas fa-map-pin"></i> {{ item.paciente.colonia }}</span>
+                <span class="pill-meta pill-zona" *ngIf="item.paciente.zonaTrabajo"><i class="fas fa-location-crosshairs"></i> {{ item.paciente.zonaTrabajo }}</span>
+                <span class="pill-meta pill-curp" *ngIf="item.paciente.curp && item.paciente.curp !== 'S/N'"><i class="fas fa-id-card"></i> {{ item.paciente.curp }}</span>
                 <span class="pill-meta pill-tel" *ngIf="item.paciente.telefono"><i class="fas fa-phone"></i> {{ item.paciente.telefono }}</span>
               </div>
               <button type="button" class="btn-remove-row-pro" (click)="removerPacienteDeLaTanda(item.id)" title="Quitar paciente de la lista">
