@@ -1132,7 +1132,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         const cp = addr.postcode || '';
         const ciudad = (addr.city || addr.town || addr.village || addr.municipality || 'León').toUpperCase();
         const estado = (addr.state || addr.region || 'Guanajuato').toUpperCase();
-        const direccionCompleta = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        const direccionCompleta = data.display_name || `${this.formatearCoord(lat, 6)}, ${this.formatearCoord(lng, 6)}`;
         return { calle, numero, colonia, cp, ciudad, estado, direccionCompleta, displayName: data.display_name };
       }
       return null;
@@ -1268,9 +1268,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       partes.push('LEÓN, GUANAJUATO');
       this.nuevoPaciente.direccion = partes.join(', ');
     } else {
-      this.nuevoPaciente.direccion = `${this.nuevoPaciente.lat?.toFixed(6) || ''}, ${this.nuevoPaciente.lng?.toFixed(6) || ''}`;
+      const latStr = this.formatearCoord(this.nuevoPaciente.lat, 6);
+      const lngStr = this.formatearCoord(this.nuevoPaciente.lng, 6);
+      this.nuevoPaciente.direccion = (latStr && lngStr) ? `${latStr}, ${lngStr}` : '';
     }
     this.cdr.detectChanges();
+  }
+
+  formatearCoord(val: any, decimals: number = 6): string {
+    const num = parseFloat(String(val));
+    return isNaN(num) ? '' : num.toFixed(decimals);
   }
 
   cerrarModalPaciente() {
@@ -2277,7 +2284,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const coordFreq = new Map<string, number>();
 
     this.pacientes.forEach((paciente) => {
-      if (!paciente.lat || !paciente.lng || paciente.lat === 0 || paciente.lng === 0) {
+      const numLat = parseFloat(String(paciente.lat));
+      const numLng = parseFloat(String(paciente.lng));
+      if (isNaN(numLat) || isNaN(numLng) || numLat === 0 || numLng === 0) {
         return;
       }
 
@@ -2345,7 +2354,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
-      this.coordsPacientesFiltrados.push(L.latLng(paciente.lat, paciente.lng));
+      this.coordsPacientesFiltrados.push(L.latLng(numLat, numLng));
 
       const estaEnPlanHoy = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
@@ -2543,12 +2552,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       const popupContent = this.generarPopupHTML(paciente, colorForPopup, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
 
       // ⭐ PREVENCIÓN DE MARCACIONES ENCIMADAS EN COORDENADAS IDÉNTICAS O MUY CERCANAS
-      const keyCoord = `${paciente.lat.toFixed(4)},${paciente.lng.toFixed(4)}`;
+      const keyCoord = `${numLat.toFixed(4)},${numLng.toFixed(4)}`;
       const repeticion = coordFreq.get(keyCoord) || 0;
       coordFreq.set(keyCoord, repeticion + 1);
 
-      let latAjustada = paciente.lat;
-      let lngAjustada = paciente.lng;
+      let latAjustada = numLat;
+      let lngAjustada = numLng;
 
       if (repeticion > 0) {
         // Distribución uniforme de girasol / roseta (Ángulo Dorado ~137.5°)
@@ -3390,7 +3399,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             border-radius: 6px;
           ">
             <i class="fas fa-crosshairs" style="color: #FF6B55; font-size: 10px;"></i>
-            <span>Lat: ${result.lat.toFixed(5)}, Lng: ${result.lon.toFixed(5)}</span>
+            <span>Lat: ${this.formatearCoord(result.lat, 5)}, Lng: ${this.formatearCoord(result.lon, 5)}</span>
           </div>
         </div>
 

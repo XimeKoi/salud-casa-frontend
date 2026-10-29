@@ -131,7 +131,7 @@
   <div class="map-info-coords" *ngIf="centerLat && centerLng">
     <span>
       <i class="fas fa-map-pin"></i>
-      <span class="coord-value">{{ centerLat.toFixed(6) }}, {{ centerLng.toFixed(6) }}</span>
+      <span class="coord-value">{{ formatearCoord(centerLat) }}, {{ formatearCoord(centerLng) }}</span>
     </span>
     <span class="coord-divider">|</span>
     <span>
@@ -175,7 +175,7 @@
           </div>
           <div class="gps-badge-info">
             <span class="gps-badge-title">Ubicación GPS Domiciliar Fijada</span>
-            <span class="gps-badge-coords">{{ nuevoPaciente.lat.toFixed(6) }}, {{ nuevoPaciente.lng.toFixed(6) }}</span>
+            <span class="gps-badge-coords">{{ formatearCoord(nuevoPaciente.lat) }}, {{ formatearCoord(nuevoPaciente.lng) }}</span>
           </div>
           <span class="gps-badge-status">
             <i class="fas fa-check-circle"></i> Georreferenciado
