@@ -132,8 +132,8 @@
                     <!-- Botón Limpiar Filtros -->
                     <button
                         *ngIf="filtroBusqueda || filtroEstado !== 'todos' || filtroRiesgo !== 'todos' || tabActivo !== 'todos'"
-                        class="btn-reset-filters" (click)="limpiarFiltros()" title="Restablecer filtros">
-                        <i class="fas fa-rotate-left"></i> Limpiar
+                        class="btn-reset-filters" (click)="limpiarFiltros()" title="Restablecer todos los filtros">
+                        <i class="fas fa-filter-circle-xmark"></i> <span>Limpiar Filtros</span>
                     </button>
 
                     <!-- Toggle Vista Tabla / Tarjetas -->
@@ -1059,7 +1059,7 @@
                             <div class="disabilities-edit-grid">
                                 <!-- 1. Discapacidad Motriz -->
                                 <div class="disability-card-row"
-                                    [class.checked]="formEdicion.discapacidades?.motriz"
+                                    [class.checked]="formEdicion.discapacidades.motriz"
                                     (click)="toggleDiscapacidadEdicion('motriz')">
                                     <div class="disability-card-left">
                                         <div class="disability-icon-wrap motriz"><i class="fas fa-wheelchair"></i></div>
@@ -1070,7 +1070,7 @@
                                     </div>
                                     <label class="modern-switch-edit" (click)="$event.stopPropagation()">
                                         <input type="checkbox"
-                                            [checked]="formEdicion.discapacidades?.motriz"
+                                            [checked]="formEdicion.discapacidades.motriz"
                                             (change)="toggleDiscapacidadEdicion('motriz')"
                                             [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
                                         <span class="switch-slider-round"></span>
@@ -1079,7 +1079,7 @@
 
                                 <!-- 2. Discapacidad Visual -->
                                 <div class="disability-card-row"
-                                    [class.checked]="formEdicion.discapacidades?.visual"
+                                    [class.checked]="formEdicion.discapacidades.visual"
                                     (click)="toggleDiscapacidadEdicion('visual')">
                                     <div class="disability-card-left">
                                         <div class="disability-icon-wrap visual"><i class="fas fa-eye-low-vision"></i></div>
@@ -1090,7 +1090,7 @@
                                     </div>
                                     <label class="modern-switch-edit" (click)="$event.stopPropagation()">
                                         <input type="checkbox"
-                                            [checked]="formEdicion.discapacidades?.visual"
+                                            [checked]="formEdicion.discapacidades.visual"
                                             (change)="toggleDiscapacidadEdicion('visual')"
                                             [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
                                         <span class="switch-slider-round"></span>
@@ -1099,7 +1099,7 @@
 
                                 <!-- 3. Discapacidad Auditiva -->
                                 <div class="disability-card-row"
-                                    [class.checked]="formEdicion.discapacidades?.auditiva"
+                                    [class.checked]="formEdicion.discapacidades.auditiva"
                                     (click)="toggleDiscapacidadEdicion('auditiva')">
                                     <div class="disability-card-left">
                                         <div class="disability-icon-wrap auditiva"><i class="fas fa-ear-deaf"></i></div>
@@ -1110,7 +1110,7 @@
                                     </div>
                                     <label class="modern-switch-edit" (click)="$event.stopPropagation()">
                                         <input type="checkbox"
-                                            [checked]="formEdicion.discapacidades?.auditiva"
+                                            [checked]="formEdicion.discapacidades.auditiva"
                                             (change)="toggleDiscapacidadEdicion('auditiva')"
                                             [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
                                         <span class="switch-slider-round"></span>
@@ -1119,7 +1119,7 @@
 
                                 <!-- 4. Discapacidad Intelectual -->
                                 <div class="disability-card-row"
-                                    [class.checked]="formEdicion.discapacidades?.intelectual"
+                                    [class.checked]="formEdicion.discapacidades.intelectual"
                                     (click)="toggleDiscapacidadEdicion('intelectual')">
                                     <div class="disability-card-left">
                                         <div class="disability-icon-wrap intelectual"><i class="fas fa-brain"></i></div>
@@ -1130,7 +1130,7 @@
                                     </div>
                                     <label class="modern-switch-edit" (click)="$event.stopPropagation()">
                                         <input type="checkbox"
-                                            [checked]="formEdicion.discapacidades?.intelectual"
+                                            [checked]="formEdicion.discapacidades.intelectual"
                                             (change)="toggleDiscapacidadEdicion('intelectual')"
                                             [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
                                         <span class="switch-slider-round"></span>
@@ -1139,7 +1139,7 @@
 
                                 <!-- 5. Discapacidad Psicosocial -->
                                 <div class="disability-card-row"
-                                    [class.checked]="formEdicion.discapacidades?.psicosocial"
+                                    [class.checked]="formEdicion.discapacidades.psicosocial"
                                     (click)="toggleDiscapacidadEdicion('psicosocial')">
                                     <div class="disability-card-left">
                                         <div class="disability-icon-wrap psicosocial"><i class="fas fa-head-side-virus"></i></div>
@@ -1150,7 +1150,7 @@
                                     </div>
                                     <label class="modern-switch-edit" (click)="$event.stopPropagation()">
                                         <input type="checkbox"
-                                            [checked]="formEdicion.discapacidades?.psicosocial"
+                                            [checked]="formEdicion.discapacidades.psicosocial"
                                             (change)="toggleDiscapacidadEdicion('psicosocial')"
                                             [disabled]="formEdicion.estatusVital === 'finado' || formEdicion.finado" />
                                         <span class="switch-slider-round"></span>

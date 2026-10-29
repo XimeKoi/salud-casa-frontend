@@ -599,22 +599,26 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ⭐ ============================================
-  // ⭐ CALCULAR DÍAS PENDIENTE
+  // ⭐ CALCULAR DÍAS PENDIENTE Y CICLO DE 20 DÍAS
   // ⭐ ============================================
 
   private calcularDiasPendiente(fechaPendiente: Date | null | undefined): number | null {
     if (!fechaPendiente) return null;
     const fecha = new Date(fechaPendiente);
+    if (isNaN(fecha.getTime())) return null;
     const hoy = new Date();
     const diffTime = hoy.getTime() - fecha.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.max(0, diffDays);
   }
 
   private actualizarDiasPendientes() {
     this.pacientes.forEach(p => {
-      if (p.estadoVisita === 'pendiente' && p.fechaPendiente) {
-        p.diasPendiente = this.calcularDiasPendiente(p.fechaPendiente);
+      if (p.estadoVisita === 'pendiente') {
+        if (!p.fechaPendiente) {
+          p.fechaPendiente = p.fechaProgramada ? new Date(p.fechaProgramada) : new Date();
+        }
+        p.diasPendiente = this.calcularDiasPendiente(p.fechaPendiente) ?? 0;
       } else {
         p.diasPendiente = null;
       }
@@ -628,7 +632,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
       this.pacientes.forEach((p: Paciente) => {
         if (p.estadoVisita === 'pendiente' && p.fechaPendiente) {
           pendientes[p.id] = {
-            fechaPendiente: p.fechaPendiente
+            fechaPendiente: p.fechaPendiente instanceof Date ? p.fechaPendiente.toISOString() : p.fechaPendiente
           };
         }
       });
@@ -641,14 +645,48 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   private cargarPendientesDesdeLocalStorage() {
     try {
       const pendientesGuardado = localStorage.getItem('pacientesPendientes');
-      if (pendientesGuardado) {
-        const pendientes = JSON.parse(pendientesGuardado);
-        this.pacientes.forEach((p: Paciente) => {
-          if (pendientes[p.id]) {
+      const pendientes = pendientesGuardado ? JSON.parse(pendientesGuardado) : {};
+      
+      const notificadosGuardados = localStorage.getItem('cuidalia_notificados_20d');
+      const notificados: string[] = notificadosGuardados ? JSON.parse(notificadosGuardados) : [];
+      const nuevosNotificados: string[] = [...notificados];
+      let nuevoCambioStorage = false;
+
+      this.pacientes.forEach((p: Paciente) => {
+        if (p.estadoVisita === 'pendiente') {
+          if (pendientes[p.id] && pendientes[p.id].fechaPendiente) {
             p.fechaPendiente = new Date(pendientes[p.id].fechaPendiente);
-            p.diasPendiente = this.calcularDiasPendiente(p.fechaPendiente);
+          } else {
+            // Inicializar fecha base para contar los días que transcurren
+            p.fechaPendiente = p.fechaProgramada ? new Date(p.fechaProgramada) : new Date();
+            pendientes[p.id] = {
+              fechaPendiente: p.fechaPendiente instanceof Date ? p.fechaPendiente.toISOString() : p.fechaPendiente
+            };
+            nuevoCambioStorage = true;
           }
-        });
+
+          p.diasPendiente = this.calcularDiasPendiente(p.fechaPendiente) ?? 0;
+
+          // Al cumplirse el ciclo de 20 días, emitir notificación al usuario
+          if (p.diasPendiente >= 20 && !nuevosNotificados.includes(String(p.id))) {
+            nuevosNotificados.push(String(p.id));
+            this.crearNotificacion(
+              '🔔 ¡Listo para visita médica!',
+              `El paciente ${p.nombre} ha cumplido su ciclo de espera (${p.diasPendiente}/20 días). Ya está disponible para visita.`,
+              'success'
+            );
+          }
+        } else {
+          p.diasPendiente = null;
+        }
+      });
+
+      if (nuevoCambioStorage) {
+        localStorage.setItem('pacientesPendientes', JSON.stringify(pendientes));
+      }
+
+      if (nuevosNotificados.length !== notificados.length) {
+        localStorage.setItem('cuidalia_notificados_20d', JSON.stringify(nuevosNotificados));
       }
     } catch (e) {
       console.error('Error cargando pendientes:', e);
@@ -1314,6 +1352,16 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
     paciente.fechaPendiente = new Date();
     paciente.diasPendiente = 0;
 
+    // Resetear notificación previa para nuevo ciclo de 20 días
+    try {
+      const notificadosGuardados = localStorage.getItem('cuidalia_notificados_20d');
+      if (notificadosGuardados) {
+        let notificados: string[] = JSON.parse(notificadosGuardados);
+        notificados = notificados.filter(id => id !== String(paciente.id));
+        localStorage.setItem('cuidalia_notificados_20d', JSON.stringify(notificados));
+      }
+    } catch (e) {}
+
     this.http.patch(`${this.apiUrl}/pacientes/${paciente.id}/estatus`, {
       estatus: 'pendiente',
       usuarioId: 1
@@ -1323,7 +1371,7 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.crearNotificacion(
           'Pendiente',
           `Paciente <strong>${paciente.nombre}</strong> marcado como pendiente.<br>
-           <span style="font-size: 12px; color: #888;">Se podrá visitar nuevamente en <strong>20 días</strong>.</span>`,
+           <span style="font-size: 12px; color: #888;">Ciclo iniciado (0/20 días). Se le notificará al cumplir 20 días.</span>`,
           'info'
         );
         this.aplicarFiltros();
@@ -1994,7 +2042,10 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
         this.pacienteEditando.discapacidadPsicosocial = payload.discapacidadPsicosocial;
         this.pacienteEditando.discapacidades = { ...payload.discapacidades };
         if (estatusFinal === 'PENDIENTE') {
-          this.pacienteEditando.diasPendiente = this.formEdicion.diasPendiente;
+          const dias = Math.max(0, Number(this.formEdicion.diasPendiente) || 0);
+          const fechaCalculada = new Date(Date.now() - (dias * 24 * 60 * 60 * 1000));
+          this.pacienteEditando.fechaPendiente = fechaCalculada;
+          this.pacienteEditando.diasPendiente = dias;
         }
 
         const idx = this.pacientes.findIndex(p => p.id === this.pacienteEditando.id);
@@ -2014,7 +2065,11 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
           this.pacientes[idx].discapacidadPsicosocial = payload.discapacidadPsicosocial;
           this.pacientes[idx].discapacidades = { ...payload.discapacidades };
           if (estatusFinal === 'PENDIENTE') {
-            this.pacientes[idx].diasPendiente = this.formEdicion.diasPendiente;
+            const dias = Math.max(0, Number(this.formEdicion.diasPendiente) || 0);
+            const fechaCalculada = new Date(Date.now() - (dias * 24 * 60 * 60 * 1000));
+            this.pacientes[idx].fechaPendiente = fechaCalculada;
+            this.pacientes[idx].diasPendiente = dias;
+            this.guardarPendientesEnLocalStorage();
           }
         }
 
