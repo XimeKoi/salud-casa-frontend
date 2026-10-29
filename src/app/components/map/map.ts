@@ -292,7 +292,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.limpiarMarcadoresPacientes();
           this.agregarMarcadoresPacientes(false);
           this.dibujarTodasLasZonas();
-          this.enfocarZonaConMasPacientes(false);
+          this.enfocarZonaConMasPacientes(false, true);
         }
 
         this.cdr.detectChanges();
@@ -416,7 +416,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           this.limpiarMarcadoresPacientes();
           this.agregarMarcadoresPacientes(false);
           this.dibujarTodasLasZonas();
-          this.enfocarZonaConMasPacientes(false);
+          this.enfocarZonaConMasPacientes(false, true);
         }
       }, 800);
     }, 300);
@@ -591,7 +591,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       try {
         if (this.pacientes && this.pacientes.length > 0) {
           this.agregarMarcadoresPacientes(false);
-          this.enfocarZonaConMasPacientes(false);
+          this.enfocarZonaConMasPacientes(false, true);
         }
         this.dibujarTodasLasZonas();
       } catch (markersErr) {
@@ -752,7 +752,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ⭐⭐⭐ ENFOCAR AUTOMÁTICAMENTE LA ZONA CON MAYOR CANTIDAD DE PACIENTES ⭐⭐⭐
-  enfocarZonaConMasPacientes(animar: boolean = false) {
+  enfocarZonaConMasPacientes(animar: boolean = false, abrirPopup: boolean = false) {
     if (!this.map || !this.mapInicializado) {
       console.warn('⚠️ No se puede enfocar zona: mapa no inicializado');
       return;
@@ -767,8 +767,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // 1. Agrupar coordenadas por zona y recopilar todas las coordenadas válidas
-    const zonasMap = new Map<string, L.LatLng[]>();
+    // 1. Agrupar coordenadas y pacientes por zona
+    const zonasMap = new Map<string, { coords: L.LatLng[], pacientes: any[] }>();
     const allCoords: L.LatLng[] = [];
 
     pacientesBase.forEach((p: any) => {
@@ -780,9 +780,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const zona = this.determinarZona(p) || this.obtenerColonia(p.direccion || '', p.colonia || '') || 'Zona General';
       if (!zonasMap.has(zona)) {
-        zonasMap.set(zona, []);
+        zonasMap.set(zona, { coords: [], pacientes: [] });
       }
-      zonasMap.get(zona)!.push(coord);
+      zonasMap.get(zona)!.coords.push(coord);
+      zonasMap.get(zona)!.pacientes.push(p);
     });
 
     if (allCoords.length === 0) {
@@ -794,12 +795,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     let topZona = '';
     let maxPacientes = -1;
     let topCoords: L.LatLng[] = [];
+    let topPacientes: any[] = [];
 
-    zonasMap.forEach((coords, zona) => {
-      if (coords.length > maxPacientes) {
-        maxPacientes = coords.length;
+    zonasMap.forEach((data, zona) => {
+      if (data.coords.length > maxPacientes) {
+        maxPacientes = data.coords.length;
         topZona = zona;
-        topCoords = coords;
+        topCoords = data.coords;
+        topPacientes = data.pacientes;
       }
     });
 
@@ -828,6 +831,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       } catch (err) {
         console.warn('⚠️ Error al ajustar bounds de la zona con más pacientes:', err);
+      }
+    }
+
+    // ⭐ Si se requiere abrir el popup (ej. al cambiar de capa de mapa), abrir el del paciente de mayor concentración
+    if (abrirPopup) {
+      const primerPacienteTop = (topPacientes && topPacientes.length > 0)
+        ? topPacientes[0]
+        : (pacientesBase && pacientesBase.length > 0 ? pacientesBase[0] : null);
+      if (primerPacienteTop) {
+        setTimeout(() => {
+          this.abrirPopupDePaciente(primerPacienteTop);
+        }, 300);
       }
     }
   }
@@ -1436,144 +1451,101 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
+    const nuevoId = Date.now();
+    const numLat = parseFloat(String(pacienteData.lat || this.centerLat || 21.1165));
+    const numLng = parseFloat(String(pacienteData.lng || this.centerLng || -101.6865));
+
+    const pacienteGuardado: any = {
+      ...pacienteData,
+      id: nuevoId,
+      lat: numLat,
+      lng: numLng,
+      nombre: primerNombre,
+      apellidoPaterno: apPaterno,
+      apellidoMaterno: apMaterno,
+      nombreCompleto: nombreCompleto,
+      telefono: tel,
+      telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
+      telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
+      curp: curp,
+      calle: pacienteData.calle || '',
+      numero: pacienteData.numero || '',
+      colonia: pacienteData.colonia || 'LEÓN',
+      direccion: pacienteData.direccion || `${pacienteData.calle || ''} #${pacienteData.numero || ''}, ${pacienteData.colonia || ''}`.trim(),
+      estatus: estatusFinal,
+      programa: programaFinal,
+      finado: esFinado,
+      estatusVital: esFinado ? 'finado' : 'vivo'
+    };
+
+    // 1. Agregar inmediatamente al inicio de pacientesOriginal y pacientes locales (Optimismo instantáneo)
+    this.pacientesOriginal.unshift(pacienteGuardado);
+    this.pacientes.unshift(pacienteGuardado);
+
+    // 2. Agregar a zonas disponibles si es nueva colonia
+    const coloniaNueva = (pacienteGuardado.colonia || '').toUpperCase().trim();
+    if (coloniaNueva && !this.manzanasDisponibles.includes(coloniaNueva)) {
+      this.manzanasDisponibles = [...this.manzanasDisponibles, coloniaNueva].sort();
+      if (!this.coloresManzanas[coloniaNueva]) {
+        const nuevoColor = this.coloresDisponibles[this.manzanasDisponibles.indexOf(coloniaNueva) % this.coloresDisponibles.length];
+        this.coloresManzanas = { ...this.coloresManzanas, [coloniaNueva]: nuevoColor };
+      }
+      this.store.dispatch(AppActions.setColoresManzanas({ colores: this.coloresManzanas }));
+      this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: this.manzanasDisponibles }));
+    }
+
+    // 3. Dibujar marcadores y enfocar al nuevo paciente en el mapa de inmediato
+    this.agregarMarcadoresPacientes(false);
+    if (this.map && numLat && numLng) {
+      this.map.setView([numLat, numLng], 17, { animate: true });
+    }
+
+    // 4. Cerrar el modal inmediatamente (0 ms de espera para el usuario)
+    this.cerrarModalPaciente();
+    this.pacienteGuardando = false;
+
+    // 5. Abrir popup de este nuevo paciente
+    setTimeout(() => {
+      this.abrirPopupDePaciente(pacienteGuardado);
+    }, 250);
+
+    // 6. Notificación visual instantánea
+    Swal.fire({
+      icon: 'success',
+      title: '¡Paciente Guardado!',
+      text: `${nombreCompleto} ha sido registrado correctamente.`,
+      confirmButtonColor: '#7A192B',
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    // 7. Persistir en caché local de forma asíncrona (no bloquea el hilo de la UI)
+    setTimeout(() => {
+      try {
+        localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+        localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+      } catch (e) { }
+      this.pacientesMapService.setPacientesCache(this.pacientesOriginal);
+    }, 50);
+
+    // 8. Sincronizar en segundo plano con la base de datos en Railway sin bloquear la pantalla
     this.http.post(`${this.apiUrl}/pacientes`, pacienteData).subscribe({
       next: (response: any) => {
-        this.pacienteGuardando = false;
-        const nuevoId = response?.id || response?.paciente?.id || response?.data?.id || (response && typeof response === 'object' && response.insertId) || Date.now();
-        const numLat = parseFloat(String(pacienteData.lat || this.centerLat || 21.1165));
-        const numLng = parseFloat(String(pacienteData.lng || this.centerLng || -101.6865));
-
-        const pacienteGuardado: any = {
-          ...pacienteData,
-          id: nuevoId,
-          lat: numLat,
-          lng: numLng,
-          nombre: primerNombre,
-          apellidoPaterno: apPaterno,
-          apellidoMaterno: apMaterno,
-          nombreCompleto: nombreCompleto,
-          telefono: tel,
-          telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
-          telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
-          curp: curp,
-          calle: pacienteData.calle || '',
-          numero: pacienteData.numero || '',
-          colonia: pacienteData.colonia || 'LEÓN',
-          direccion: pacienteData.direccion || `${pacienteData.calle || ''} #${pacienteData.numero || ''}, ${pacienteData.colonia || ''}`.trim(),
-          estatus: estatusFinal,
-          programa: programaFinal,
-          finado: esFinado,
-          estatusVital: esFinado ? 'finado' : 'vivo'
-        };
-
-        // 1. Agregar inmediatamente al inicio de pacientesOriginal y pacientes locales
-        const idxOrig = this.pacientesOriginal.findIndex((p: any) => p.id === nuevoId);
-        if (idxOrig >= 0) {
-          this.pacientesOriginal[idxOrig] = pacienteGuardado;
-        } else {
-          this.pacientesOriginal.unshift(pacienteGuardado);
-        }
-
-        const idxPac = this.pacientes.findIndex((p: any) => p.id === nuevoId);
-        if (idxPac >= 0) {
-          this.pacientes[idxPac] = pacienteGuardado;
-        } else {
-          this.pacientes.unshift(pacienteGuardado);
-        }
-
-        // 2. Persistir de inmediato en caché local para búsquedas y modo sin conexión
-        try {
-          localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
-          localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
-        } catch (e) { }
-
-        // 3. Notificar al servicio compartido de pacientes
-        this.pacientesMapService.setPacientesCache(this.pacientesOriginal);
-
-        // 4. Agregar a zonas disponibles si es nueva colonia
-        const coloniaNueva = (pacienteGuardado.colonia || '').toUpperCase().trim();
-        if (coloniaNueva && !this.manzanasDisponibles.includes(coloniaNueva)) {
-          this.manzanasDisponibles = [...this.manzanasDisponibles, coloniaNueva].sort();
-          if (!this.coloresManzanas[coloniaNueva]) {
-            const nuevoColor = this.coloresDisponibles[this.manzanasDisponibles.indexOf(coloniaNueva) % this.coloresDisponibles.length];
-            this.coloresManzanas = { ...this.coloresManzanas, [coloniaNueva]: nuevoColor };
+        const dbId = response?.id || response?.paciente?.id || response?.data?.id || (response && typeof response === 'object' && response.insertId);
+        if (dbId && dbId !== nuevoId) {
+          pacienteGuardado.id = dbId;
+          const markerFound = this.marcadoresPacientes.find((m: any) => m._pacienteId === nuevoId);
+          if (markerFound) {
+            (markerFound as any)._pacienteId = dbId;
           }
-          this.store.dispatch(AppActions.setColoresManzanas({ colores: this.coloresManzanas }));
-          this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: this.manzanasDisponibles }));
+          try {
+            localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+            localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+          } catch (e) { }
         }
-
-        // 5. Dibujar marcadores y enfocar al nuevo paciente en el mapa
-        this.agregarMarcadoresPacientes(false);
-        if (this.map && numLat && numLng) {
-          this.map.setView([numLat, numLng], 17);
-        }
-
-        this.cerrarModalPaciente();
-        this.cargarPacientesDirectamente(true);
-
-        Swal.fire({
-          icon: 'success',
-          title: '¡Paciente Guardado!',
-          text: `${nombreCompleto} ha sido registrado correctamente.`,
-          confirmButtonColor: '#7A192B'
-        });
       },
       error: (error) => {
-        console.warn('⚠️ Guardando localmente en mapa tras aviso:', error);
-        this.pacienteGuardando = false;
-
-        const nuevoId = Date.now();
-        const numLat = parseFloat(String(pacienteData.lat || this.centerLat || 21.1165));
-        const numLng = parseFloat(String(pacienteData.lng || this.centerLng || -101.6865));
-
-        const nuevoObj: PacienteMap = {
-          id: nuevoId,
-          nombre: nombreCompleto,
-          apellidoPaterno: this.nuevoPaciente.apellidoPaterno || '',
-          apellidoMaterno: this.nuevoPaciente.apellidoMaterno || '',
-          curp: curp,
-          telefono: tel,
-          telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
-          telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
-          programa: programaFinal,
-          estatus: estatusFinal,
-          seccion: '277',
-          genero: 'M',
-          direccion: this.nuevoPaciente.direccion || `${this.nuevoPaciente.calle} ${this.nuevoPaciente.numero || ''}, ${this.nuevoPaciente.colonia || ''}`,
-          colonia: this.nuevoPaciente.colonia || 'LEÓN',
-          lat: numLat,
-          lng: numLng,
-          discapacidades: {
-            motriz: !!this.nuevoPaciente.discapacidades?.motriz,
-            visual: !!this.nuevoPaciente.discapacidades?.visual,
-            auditiva: !!this.nuevoPaciente.discapacidades?.auditiva,
-            intelectual: !!this.nuevoPaciente.discapacidades?.intelectual,
-            psicosocial: !!this.nuevoPaciente.discapacidades?.psicosocial
-          },
-          finado: esFinado,
-          fechaFinado: fechaFinadoFinal
-        };
-
-        this.pacientesOriginal.unshift(nuevoObj);
-        this.pacientes.unshift(nuevoObj);
-
-        try {
-          localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
-          localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
-        } catch (e) { }
-
-        this.pacientesMapService.setPacientesCache(this.pacientesOriginal);
-        this.agregarMarcadoresPacientes(false);
-        if (this.map && nuevoObj.lat && nuevoObj.lng) {
-          this.map.setView([nuevoObj.lat, nuevoObj.lng], 17, { animate: true });
-        }
-        this.cerrarModalPaciente();
-        Swal.fire({
-          icon: 'success',
-          title: '¡Paciente Registrado!',
-          text: `${nombreCompleto} ha sido registrado y georreferenciado en el mapa.`,
-          confirmButtonColor: '#7A192B'
-        });
+        console.warn('⚠️ Paciente guardado en caché local, pendiente de sincronización con servidor:', error);
       }
     });
   }
@@ -2137,102 +2109,103 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   `;
   }
 
-  // ⭐⭐⭐ ABRIR POPUP DEL PRIMER PACIENTE ⭐⭐⭐
-  private abrirPopupDelPrimerPaciente() {
+  // ⭐⭐⭐ ABRIR POPUP DE PACIENTE POR ID O COORDENADAS ⭐⭐⭐
+  abrirPopupDePaciente(pacienteTarget?: any) {
     if (!this.map) {
       console.warn('⚠️ Mapa no disponible');
       return;
     }
 
-    if (this.pacientes.length === 0) {
-      console.warn('⚠️ No hay pacientes para mostrar');
+    const target = pacienteTarget || (this.pacientes && this.pacientes.length > 0 ? this.pacientes[0] : null);
+    if (!target) {
+      console.warn('⚠️ No hay paciente para abrir popup');
       return;
     }
 
-    const primero = this.pacientes[0];
-    if (!primero.lat || !primero.lng) {
-      console.warn('⚠️ El primer paciente no tiene coordenadas');
-      return;
+    const targetId = Number(target.id);
+    const lat = parseFloat(String(target.lat));
+    const lng = parseFloat(String(target.lng));
+
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      this.map.setView([lat, lng], 17, { animate: true });
     }
 
-    console.log(`🔍 Abriendo popup para: ${primero.nombre} (ID: ${primero.id})`);
+    const intentarAbrir = (): boolean => {
+      // 1. Buscar en marcadoresPacientes por _pacienteId
+      if (this.marcadoresPacientes && this.marcadoresPacientes.length > 0) {
+        const marker = this.marcadoresPacientes.find((m: any) => Number(m._pacienteId) === targetId);
+        if (marker && typeof marker.openPopup === 'function') {
+          marker.openPopup();
+          console.log(`✅ Popup abierto directamente para paciente ID: ${targetId}`);
+          return true;
+        }
+      }
 
-    // Centrar el mapa en el primer paciente
-    this.map.setView([primero.lat, primero.lng], 17);
-
-    // Esperar a que los marcadores estén listos
-    setTimeout(() => {
-      let popupAbierto = false;
-      let intentos = 0;
-      const maxIntentos = 10;
-
-      const intentarAbrirPopup = () => {
-        if (popupAbierto || intentos >= maxIntentos) {
-          if (!popupAbierto) {
-            console.warn('⚠️ No se pudo abrir el popup después de varios intentos');
+      // 2. Buscar en pacientesLayerGroup si aplica
+      if (this.pacientesLayerGroup && typeof this.pacientesLayerGroup.eachLayer === 'function') {
+        let found: any = null;
+        this.pacientesLayerGroup.eachLayer((layer: any) => {
+          if (!found && Number(layer._pacienteId) === targetId) {
+            found = layer;
           }
-          return;
+        });
+        if (found && typeof found.openPopup === 'function') {
+          found.openPopup();
+          console.log(`✅ Popup abierto desde capa de pacientes para ID: ${targetId}`);
+          return true;
         }
+      }
 
-        intentos++;
-        console.log(`🔍 Intento ${intentos} de ${maxIntentos} para abrir popup...`);
+      // 3. Buscar en clusterGroup si aplica
+      if (this.clusterGroup && typeof this.clusterGroup.eachLayer === 'function') {
+        let found: any = null;
+        this.clusterGroup.eachLayer((layer: any) => {
+          if (!found && Number(layer._pacienteId) === targetId) {
+            found = layer;
+          }
+        });
+        if (found && typeof found.openPopup === 'function') {
+          found.openPopup();
+          console.log(`✅ Popup abierto desde cluster para ID: ${targetId}`);
+          return true;
+        }
+      }
 
-        // Buscar en marcadores principales
-        for (const marker of this.marcadoresPacientes) {
+      // 4. Fallback por coordenadas cercanas
+      if (this.marcadoresPacientes && this.marcadoresPacientes.length > 0 && !isNaN(lat) && !isNaN(lng)) {
+        const cercano = this.marcadoresPacientes.find((m: any) => {
           try {
-            const popup = marker.getPopup();
-            if (popup) {
-              const content = popup.getContent();
-              if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
-                marker.openPopup();
-                popupAbierto = true;
-                console.log(`✅ Popup abierto para: ${primero.nombre}`);
-                return;
-              }
-            }
-          } catch (e) { }
+            const mll = m.getLatLng ? m.getLatLng() : null;
+            return mll && Math.abs(mll.lat - lat) < 0.0008 && Math.abs(mll.lng - lng) < 0.0008;
+          } catch (e) {
+            return false;
+          }
+        }) || this.marcadoresPacientes[0];
+
+        if (cercano && typeof cercano.openPopup === 'function') {
+          cercano.openPopup();
+          console.log(`✅ Popup abierto por proximidad de coordenadas`);
+          return true;
         }
+      }
 
-        // Buscar en cluster
-        if (!popupAbierto && this.clusterGroup && typeof this.clusterGroup.eachLayer === 'function') {
-          try {
-            this.clusterGroup.eachLayer((layer: any) => {
-              if (popupAbierto) return;
-              try {
-                if (layer && (layer._icon || layer.options?.icon || typeof layer.getPopup === 'function')) {
-                  const popup = layer.getPopup();
-                  if (popup) {
-                    const content = popup.getContent();
-                    if (content && typeof content === 'string' && content.includes(`"pacienteId":${primero.id}`)) {
-                      layer.openPopup();
-                      popupAbierto = true;
-                      console.log(`✅ Popup abierto desde cluster para: ${primero.nombre}`);
-                    }
-                  }
-                }
-              } catch (e) { }
-            });
-          } catch (e) { }
+      return false;
+    };
+
+    if (!intentarAbrir()) {
+      setTimeout(() => {
+        if (!intentarAbrir()) {
+          setTimeout(intentarAbrir, 250);
         }
+      }, 120);
+    }
+  }
 
-        // Fallback
-        if (!popupAbierto && this.marcadoresPacientes.length > 0) {
-          try {
-            this.marcadoresPacientes[0].openPopup();
-            popupAbierto = true;
-            console.log('✅ Popup abierto (fallback)');
-            return;
-          } catch (e) { }
-        }
-
-        if (!popupAbierto && intentos < maxIntentos) {
-          setTimeout(intentarAbrirPopup, 300);
-        }
-      };
-
-      intentarAbrirPopup();
-
-    }, 500);
+  // ⭐⭐⭐ COMPATIBILIDAD CON ABRIR POPUP DEL PRIMER PACIENTE ⭐⭐⭐
+  abrirPopupDelPrimerPaciente() {
+    if (this.pacientes && this.pacientes.length > 0) {
+      this.abrirPopupDePaciente(this.pacientes[0]);
+    }
   }
 
   // ⭐⭐⭐ CREACIÓN DE GRUPO DE CLÚSTERES DE ALTO RENDIMIENTO (60 FPS MÓVIL) ⭐⭐⭐
@@ -3232,17 +3205,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     backupOriginal: any[],
     terminarBusqueda: () => void
   ) {
-    // Detectar si la búsqueda tiene apariencia de calle / dirección geográfica en León
-    const esDireccionVial = /(?:CALLE|AVENIDA|AV|BLVD|BOULEVARD|CTO|CIRCUITO|ANDADOR|AND|PRIVADA|PRIV|PROL|COLONIA|COL|FRACCIONAMIENTO|#|\b\d{2,}\b)/i.test(query);
-
-    if (!esDireccionVial) {
-      // Es una búsqueda por nombre de persona, folio o teléfono que no se encontró en la BD
-      this.mostrarToast('No encontrado', `No se encontró el paciente "${query}"`, 'warning', 3000);
-      terminarBusqueda();
-      return;
-    }
-
-    // Si parece dirección, intentar buscar punto geográfico con OpenStreetMap con timeout estricto
+    // Si no coincidió con paciente local ni en BD, buscar como dirección o punto geográfico en OSM León
     this.buscarUbicacionGeograficaOSM(query, terminarBusqueda);
   }
 
@@ -3299,50 +3262,39 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     console.log(`✅ Mostrando ${finalPacientes.length} pacientes encontrados`);
-    this.pacientes = finalPacientes;
 
-    const zonasSet = new Set<string>();
-    finalPacientes.forEach((p: any) => {
-      const colonia = p.colonia || this.extraerColonia(p.direccion);
-      if (colonia && colonia.length > 2) {
-        zonasSet.add(colonia.toUpperCase().trim());
-      }
-    });
+    // ⭐ MANTENER TODOS LOS PACIENTES EN EL MAPA PARA QUE NO SE BORREN LOS DEMÁS MARCADORES
+    this.pacientes = (backupOriginal && backupOriginal.length > 0)
+      ? [...backupOriginal]
+      : (this.pacientesOriginal && this.pacientesOriginal.length > 0 ? [...this.pacientesOriginal] : [...this.pacientes]);
 
-    if (zonasSet.size > 0) {
-      const nuevasZonas = Array.from(zonasSet).sort();
-      this.manzanasDisponibles = nuevasZonas;
-
-      const nuevosColores: { [key: string]: string } = {};
-      nuevasZonas.forEach((zona, index) => {
-        const color = this.coloresDisponibles[index % this.coloresDisponibles.length];
-        nuevosColores[zona] = color;
-      });
-      this.coloresManzanas = nuevosColores;
-
-      this.store.dispatch(AppActions.setColoresManzanas({ colores: nuevosColores }));
-      this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: nuevasZonas }));
+    // Asegurar que los marcadores existan en el mapa
+    if (!this.marcadoresPacientes || this.marcadoresPacientes.length === 0) {
+      this.agregarMarcadoresPacientes(false);
     }
-
-    this.agregarMarcadoresPacientes(false);
 
     // Centrar mapa de inmediato en los pacientes encontrados
     const conCoords = finalPacientes.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
     if (conCoords.length > 0 && this.map) {
       if (conCoords.length === 1) {
-        this.map.setView([conCoords[0].lat, conCoords[0].lng], 17);
+        this.map.setView([conCoords[0].lat, conCoords[0].lng], 17, { animate: true });
       } else {
         const bounds = L.latLngBounds(conCoords.map((p: any) => L.latLng(p.lat, p.lng)));
         if (bounds.isValid()) {
-          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17 });
+          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17, animate: true });
         }
       }
     }
 
     // Abrir popup automáticamente del primer paciente encontrado
-    setTimeout(() => {
-      this.abrirPopupDelPrimerPaciente();
-    }, 400);
+    if (finalPacientes.length > 0) {
+      setTimeout(() => {
+        this.abrirPopupDePaciente(finalPacientes[0]);
+      }, 250);
+
+      const nom = finalPacientes[0].nombreCompleto || finalPacientes[0].nombre || 'Paciente';
+      this.mostrarToast('Paciente Encontrado', `📍 ${nom}`, 'success', 2200);
+    }
   }
 
   private inferirColoniaDeCalle(street: string): string {
@@ -3746,19 +3698,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     // Redibujar zonas
     this.dibujarTodasLasZonas();
 
-    // Enfocar inmediatamente en donde están concentrados todos los pacientes
-    this.enfocarZonaConMasPacientes(false);
+    // Enfocar inmediatamente en donde están concentrados todos los pacientes y abrir el popup del paciente principal
+    this.enfocarZonaConMasPacientes(false, true);
 
     // Ajuste adicional en el siguiente tick para garantizar teselas y vista perfectas
     setTimeout(() => {
       if (this.map) {
         this.map.invalidateSize(false);
-        this.enfocarZonaConMasPacientes(false);
+        this.enfocarZonaConMasPacientes(false, true);
         if (this.pacientesLayerGroup && typeof (this.pacientesLayerGroup as any).bringToFront === 'function') {
           (this.pacientesLayerGroup as any).bringToFront();
         }
       }
-    }, 60);
+    }, 150);
 
     this.mostrarToast('Capa de Mapa', `Vista cambiada a ${this.obtenerNombreCapa(tipo)}`, 'info', 1600);
     this.mostrarMenuCapas = false;
