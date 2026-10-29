@@ -31,6 +31,7 @@ import { CalendarioService, VisitaData } from '../../services/calendario.service
 import { VisitasHoyService } from '../../services/visitas-hoy.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { timeout } from 'rxjs';
 
 declare const Toastify: any;
 
@@ -752,19 +753,25 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // 1. Agrupar coordenadas por zona
+    // 1. Agrupar coordenadas por zona y recopilar todas las coordenadas válidas
     const zonasMap = new Map<string, L.LatLng[]>();
+    const allCoords: L.LatLng[] = [];
 
     pacientesBase.forEach((p: any) => {
-      if (!p.lat || !p.lng || p.lat === 0 || p.lng === 0) return;
+      const lat = parseFloat(p.lat);
+      const lng = parseFloat(p.lng);
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+      const coord = L.latLng(lat, lng);
+      allCoords.push(coord);
+
       const zona = this.determinarZona(p) || this.obtenerColonia(p.direccion || '', p.colonia || '') || 'Zona General';
       if (!zonasMap.has(zona)) {
         zonasMap.set(zona, []);
       }
-      zonasMap.get(zona)!.push(L.latLng(p.lat, p.lng));
+      zonasMap.get(zona)!.push(coord);
     });
 
-    if (zonasMap.size === 0) {
+    if (allCoords.length === 0) {
       console.warn('⚠️ No hay coordenadas válidas para enfocar zona');
       return;
     }
@@ -782,11 +789,17 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    console.log(`📍 [Enfocar Zona] Zona top con más pacientes: "${topZona}" (${maxPacientes} pacientes)`);
+    console.log(`📍 [Enfocar Zona] Zona top con más pacientes: "${topZona}" (${maxPacientes} pacientes de ${allCoords.length} totales)`);
 
-    if (topCoords.length > 0) {
+    // Si la zona con mayor número tiene al menos el 35% de los pacientes o al menos 3 pacientes, enfocar esa concentración principal;
+    // de lo contrario o si los pacientes abarcan varias colonias, enfocar la vista en todos los pacientes
+    let coordsToFocus = (topCoords.length >= 3 || topCoords.length >= allCoords.length * 0.35)
+      ? topCoords
+      : allCoords;
+
+    if (coordsToFocus.length > 0) {
       try {
-        const bounds = L.latLngBounds(topCoords);
+        const bounds = L.latLngBounds(coordsToFocus);
         if (bounds.isValid()) {
           this.map.fitBounds(bounds, {
             padding: [60, 60],
@@ -1412,8 +1425,78 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.http.post(`${this.apiUrl}/pacientes`, pacienteData).subscribe({
       next: (response: any) => {
         this.pacienteGuardando = false;
+        const nuevoId = response?.id || response?.paciente?.id || response?.data?.id || (response && typeof response === 'object' && response.insertId) || Date.now();
+        const numLat = parseFloat(String(pacienteData.lat || this.centerLat || 21.1165));
+        const numLng = parseFloat(String(pacienteData.lng || this.centerLng || -101.6865));
+
+        const pacienteGuardado: any = {
+          ...pacienteData,
+          id: nuevoId,
+          lat: numLat,
+          lng: numLng,
+          nombre: primerNombre,
+          apellidoPaterno: apPaterno,
+          apellidoMaterno: apMaterno,
+          nombreCompleto: nombreCompleto,
+          telefono: tel,
+          telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
+          telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
+          curp: curp,
+          calle: pacienteData.calle || '',
+          numero: pacienteData.numero || '',
+          colonia: pacienteData.colonia || 'LEÓN',
+          direccion: pacienteData.direccion || `${pacienteData.calle || ''} #${pacienteData.numero || ''}, ${pacienteData.colonia || ''}`.trim(),
+          estatus: estatusFinal,
+          programa: programaFinal,
+          finado: esFinado,
+          estatusVital: esFinado ? 'finado' : 'vivo'
+        };
+
+        // 1. Agregar inmediatamente al inicio de pacientesOriginal y pacientes locales
+        const idxOrig = this.pacientesOriginal.findIndex((p: any) => p.id === nuevoId);
+        if (idxOrig >= 0) {
+          this.pacientesOriginal[idxOrig] = pacienteGuardado;
+        } else {
+          this.pacientesOriginal.unshift(pacienteGuardado);
+        }
+
+        const idxPac = this.pacientes.findIndex((p: any) => p.id === nuevoId);
+        if (idxPac >= 0) {
+          this.pacientes[idxPac] = pacienteGuardado;
+        } else {
+          this.pacientes.unshift(pacienteGuardado);
+        }
+
+        // 2. Persistir de inmediato en caché local para búsquedas y modo sin conexión
+        try {
+          localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+          localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+        } catch (e) { }
+
+        // 3. Notificar al servicio compartido de pacientes
+        this.pacientesMapService.setPacientesCache(this.pacientesOriginal);
+
+        // 4. Agregar a zonas disponibles si es nueva colonia
+        const coloniaNueva = (pacienteGuardado.colonia || '').toUpperCase().trim();
+        if (coloniaNueva && !this.manzanasDisponibles.includes(coloniaNueva)) {
+          this.manzanasDisponibles = [...this.manzanasDisponibles, coloniaNueva].sort();
+          if (!this.coloresManzanas[coloniaNueva]) {
+            const nuevoColor = this.coloresDisponibles[this.manzanasDisponibles.indexOf(coloniaNueva) % this.coloresDisponibles.length];
+            this.coloresManzanas = { ...this.coloresManzanas, [coloniaNueva]: nuevoColor };
+          }
+          this.store.dispatch(AppActions.setColoresManzanas({ colores: this.coloresManzanas }));
+          this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: this.manzanasDisponibles }));
+        }
+
+        // 5. Dibujar marcadores y enfocar al nuevo paciente en el mapa
+        this.agregarMarcadoresPacientes(false);
+        if (this.map && numLat && numLng) {
+          this.map.setView([numLat, numLng], 17);
+        }
+
         this.cerrarModalPaciente();
         this.cargarPacientesDirectamente(true);
+
         Swal.fire({
           icon: 'success',
           title: '¡Paciente Guardado!',
@@ -1422,11 +1505,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       },
       error: (error) => {
-        console.warn('⚠️ Guardando localmente en mapa:', error);
+        console.warn('⚠️ Guardando localmente en mapa tras aviso:', error);
         this.pacienteGuardando = false;
 
+        const nuevoId = Date.now();
+        const numLat = parseFloat(String(pacienteData.lat || this.centerLat || 21.1165));
+        const numLng = parseFloat(String(pacienteData.lng || this.centerLng || -101.6865));
+
         const nuevoObj: PacienteMap = {
-          id: Date.now(),
+          id: nuevoId,
           nombre: nombreCompleto,
           apellidoPaterno: this.nuevoPaciente.apellidoPaterno || '',
           apellidoMaterno: this.nuevoPaciente.apellidoMaterno || '',
@@ -1439,9 +1526,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           seccion: '277',
           genero: 'M',
           direccion: this.nuevoPaciente.direccion || `${this.nuevoPaciente.calle} ${this.nuevoPaciente.numero || ''}, ${this.nuevoPaciente.colonia || ''}`,
-          colonia: this.nuevoPaciente.colonia || 'SANTA ROSA DE LIMA',
-          lat: Number(this.nuevoPaciente.lat || this.centerLat || 21.1165),
-          lng: Number(this.nuevoPaciente.lng || this.centerLng || -101.6865),
+          colonia: this.nuevoPaciente.colonia || 'LEÓN',
+          lat: numLat,
+          lng: numLng,
           discapacidades: {
             motriz: !!this.nuevoPaciente.discapacidades?.motriz,
             visual: !!this.nuevoPaciente.discapacidades?.visual,
@@ -1453,10 +1540,18 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           fechaFinado: fechaFinadoFinal
         };
 
+        this.pacientesOriginal.unshift(nuevoObj);
         this.pacientes.unshift(nuevoObj);
+
+        try {
+          localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+          localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+        } catch (e) { }
+
+        this.pacientesMapService.setPacientesCache(this.pacientesOriginal);
         this.agregarMarcadoresPacientes(false);
         if (this.map && nuevoObj.lat && nuevoObj.lng) {
-          this.map.setView([nuevoObj.lat, nuevoObj.lng], 18, { animate: true });
+          this.map.setView([nuevoObj.lat, nuevoObj.lng], 17, { animate: true });
         }
         this.cerrarModalPaciente();
         Swal.fire({
@@ -2987,14 +3082,16 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ⭐⭐⭐ BÚSQUEDA DE DIRECCIÓN INTELIGENTE ⭐⭐⭐
   buscarDireccion() {
+    // Si había una búsqueda colgada, desbloquearla inmediatamente
     if (this.busquedaEnProgreso) {
-      console.log('⏳ Búsqueda en progreso, ignorando nueva solicitud...');
-      return;
+      console.warn('⏳ Búsqueda previa en progreso, reiniciando para la nueva búsqueda...');
+      this.busquedaEnProgreso = false;
+      this.isSearching = false;
     }
 
     const query = this.searchQuery?.trim();
     if (!query) {
-      this.mostrarToast('Error', 'Ingresa una dirección para buscar', 'warning');
+      this.mostrarToast('Error', 'Ingresa el nombre o dirección del paciente para buscar', 'warning');
       return;
     }
 
@@ -3002,105 +3099,181 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isSearching = true;
     this.cdr.detectChanges();
 
+    // ⏱️ TIMEOUT DE SEGURIDAD ABSOLUTO: Nunca permitir que el spinner se quede activo más de 4.5 segundos
+    const safetyTimeout = setTimeout(() => {
+      if (this.isSearching || this.busquedaEnProgreso) {
+        console.warn('⏱️ Timeout de seguridad de búsqueda alcanzado, restableciendo estado');
+        this.isSearching = false;
+        this.busquedaEnProgreso = false;
+        this.cdr.detectChanges();
+      }
+    }, 4500);
+
+    const terminarBusqueda = () => {
+      clearTimeout(safetyTimeout);
+      this.busquedaEnProgreso = false;
+      this.isSearching = false;
+      this.cdr.detectChanges();
+    };
+
     if (this.searchMarker) {
       try { this.map?.removeLayer(this.searchMarker); } catch (e) { }
       this.searchMarker = null;
     }
 
-    const backupOriginal = [...this.pacientesOriginal];
-    const queryUpper = query.toUpperCase();
+    const backupOriginal = (this.pacientesOriginal && this.pacientesOriginal.length > 0)
+      ? [...this.pacientesOriginal]
+      : [...this.pacientes];
 
-    // Extractor robusto de dirección
-    const extractPatientDir = (dir: string) => {
-      const full = (dir || '').toUpperCase().trim();
-      const mainPart = full.split('|')[0].trim();
-      const numM = mainPart.match(/#\s*([0-9]+)/);
-      const houseNum = numM ? numM[1] : '';
-      const beforeHash = mainPart.split(/#|,/)[0].trim();
-      const street = beforeHash
-        .replace(/^(?:CALLE|C\.|AVENIDA|AV\.|BLVD\.|BLVD|ANDADOR|AND\.|CTO\.|CIRCUITO|PROL\.|PROLONGACION)\s+/i, '')
+    // Normalizador en español: quita acentos, signos de puntuación redundantes y normaliza mayúsculas
+    const normalizar = (txt: string): string => {
+      if (!txt) return '';
+      return String(txt)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
         .trim();
-      return { street, houseNum, full };
     };
 
-    // Detectar número y tokens de calle en la búsqueda
-    const matchNumber = query.match(/\b\d+\b/);
-    const hasNumber = !!matchNumber;
-    const searchNum = matchNumber ? matchNumber[0] : '';
-    const cleanStreetTokens = queryUpper
-      .replace(/\b\d+\b/g, '')
-      .replace(/[#,,.]/g, ' ')
-      .replace(/\b(?:CALLE|C|AVENIDA|AV|BLVD|BOULEVARD|ANDADOR|AND|PRIVADA|PRIV|CTO|CIRCUITO|PROL|COLONIA|COL|FRACCIONAMIENTO|FRACC|BARRIO|RESIDENCIAL|LEON|GUANAJUATO|GTO|MEXICO)\b/gi, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .split(' ')
-      .filter((t: string) => t.length >= 2);
+    const queryNorm = normalizar(query);
+    const queryTokens = queryNorm
+      .split(/[\s,#.-]+/)
+      .filter((t: string) => t.length > 0);
 
-    const searchStreet = cleanStreetTokens.join(' ');
+    // 1. BÚSQUEDA LOCAL ULTRA-RÁPIDA EN MEMORIA
+    // Coincidencia con nombre, apellidos, dirección, curp, teléfono, número, colonia, id
+    const exactPatients = backupOriginal.filter((p: any) => {
+      const pNombre = normalizar(`${p.nombre || ''} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`);
+      const pCompleto = normalizar(p.nombreCompleto || '');
+      const pCurp = normalizar(p.curp || '');
+      const pTel = String(p.telefonoCelular || p.telefonoFijo || p.telefono || '').replace(/\D/g, '');
+      const pCalle = normalizar(p.calle || '');
+      const pNum = String(p.numero || '').trim();
+      const pColonia = normalizar(p.colonia || '');
+      const pDir = normalizar(p.direccion || '');
+      const pRef = normalizar(p.referencias || p.referenciasViales || '');
+      const pId = String(p.id || '');
 
-    // 1. Búsqueda local en pacientesOriginal
-    let exactPatients: any[] = [];
-    if (hasNumber) {
-      exactPatients = backupOriginal.filter((p: any) => {
-        const { street, houseNum, full } = extractPatientDir(p.direccion);
-        const matchNum = (houseNum === searchNum) || full.includes(`#${searchNum}`) || full.includes(` ${searchNum}`) || (p.numero && p.numero.toString() === searchNum);
-        if (!matchNum) return false;
-        if (cleanStreetTokens.length === 0) return true;
-        return cleanStreetTokens.every((tok: string) => street.includes(tok) || full.includes(tok)) || street.includes(searchStreet);
-      });
-    } else {
-      // Búsqueda por nombre de persona, CURP, teléfono o calle
-      exactPatients = backupOriginal.filter((p: any) => {
-        const nombreCompleto = `${p.nombre || ''} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`.toUpperCase();
-        const curp = (p.curp || '').toUpperCase();
-        const tel = (p.telefonoCelular || p.telefonoFijo || '');
-        const { street, full } = extractPatientDir(p.direccion);
-        if (nombreCompleto.includes(queryUpper) || (curp && curp.includes(queryUpper)) || (tel && tel.includes(queryUpper))) {
-          return true;
-        }
-        if (cleanStreetTokens.length > 0 && cleanStreetTokens.every((tok: string) => street.includes(tok) || full.includes(tok))) {
-          return true;
-        }
-        return false;
-      });
-    }
+      const fullString = `${pNombre} ${pCompleto} ${pCurp} ${pTel} ${pCalle} ${pNum} ${pColonia} ${pDir} ${pRef} ${pId}`;
 
-    // Si encontramos al paciente EXACTO localmente:
+      // A) Coincidencia directa con la frase completa normalizada
+      if (fullString.includes(queryNorm)) return true;
+      if (pNombre.includes(queryNorm) || pCompleto.includes(queryNorm)) return true;
+      if (pDir.includes(queryNorm) || pCalle.includes(queryNorm)) return true;
+
+      // B) Búsqueda por teléfono
+      const queryTelDigits = queryNorm.replace(/\D/g, '');
+      if (queryTelDigits.length >= 4 && pTel.includes(queryTelDigits)) return true;
+
+      // C) Búsqueda multi-palabra: todos los tokens ingresados deben encontrarse en el paciente
+      if (queryTokens.length > 1) {
+        const todosCoinciden = queryTokens.every((tok: string) => fullString.includes(tok));
+        if (todosCoinciden) return true;
+      }
+
+      return false;
+    });
+
     if (exactPatients.length > 0) {
-      console.log(`✅ Paciente exacto encontrado localmente: ${exactPatients.length}`);
+      console.log(`✅ Paciente(s) encontrado(s) en memoria: ${exactPatients.length}`);
       this.mostrarPacientesEncontrados(exactPatients, backupOriginal, query);
-      this.busquedaEnProgreso = false;
-      this.isSearching = false;
-      this.cdr.detectChanges();
+      terminarBusqueda();
       return;
     }
 
-    // 2. Si no se encontró en la lista local, consultar al backend por si pertenece a otra enfermera o zona
-    console.log(`🔍 Buscando en backend para "${query}"...`);
-    this.http.get<any[]>(`${this.apiUrl}/pacientes/buscar?direccion=${encodeURIComponent(query)}`).subscribe({
-      next: (backendPatients: any[]) => {
-        if (backendPatients && backendPatients.length > 0) {
-          console.log(`✅ Pacientes encontrados en backend: ${backendPatients.length}`);
-          const validCoords = backendPatients.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
-          if (validCoords.length > 0) {
-            this.mostrarPacientesEncontrados(validCoords, backupOriginal, query);
-            this.busquedaEnProgreso = false;
-            this.isSearching = false;
-            this.cdr.detectChanges();
-            return;
+    // 2. Si no se encontró en memoria local, buscar en la base de datos
+    console.log(`🔍 Paciente no encontrado localmente, consultando backend para "${query}"...`);
+    this.http.get<any[]>(`${this.apiUrl}/pacientes/buscar?direccion=${encodeURIComponent(query)}`)
+      .pipe(timeout(3500))
+      .subscribe({
+        next: (backendPatients: any[]) => {
+          if (backendPatients && backendPatients.length > 0) {
+            const validCoords = backendPatients.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
+            if (validCoords.length > 0) {
+              console.log(`✅ Pacientes encontrados en backend: ${validCoords.length}`);
+              validCoords.forEach((bp: any) => {
+                if (!this.pacientesOriginal.some((o: any) => o.id === bp.id)) {
+                  this.pacientesOriginal.push(bp);
+                }
+              });
+              this.mostrarPacientesEncontrados(validCoords, backupOriginal, query);
+              terminarBusqueda();
+              return;
+            }
           }
+
+          // 3. Fallback: Si no hay resultados en BD
+          this.resolverFallbackBusqueda(query, queryNorm, queryTokens, backupOriginal, terminarBusqueda);
+        },
+        error: () => {
+          this.resolverFallbackBusqueda(query, queryNorm, queryTokens, backupOriginal, terminarBusqueda);
         }
-        // 3. Fallback a Nominatim si no existe en la base de datos
-        console.log(`🌍 Buscando ubicación geográfica en OSM para "${query}"...`);
-        this.buscarUbicacionPorDireccion(query, searchStreet, searchNum);
+      });
+  }
+
+  private resolverFallbackBusqueda(
+    query: string,
+    queryNorm: string,
+    queryTokens: string[],
+    backupOriginal: any[],
+    terminarBusqueda: () => void
+  ) {
+    // Detectar si la búsqueda tiene apariencia de calle / dirección geográfica en León
+    const esDireccionVial = /(?:CALLE|AVENIDA|AV|BLVD|BOULEVARD|CTO|CIRCUITO|ANDADOR|AND|PRIVADA|PRIV|PROL|COLONIA|COL|FRACCIONAMIENTO|#|\b\d{2,}\b)/i.test(query);
+
+    if (!esDireccionVial) {
+      // Es una búsqueda por nombre de persona, folio o teléfono que no se encontró en la BD
+      this.mostrarToast('No encontrado', `No se encontró el paciente "${query}"`, 'warning', 3000);
+      terminarBusqueda();
+      return;
+    }
+
+    // Si parece dirección, intentar buscar punto geográfico con OpenStreetMap con timeout estricto
+    this.buscarUbicacionGeograficaOSM(query, terminarBusqueda);
+  }
+
+  private buscarUbicacionGeograficaOSM(query: string, onConcluir: () => void) {
+    this.mostrarToast('Buscando ubicación', `Buscando "${query}" en el mapa...`, 'info', 1200);
+
+    const cleanQuery = query.toLowerCase().includes('león') || query.toLowerCase().includes('leon')
+      ? query
+      : `${query}, León, Guanajuato, Mexico`;
+    const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&limit=1&countrycodes=mx`;
+
+    this.http.get(geocodingUrl).pipe(timeout(3000)).subscribe({
+      next: (results: any) => {
+        if (results && results.length > 0 && !isNaN(parseFloat(results[0].lat))) {
+          const res = results[0];
+          const lat = parseFloat(res.lat);
+          const lon = parseFloat(res.lon);
+          const colonia = this.inferirColoniaDeCalle(query);
+
+          this.mostrarMarcadorUbicacion({
+            lat: lat,
+            lon: lon,
+            display_name: `${query.toUpperCase()}${colonia ? ', ' + colonia : ''}, LEÓN, GTO.`,
+            calle: query,
+            numero: '',
+            colonia: colonia
+          });
+          this.concluirBusquedaExitosa(query);
+          onConcluir();
+          return;
+        }
+
+        this.fallbackUbicacionPorPacientesCercanos(query, onConcluir);
       },
       error: () => {
-        this.buscarUbicacionPorDireccion(query, searchStreet, searchNum);
+        this.fallbackUbicacionPorPacientesCercanos(query, onConcluir);
       }
     });
   }
 
   private mostrarPacientesEncontrados(pacientes: any[], backupOriginal: any[], query: string) {
+    this.busquedaEnProgreso = false;
+    this.isSearching = false;
+    this.cdr.detectChanges();
+
     const idsExistentes = new Set();
     const finalPacientes: any[] = [];
 
@@ -3137,12 +3310,25 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.store.dispatch(AppActions.setManzanasDisponibles({ manzanas: nuevasZonas }));
     }
 
-    this.agregarMarcadoresPacientes();
+    this.agregarMarcadoresPacientes(false);
+
+    // Centrar mapa de inmediato en los pacientes encontrados
+    const conCoords = finalPacientes.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
+    if (conCoords.length > 0 && this.map) {
+      if (conCoords.length === 1) {
+        this.map.setView([conCoords[0].lat, conCoords[0].lng], 17);
+      } else {
+        const bounds = L.latLngBounds(conCoords.map((p: any) => L.latLng(p.lat, p.lng)));
+        if (bounds.isValid()) {
+          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17 });
+        }
+      }
+    }
 
     // Abrir popup automáticamente del primer paciente encontrado
     setTimeout(() => {
       this.abrirPopupDelPrimerPaciente();
-    }, 800);
+    }, 400);
   }
 
   private inferirColoniaDeCalle(street: string): string {
@@ -3157,104 +3343,34 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return pacienteCercano?.colonia || (pacienteCercano ? this.extraerColonia(pacienteCercano.direccion) : '') || '';
   }
 
-  private buscarUbicacionPorDireccion(query: string, streetHint?: string, numHint?: string) {
-    this.mostrarToast('Buscando ubicación', `Buscando "${query}" en el mapa...`, 'info', 1000);
-
-    const cleanQuery = query.includes('LEON') || query.includes('León') ? query : `${query}, León, Guanajuato, Mexico`;
-    const geocodingUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&limit=1&countrycodes=mx`;
-
-    this.http.get(geocodingUrl).subscribe({
-      next: (results: any) => {
-        if (results && results.length > 0 && !isNaN(parseFloat(results[0].lat))) {
-          const res = results[0];
-          const lat = parseFloat(res.lat);
-          const lon = parseFloat(res.lon);
-          const colonia = this.inferirColoniaDeCalle(streetHint || query);
-
-          this.mostrarMarcadorUbicacion({
-            lat: lat,
-            lon: lon,
-            display_name: `${query.toUpperCase()}${colonia ? ', ' + colonia : ''}, LEÓN, GTO.`,
-            calle: streetHint || query,
-            numero: numHint || '',
-            colonia: colonia
-          });
-          this.concluirBusquedaExitosa(query);
-          return;
-        }
-
-        // Si no encontró el número exacto, buscar la calle en León
-        this.fallbackUbicacionPorCalleOPacientes(query, streetHint, numHint);
-      },
-      error: () => {
-        this.fallbackUbicacionPorCalleOPacientes(query, streetHint, numHint);
-      }
+  private fallbackUbicacionPorPacientesCercanos(query: string, onConcluir?: () => void) {
+    const stUpper = query.toUpperCase().trim();
+    const pacienteCercano = this.pacientesOriginal.find((p: any) => {
+      const dir = (p.direccion || '').toUpperCase();
+      const c = (p.calle || '').toUpperCase();
+      return (c && c.includes(stUpper)) || dir.includes(stUpper);
     });
-  }
 
-  private fallbackUbicacionPorCalleOPacientes(query: string, streetHint?: string, numHint?: string) {
-    // 1. Intentar geocodificar solo el nombre de la calle
-    if (streetHint && streetHint.length >= 2) {
-      const streetQuery = `${streetHint}, León, Guanajuato, Mexico`;
-      const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(streetQuery)}&limit=1&countrycodes=mx`;
-
-      this.http.get(fallbackUrl).subscribe({
-        next: (stResults: any) => {
-          if (stResults && stResults.length > 0 && !isNaN(parseFloat(stResults[0].lat))) {
-            const res = stResults[0];
-            const lat = parseFloat(res.lat);
-            const lon = parseFloat(res.lon);
-            const colonia = this.inferirColoniaDeCalle(streetHint);
-
-            this.mostrarMarcadorUbicacion({
-              lat: lat,
-              lon: lon,
-              display_name: `${query.toUpperCase()}${colonia ? ', ' + colonia : ''}, LEÓN, GTO.`,
-              calle: streetHint,
-              numero: numHint || '',
-              colonia: colonia
-            });
-            this.concluirBusquedaExitosa(query);
-            return;
-          }
-          this.fallbackUbicacionPorPacientesCercanos(query, streetHint, numHint);
-        },
-        error: () => this.fallbackUbicacionPorPacientesCercanos(query, streetHint, numHint)
+    if (pacienteCercano && pacienteCercano.lat && pacienteCercano.lng) {
+      const col = pacienteCercano.colonia || this.extraerColonia(pacienteCercano.direccion);
+      this.mostrarMarcadorUbicacion({
+        lat: pacienteCercano.lat + 0.00015,
+        lon: pacienteCercano.lng + 0.00015,
+        display_name: `${query.toUpperCase()}${col ? ', ' + col : ''}, LEÓN, GTO.`,
+        calle: query,
+        numero: '',
+        colonia: col
       });
+      this.concluirBusquedaExitosa(query);
+      if (onConcluir) onConcluir();
       return;
-    }
-
-    this.fallbackUbicacionPorPacientesCercanos(query, streetHint, numHint);
-  }
-
-  private fallbackUbicacionPorPacientesCercanos(query: string, streetHint?: string, numHint?: string) {
-    if (streetHint && streetHint.length >= 2) {
-      const stUpper = streetHint.toUpperCase().trim();
-      const pacienteCercano = this.pacientesOriginal.find((p: any) => {
-        const dir = (p.direccion || '').toUpperCase();
-        const c = (p.calle || '').toUpperCase();
-        return (c && c.includes(stUpper)) || dir.includes(stUpper);
-      });
-
-      if (pacienteCercano && pacienteCercano.lat && pacienteCercano.lng) {
-        const col = pacienteCercano.colonia || this.extraerColonia(pacienteCercano.direccion);
-        this.mostrarMarcadorUbicacion({
-          lat: pacienteCercano.lat + 0.00015,
-          lon: pacienteCercano.lng + 0.00015,
-          display_name: `${query.toUpperCase()}${col ? ', ' + col : ''}, LEÓN, GTO.`,
-          calle: streetHint,
-          numero: numHint || '',
-          colonia: col
-        });
-        this.concluirBusquedaExitosa(query);
-        return;
-      }
     }
 
     this.mostrarToast('No encontrado', `No se encontró "${query}" en el mapa`, 'warning', 3000);
     this.busquedaEnProgreso = false;
     this.isSearching = false;
     this.cdr.detectChanges();
+    if (onConcluir) onConcluir();
   }
 
   private concluirBusquedaExitosa(query: string) {
@@ -3581,7 +3697,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.map || !this.baseLayers[tipo]) return;
 
     if (this.currentTileLayer) {
-      this.map.removeLayer(this.currentTileLayer);
+      try { this.map.removeLayer(this.currentTileLayer); } catch (e) { }
     }
 
     this.capaActualTipo = tipo;
@@ -3592,6 +3708,43 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       localStorage.setItem('cuidalia_capa_mapa', tipo);
     } catch (e) {}
+
+    // Garantizar que los pacientes sigan presentes y en primer plano visual
+    if (!this.pacientes || this.pacientes.length === 0) {
+      if (this.pacientesOriginal && this.pacientesOriginal.length > 0) {
+        this.pacientes = [...this.pacientesOriginal];
+      }
+    }
+
+    if (!this.pacientesLayerGroup) {
+      this.pacientesLayerGroup = L.featureGroup();
+    }
+    if (!this.map.hasLayer(this.pacientesLayerGroup)) {
+      this.pacientesLayerGroup.addTo(this.map);
+    }
+
+    // Re-renderizar marcadores y asegurarse de que estén en primer plano visual
+    this.agregarMarcadoresPacientes(false);
+    if (this.pacientesLayerGroup && typeof (this.pacientesLayerGroup as any).bringToFront === 'function') {
+      (this.pacientesLayerGroup as any).bringToFront();
+    }
+
+    // Redibujar zonas
+    this.dibujarTodasLasZonas();
+
+    // Enfocar inmediatamente en donde están concentrados todos los pacientes
+    this.enfocarZonaConMasPacientes(false);
+
+    // Ajuste adicional en el siguiente tick para garantizar teselas y vista perfectas
+    setTimeout(() => {
+      if (this.map) {
+        this.map.invalidateSize(false);
+        this.enfocarZonaConMasPacientes(false);
+        if (this.pacientesLayerGroup && typeof (this.pacientesLayerGroup as any).bringToFront === 'function') {
+          (this.pacientesLayerGroup as any).bringToFront();
+        }
+      }
+    }, 60);
 
     this.mostrarToast('Capa de Mapa', `Vista cambiada a ${this.obtenerNombreCapa(tipo)}`, 'info', 1600);
     this.mostrarMenuCapas = false;
