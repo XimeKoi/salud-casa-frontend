@@ -646,108 +646,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ⭐ ACTIVAR COLONIA Y DIBUJAR CÍRCULO
-  // ⭐⭐⭐ DIBUJAR TODAS LAS ZONAS AUTOMÁTICAMENTE AL INICIAR EL MAPA ⭐⭐⭐
+  // ⭐⭐⭐ LIMPIEZA DE ZONAS (SIN CÍRCULOS NI ETIQUETAS ENCIMADAS) ⭐⭐⭐
   dibujarTodasLasZonas() {
-    if (!this.map || !this.mapInicializado) return;
-
     if (this.grupoTodasLasZonas) {
-      try { this.map.removeLayer(this.grupoTodasLasZonas); } catch (e) { }
+      try { this.map?.removeLayer(this.grupoTodasLasZonas); } catch (e) { }
       this.grupoTodasLasZonas = null;
-    }
-
-    const pacientesBase = (this.pacientesOriginal && this.pacientesOriginal.length > 0)
-      ? this.pacientesOriginal
-      : this.pacientes;
-
-    if (!pacientesBase || pacientesBase.length === 0) return;
-
-    // Agrupar pacientes por zona/colonia
-    const zonasMap = new Map<string, any[]>();
-    pacientesBase.forEach((p: any) => {
-      const z = this.obtenerColonia(p.direccion || '', p.colonia || '').toUpperCase().trim();
-      if (z && z !== '' && z !== 'SIN COLONIA') {
-        if (!zonasMap.has(z)) {
-          zonasMap.set(z, []);
-        }
-        zonasMap.get(z)!.push(p);
-      }
-    });
-
-    if (zonasMap.size === 0) return;
-
-    this.grupoTodasLasZonas = L.featureGroup();
-
-    zonasMap.forEach((pacs, zona) => {
-      const pacsConCoords = pacs.filter((p: any) => p.lat && p.lng && p.lat !== 0 && p.lng !== 0);
-      if (pacsConCoords.length === 0) return;
-
-      const latLngs = pacsConCoords.map((p: any) => L.latLng(p.lat, p.lng));
-      const bounds = L.latLngBounds(latLngs);
-      const center = bounds.getCenter();
-
-      let maxDistance = 0;
-      latLngs.forEach((ll: any) => {
-        const d = center.distanceTo(ll);
-        if (d > maxDistance) maxDistance = d;
-      });
-
-      const radius = Math.max(maxDistance * 1.05, 260);
-      const color = (this.coloresManzanas && this.coloresManzanas[zona]) ? this.coloresManzanas[zona] : '#7E101F';
-
-      const circle = L.circle(center, {
-        radius: radius,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.12,
-        weight: 2.5,
-        dashArray: '6, 6'
-      });
-
-      const tooltipContent = `<div class="zona-badge-tag" style="
-        background: #ffffff;
-        border-left: 4px solid ${color};
-        color: #1e293b;
-        padding: 3px 8px;
-        border-radius: 8px;
-        font-size: 11px;
-        font-weight: 800;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        white-space: nowrap;
-      ">
-        <span style="color: ${color};"><i class="fas fa-layer-group"></i></span>
-        <span>${zona}</span>
-        <span style="background: ${color}; color: #ffffff; padding: 1px 5px; border-radius: 10px; font-size: 9.5px;">${pacsConCoords.length}</span>
-      </div>`;
-
-      circle.bindTooltip(tooltipContent, {
-        permanent: true,
-        direction: 'center',
-        className: 'zona-leaflet-tooltip'
-      });
-
-      circle.on('click', () => {
-        this.ngZone.run(() => {
-          this.activarColoniaEnMapa({
-            nombre: zona,
-            colonia: zona,
-            pacientes: pacsConCoords,
-            color: color
-          });
-        });
-      });
-
-      this.grupoTodasLasZonas!.addLayer(circle);
-    });
-
-    if (this.grupoTodasLasZonas && this.map) {
-      this.grupoTodasLasZonas.addTo(this.map);
-      if (typeof (this.grupoTodasLasZonas as any).bringToBack === 'function') {
-        (this.grupoTodasLasZonas as any).bringToBack();
-      }
-      console.log(`✅ Visualizadas ${zonasMap.size} zonas territoriales en el mapa`);
     }
   }
 
@@ -1377,33 +1280,70 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   guardarPacienteDesdeModal() {
-    if (!this.nuevoPaciente.nombre || !this.nuevoPaciente.nombre.trim() ||
-      !this.nuevoPaciente.apellidoPaterno || !this.nuevoPaciente.apellidoPaterno.trim()) {
+    let rawNombre = (this.nuevoPaciente.nombre || '').trim();
+    let apPaterno = (this.nuevoPaciente.apellidoPaterno || '').trim();
+    let apMaterno = (this.nuevoPaciente.apellidoMaterno || '').trim();
+
+    if (!rawNombre && !apPaterno) {
       Swal.fire({
         icon: 'warning',
-        title: 'Campos requeridos',
-        text: 'Nombre y apellido paterno son obligatorios',
+        title: 'Nombre requerido',
+        text: 'Por favor ingresa el nombre del paciente para registrarlo.',
         confirmButtonColor: '#7A192B'
       });
       return;
     }
 
+    // ⭐ Si el usuario escribió el nombre completo en un solo campo, separar inteligentemente
+    if (rawNombre && !apPaterno) {
+      const parts = rawNombre.split(/\s+/).filter(Boolean);
+      if (parts.length >= 3) {
+        rawNombre = parts.slice(0, parts.length - 2).join(' ');
+        apPaterno = parts[parts.length - 2];
+        if (!apMaterno) apMaterno = parts[parts.length - 1];
+      } else if (parts.length === 2) {
+        rawNombre = parts[0];
+        apPaterno = parts[1];
+      } else {
+        apPaterno = '.';
+      }
+    } else if (!rawNombre && apPaterno) {
+      const parts = apPaterno.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        rawNombre = parts[0];
+        apPaterno = parts.slice(1).join(' ');
+      } else {
+        rawNombre = apPaterno;
+        apPaterno = '.';
+      }
+    }
+
     this.pacienteGuardando = true;
     this.cdr.detectChanges();
 
-    const primerNombre = this.nuevoPaciente.nombre.trim();
-    const apPaterno = this.nuevoPaciente.apellidoPaterno.trim();
-    const apMaterno = (this.nuevoPaciente.apellidoMaterno || '').trim();
-    const nombreCompleto = `${primerNombre} ${apPaterno} ${apMaterno}`.trim();
+    const primerNombre = rawNombre;
+    const nombreCompleto = `${primerNombre} ${apPaterno} ${apMaterno}`.replace(/\s+/g, ' ').replace(/\s*\.\s*$/, '').trim();
     const tel = (this.nuevoPaciente.telefonoCelular || this.nuevoPaciente.telefonoFijo || '').trim();
     const curp = (this.nuevoPaciente.curp || '').trim().toUpperCase();
 
-    // Normalizar teléfono en formato internacional mexicano +52 si tiene 10 dígitos (para pasarelas SMS como TextBee)
+    // Normalizar teléfono
     let soloDigitos = tel.replace(/\D/g, '');
     let telE164 = soloDigitos;
     if (soloDigitos.length === 10) {
       telE164 = `+52${soloDigitos}`;
     }
+
+    // Obtener idEnfermera activo
+    let idEnf = Number(this.idEnfermera);
+    try {
+      const userStr = localStorage.getItem('userData');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        idEnf = Number(u.id_personal_enfermeria || u.id || idEnf || 1);
+      }
+    } catch (e) { }
+    if (!idEnf || isNaN(idEnf)) idEnf = 1;
+    this.idEnfermera = idEnf;
 
     const tieneAlgunaDiscapacidad = !!(
       this.nuevoPaciente.discapacidades?.motriz ||
@@ -1416,12 +1356,22 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const esFinado = this.nuevoPaciente.estatusVital === 'finado' || this.nuevoPaciente.estatus === 'FINADO' || !!this.nuevoPaciente.finado;
     const estatusFinal = esFinado ? 'FINADO' : (this.nuevoPaciente.estatus || 'PENDIENTE');
     const programaFinal = tieneAlgunaDiscapacidad ? 'DISCAPACIDAD' : (this.nuevoPaciente.programa || 'PAM');
-    const fechaFinadoFinal = esFinado ? (this.nuevoPaciente.fechaFinado || new Date().toISOString().split('T')[0]) : '';
+    const fechaFinadoFinal = esFinado ? (this.nuevoPaciente.fechaFinado || new Date().toISOString().split('T')[0]) : null;
     const numVisitaFinal = Math.max(1, Number(this.nuevoPaciente.numVisita) || 1);
 
+    const calle = (this.nuevoPaciente.calle || '').trim().toUpperCase();
+    const numero = (this.nuevoPaciente.numero || '').trim();
+    const colonia = (this.nuevoPaciente.colonia || 'LEÓN').trim().toUpperCase();
+    let dir = (this.nuevoPaciente.direccion || '').trim();
+    if (!dir) {
+      dir = `${calle} ${numero ? '#' + numero : ''}, ${colonia}, LEÓN, GUANAJUATO`.replace(/\s+,/g, ',').trim();
+    }
+
+    const numLat = parseFloat(String(this.nuevoPaciente.lat || this.centerLat || 21.1165));
+    const numLng = parseFloat(String(this.nuevoPaciente.lng || this.centerLng || -101.6865));
+
     const pacienteData = {
-      ...this.nuevoPaciente,
-      nombre: primerNombre, // Solo el nombre para evitar duplicación con apellidoPaterno y apellidoMaterno
+      nombre: primerNombre,
       apellidoPaterno: apPaterno,
       apellidoMaterno: apMaterno,
       nombreCompleto: nombreCompleto,
@@ -1433,6 +1383,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       idEnfermera: this.idEnfermera,
       estatus: estatusFinal,
       programa: programaFinal,
+      direccion: dir,
+      calle: calle,
+      numero: numero,
+      colonia: colonia,
+      lat: numLat,
+      lng: numLng,
       estatusVital: esFinado ? 'finado' : 'vivo',
       finado: esFinado,
       fechaFinado: fechaFinadoFinal,
@@ -1452,30 +1408,12 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     const nuevoId = Date.now();
-    const numLat = parseFloat(String(pacienteData.lat || this.centerLat || 21.1165));
-    const numLng = parseFloat(String(pacienteData.lng || this.centerLng || -101.6865));
 
     const pacienteGuardado: any = {
       ...pacienteData,
       id: nuevoId,
       lat: numLat,
-      lng: numLng,
-      nombre: primerNombre,
-      apellidoPaterno: apPaterno,
-      apellidoMaterno: apMaterno,
-      nombreCompleto: nombreCompleto,
-      telefono: tel,
-      telefonoCelular: this.nuevoPaciente.telefonoCelular || tel,
-      telefonoFijo: this.nuevoPaciente.telefonoFijo || '',
-      curp: curp,
-      calle: pacienteData.calle || '',
-      numero: pacienteData.numero || '',
-      colonia: pacienteData.colonia || 'LEÓN',
-      direccion: pacienteData.direccion || `${pacienteData.calle || ''} #${pacienteData.numero || ''}, ${pacienteData.colonia || ''}`.trim(),
-      estatus: estatusFinal,
-      programa: programaFinal,
-      finado: esFinado,
-      estatusVital: esFinado ? 'finado' : 'vivo'
+      lng: numLng
     };
 
     // 1. Agregar inmediatamente al inicio de pacientesOriginal y pacientes locales (Optimismo instantáneo)
@@ -1483,7 +1421,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.pacientes.unshift(pacienteGuardado);
 
     // 2. Agregar a zonas disponibles si es nueva colonia
-    const coloniaNueva = (pacienteGuardado.colonia || '').toUpperCase().trim();
+    const coloniaNueva = colonia;
     if (coloniaNueva && !this.manzanasDisponibles.includes(coloniaNueva)) {
       this.manzanasDisponibles = [...this.manzanasDisponibles, coloniaNueva].sort();
       if (!this.coloresManzanas[coloniaNueva]) {
@@ -1531,17 +1469,21 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     // 8. Sincronizar en segundo plano con la base de datos en Railway sin bloquear la pantalla
     this.http.post(`${this.apiUrl}/pacientes`, pacienteData).subscribe({
       next: (response: any) => {
-        const dbId = response?.id || response?.paciente?.id || response?.data?.id || (response && typeof response === 'object' && response.insertId);
-        if (dbId && dbId !== nuevoId) {
-          pacienteGuardado.id = dbId;
-          const markerFound = this.marcadoresPacientes.find((m: any) => m._pacienteId === nuevoId);
-          if (markerFound) {
-            (markerFound as any)._pacienteId = dbId;
+        if (response && response.success !== false) {
+          const dbId = response?.id || response?.paciente?.id || response?.data?.id || (response && typeof response === 'object' && response.insertId);
+          if (dbId && dbId !== nuevoId) {
+            pacienteGuardado.id = dbId;
+            const markerFound = this.marcadoresPacientes.find((m: any) => m._pacienteId === nuevoId);
+            if (markerFound) {
+              (markerFound as any)._pacienteId = dbId;
+            }
+            try {
+              localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+              localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
+            } catch (e) { }
           }
-          try {
-            localStorage.setItem('cuidalia_map_pacientes_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
-            localStorage.setItem('cuidalia_pacientes_raw_' + this.idEnfermera, JSON.stringify(this.pacientesOriginal));
-          } catch (e) { }
+        } else {
+          console.warn('⚠️ El servidor indicó un problema al guardar:', response?.message || response);
         }
       },
       error: (error) => {
