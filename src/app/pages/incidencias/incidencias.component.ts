@@ -43,6 +43,7 @@ interface Incidencia {
 }
 
 import { PageHeaderNavComponent } from '../../components/page-header-nav/page-header-nav';
+import { PacientesMapService } from '../../services/pacientes-map.service';
 
 @Component({
     selector: 'app-incidencias',
@@ -77,6 +78,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     loading: boolean = false;
     usandoLocalStorage: boolean = false;
     metadatosEvidencia: any = null;
+    vinoDelMapa: boolean = false;
 
     tiposIncidencias = [
         { valor: 'no_localizado', label: 'No se localizó al usuario', icono: 'fas fa-user-xmark', color: '#f59e0b', desc: 'No se encontró a nadie en el domicilio' },
@@ -119,7 +121,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         private cdr: ChangeDetectorRef,
         private router: Router,
         private http: HttpClient,
-        private ngZone: NgZone
+        private ngZone: NgZone,
+        private pacientesMapService: PacientesMapService
     ) {
         console.log('🔍 [Incidencias] API URL:', this.apiUrl);
     }
@@ -135,8 +138,14 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         this.mostrarFormulario = false;
         this.cargarIncidencias();
 
+        // ⭐ VERIFICAR SI VIENE DEL MAPA
+        this.vinoDelMapa = sessionStorage.getItem('fromMap') === 'true';
+
         // ⭐ VERIFICAR LOCAL STORAGE
         const pacienteLocal = localStorage.getItem('incidenciaPaciente');
+        if (pacienteLocal) {
+            this.vinoDelMapa = true;
+        }
         console.log('🔍 [Incidencias] Verificando localStorage en ngOnInit:', pacienteLocal);
 
         if (pacienteLocal) {
@@ -418,34 +427,39 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     guardarIncidenciaEnBD(incidencia: Incidencia) {
         this.loading = true;
 
+        const nuevoEstatus = (incidencia.tipo === 'usuario_rechazo' ? 'RECHAZO' : 'INCIDENCIA');
+
         const incidenciaData = {
             tipo: incidencia.tipo,
             descripcion: incidencia.descripcion,
             direccion: incidencia.direccion,
             fecha: incidencia.fecha.toISOString(),
-            fotos: incidencia.fotos,
+            fotos: incidencia.fotos || [],
             resuelta: incidencia.resuelta,
             pacienteId: incidencia.pacienteId,
             datosPaciente: incidencia.datosPaciente,
             otroTexto: incidencia.otroTexto || ''
         };
 
-        console.log('📤 Guardando incidencia en BD:', incidenciaData);
+        console.log('📤 Guardando incidencia en BD con fotos:', {
+            tipo: incidenciaData.tipo,
+            pacienteId: incidenciaData.pacienteId,
+            fotosCount: (incidenciaData.fotos || []).length
+        });
 
         this.http.post(`${this.apiUrl}/incidencias`, incidenciaData)
             .subscribe({
                 next: (response: any) => {
-                    console.log('✅ Incidencia guardada en BD:', response);
+                    console.log('✅ Incidencia y fotos guardadas en BD:', response);
                     const nuevaIncidencia = { ...incidencia, id: response.id || Date.now() };
                     this.incidencias.unshift(nuevaIncidencia);
                     this.guardarIncidencias();
                     this.aplicarFiltro();
                     this.loading = false;
-                    this.mostrarToast('✅ Incidencia guardada correctamente', 'success');
+                    this.mostrarToast('✅ Incidencia y fotos guardadas en la Base de Datos', 'success');
                     this.cdr.detectChanges();
 
                     if (incidencia.pacienteId) {
-                        const nuevoEstatus = incidencia.tipo === 'usuario_rechazo' ? 'rechazo' : 'incidencia';
                         this.actualizarEstadoPaciente(incidencia.pacienteId, nuevoEstatus);
                     }
 
@@ -463,6 +477,10 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                     this.mostrarToast('⚠️ Incidencia guardada localmente (sin conexión a BD)', 'warning');
                     this.usandoLocalStorage = true;
                     this.cdr.detectChanges();
+
+                    if (incidencia.pacienteId) {
+                        this.actualizarEstadoPaciente(incidencia.pacienteId, nuevoEstatus);
+                    }
 
                     // ⭐ Mostrar diálogo con aviso por WhatsApp y SMS para el paciente
                     this.mostrarDialogoNotificarPaciente(nuevaIncidencia);
@@ -508,11 +526,64 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     actualizarEstadoPaciente(pacienteId: number, estado: string) {
-        this.http.patch(`${this.apiUrl}/pacientes/${pacienteId}/estatus`, { estatus: estado })
+        const estatusFinal = (estado || 'INCIDENCIA').toUpperCase();
+
+        // 1. Persistir estatus en la Base de Datos
+        this.http.patch(`${this.apiUrl}/pacientes/${pacienteId}/estatus`, { estatus: estatusFinal })
             .subscribe({
-                next: () => console.log('✅ Estado del paciente actualizado a:', estado),
-                error: (err) => console.error('❌ Error actualizando estado:', err)
+                next: () => console.log('✅ [Incidencias] Estado del paciente actualizado en BD a:', estatusFinal),
+                error: (err) => console.warn('⚠️ [Incidencias] Aviso PATCH estatus:', err)
             });
+
+        // 2. Actualizar inmediatamente cachés locales de pacientes (para reflejo inmediato en el mapa)
+        try {
+            const enfermeraId = this.pacientesMapService ? this.pacientesMapService.obtenerIdEnfermeraActual() : 1;
+            const keys = [
+                'cuidalia_map_pacientes_' + enfermeraId,
+                'cuidalia_pacientes_raw_' + enfermeraId,
+                'pacientes_cache_' + enfermeraId,
+                'cuidalia_map_pacientes_1',
+                'cuidalia_pacientes_raw_1'
+            ];
+
+            keys.forEach(k => {
+                const raw = localStorage.getItem(k);
+                if (raw) {
+                    try {
+                        const list = JSON.parse(raw);
+                        if (Array.isArray(list)) {
+                            let modificado = false;
+                            list.forEach((p: any) => {
+                                if (Number(p.id) === Number(pacienteId)) {
+                                    p.estatus = estatusFinal;
+                                    modificado = true;
+                                }
+                            });
+                            if (modificado) {
+                                localStorage.setItem(k, JSON.stringify(list));
+                                console.log(`💾 [Incidencias] Paciente ${pacienteId} actualizado a ${estatusFinal} en caché local ${k}`);
+                            }
+                        }
+                    } catch (e) { }
+                }
+            });
+        } catch (e) {
+            console.warn('Error al actualizar almacenamiento local de paciente:', e);
+        }
+
+        // 3. Forzar invalidación de caché en el servicio
+        if (this.pacientesMapService) {
+            this.pacientesMapService.refreshPacientes();
+        }
+
+        // 4. Emitir eventos globales para que el mapa actualice marcador y pop al instante
+        window.dispatchEvent(new CustomEvent('recargarMapa'));
+        window.dispatchEvent(new CustomEvent('pacienteActualizado', {
+            detail: {
+                id: pacienteId,
+                estatus: estatusFinal
+            }
+        }));
     }
 
     // ⭐ ============================================
@@ -1182,10 +1253,11 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
             }
         }).then(() => {
+            const redirectPath = this.vinoDelMapa ? '/map' : '/pacientes';
             this.limpiarDatosPaciente();
             this.datosPaciente = null;
             this.mostrarFormulario = false;
-            this.router.navigate(['/pacientes']);
+            this.router.navigate([redirectPath]);
         });
     }
 

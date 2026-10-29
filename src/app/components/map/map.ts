@@ -363,6 +363,44 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cargarPacientesDirectamente(true);
     });
 
+    window.addEventListener('pacienteActualizado', (event: any) => {
+      this.ngZone.run(() => {
+        const d = event.detail || {};
+        const pacId = Number(d.id);
+        const nuevoEstatus = (d.estatus || 'INCIDENCIA').toUpperCase();
+        console.log(`🔄 [MapComponent] pacienteActualizado para ID ${pacId}:`, nuevoEstatus);
+
+        let pacObj: any = null;
+        if (this.pacientes) {
+          const p = this.pacientes.find((x: any) => Number(x.id) === pacId);
+          if (p) {
+            p.estatus = nuevoEstatus;
+            pacObj = p;
+          }
+        }
+        if (this.pacientesOriginal) {
+          const pOrig = this.pacientesOriginal.find((x: any) => Number(x.id) === pacId);
+          if (pOrig) {
+            pOrig.estatus = nuevoEstatus;
+            if (!pacObj) pacObj = pOrig;
+          }
+        }
+
+        if (this.marcadoresPacientes && pacObj) {
+          const marker: any = this.marcadoresPacientes.find((m: any) => Number(m._pacienteId) === pacId);
+          if (marker) {
+            const color = this.obtenerColorPaciente(pacObj);
+            const nombreCompleto = pacObj.nombre || 'Nombre no disponible';
+            const direccionLimpia = this.limpiarDireccion(pacObj.direccion || '');
+            const coloniaMostrar = this.obtenerColonia(pacObj.direccion || '', pacObj.colonia || '');
+            const estatusLower = nuevoEstatus.toLowerCase();
+            const popupContent = this.generarPopupHTML(pacObj, color, estatusLower, nombreCompleto, direccionLimpia, coloniaMostrar);
+            marker.setPopupContent(popupContent);
+          }
+        }
+      });
+    });
+
     window.addEventListener('abrirModalRegistrarPaciente', (event: any) => {
       this.ngZone.run(() => {
         const d = event.detail || {};
@@ -2665,6 +2703,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           lng: data.lng || 0
         };
         localStorage.setItem('incidenciaPaciente', JSON.stringify(pacienteData));
+        sessionStorage.setItem('fromMap', 'true');
         this.router.navigate(['/incidencias']);
       });
     };
