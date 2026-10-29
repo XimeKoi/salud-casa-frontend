@@ -22,7 +22,6 @@ console.log('🔍 [dashboard] Cargando DashboardComponent...');
 })
 export class DashboardComponent {
   infoPanelMobileOpen: boolean = false;
-  infoPanelCollapsed: boolean = false;
 
   constructor() {
     console.log('🏗️ [DashboardComponent] Constructor ejecutado');
@@ -34,9 +33,5 @@ export class DashboardComponent {
 
   cerrarInfoPanelMobile() {
     this.infoPanelMobileOpen = false;
-  }
-
-  toggleInfoPanelCollapse() {
-    this.infoPanelCollapsed = !this.infoPanelCollapsed;
   }
 }

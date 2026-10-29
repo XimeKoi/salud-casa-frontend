@@ -76,6 +76,18 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  cerrarSidebar() {
+    if (this.sidebarMobileOpen) {
+      this.sidebarMobileOpen = false;
+    } else {
+      this.sidebarCollapsed = true;
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 350);
+    }
+    this.cdr.detectChanges();
+  }
+
   private coloresCache: { [key: string]: string } = {};
   private subscriptions: Subscription[] = [];
 

@@ -34,16 +34,7 @@
     <div *ngIf="mostrarSidebar" class="new-sidebar" [class.mobile-open]="sidebarMobileOpen"
       [class.sidebar-collapsed]="sidebarCollapsed">
 
-      <!-- Fila superior para cerrar en móviles -->
-      <div class="mobile-sidebar-close-row">
-        <span>Filtro por Zonas</span>
-        <button type="button" class="btn-close-side-mobile" (click)="closeSidebarMobile()"
-          aria-label="Cerrar panel de zonas">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <!-- CABECERA INSTITUCIONAL ROJA CON BOTÓN MINIMIZAR -->
+      <!-- CABECERA INSTITUCIONAL ROJA CON BOTÓN CERRAR -->
       <div class="header-red">
         <div class="header-red-title">
           <i class="fas fa-layer-group"></i>
@@ -52,9 +43,9 @@
             <span class="header-sub-tag">ZONAS TERRITORIALES • LEÓN</span>
           </div>
         </div>
-        <button type="button" class="btn-collapse-sidebar" (click)="toggleSidebarCollapse()"
-          title="Ocultar panel / Ver mapa a pantalla completa">
-          <i class="fas fa-angles-left"></i>
+        <button type="button" class="btn-collapse-sidebar" (click)="cerrarSidebar()"
+          title="Cerrar panel">
+          <i class="fas fa-times"></i>
         </button>
       </div>
 
