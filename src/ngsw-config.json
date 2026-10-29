@@ -27,40 +27,5 @@
                 ]
             }
         }
-    ],
-    "dataGroups": [
-        {
-            "name": "api-pacientes",
-            "urls": [
-                "https://salud-casa-backend-production.up.railway.app/pacientes/**"
-            ],
-            "cacheConfig": {
-                "maxSize": 100,
-                "maxAge": "7d",
-                "strategy": "freshness"
-            }
-        },
-        {
-            "name": "api-incidencias",
-            "urls": [
-                "https://salud-casa-backend-production.up.railway.app/incidencias/**"
-            ],
-            "cacheConfig": {
-                "maxSize": 50,
-                "maxAge": "7d",
-                "strategy": "freshness"
-            }
-        },
-        {
-            "name": "api-notificaciones",
-            "urls": [
-                "https://salud-casa-backend-production.up.railway.app/notificaciones/**"
-            ],
-            "cacheConfig": {
-                "maxSize": 50,
-                "maxAge": "7d",
-                "strategy": "freshness"
-            }
-        }
     ]
 }

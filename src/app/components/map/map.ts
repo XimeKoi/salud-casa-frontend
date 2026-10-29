@@ -237,7 +237,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.searchMarker = null;
     }
 
-    this.http.get(`${this.apiUrl}/pacientes/enfermera/${this.idEnfermera}`).subscribe({
+    const cacheBuster = forceRefresh ? `?_t=${Date.now()}` : '';
+    this.http.get(`${this.apiUrl}/pacientes/enfermera/${this.idEnfermera}${cacheBuster}`).subscribe({
       next: (data: any) => {
         console.log('✅ Pacientes recibidos:', data?.length || 0);
         this.pacientesMapService.setPacientesCache(data);
@@ -615,7 +616,20 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   recargarPacientes() {
-    console.log('🔄 Recargando pacientes...');
+    console.log('🔄 Recargando pacientes desde el servidor...');
+    this.mostrarToast('Actualizando', 'Sincronizando pacientes...', 'info', 1200);
+
+    // Limpiar caches de la API del navegador para evitar datos viejos
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(k => {
+          if (k.includes('pacientes') || k.includes('cuidalia-api') || k.includes('api')) {
+            caches.delete(k);
+          }
+        });
+      });
+    }
+
     this.searchQuery = '';
     this.isSearching = false;
     if (this.searchMarker) {

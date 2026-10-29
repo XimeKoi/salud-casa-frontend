@@ -35,19 +35,6 @@
   ],
   "dataGroups": [
     {
-      "name": "cuidalia-api-pacientes",
-      "urls": [
-        "https://salud-casa-backend-production.up.railway.app/pacientes/**",
-        "https://salud-casa-backend-production.up.railway.app/auth/**"
-      ],
-      "cacheConfig": {
-        "maxSize": 200,
-        "maxAge": "14d",
-        "timeout": "3s",
-        "strategy": "freshness"
-      }
-    },
-    {
       "name": "cuidalia-map-tiles",
       "urls": [
         "https://*.tile.openstreetmap.org/**",
