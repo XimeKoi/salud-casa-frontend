@@ -427,8 +427,8 @@
                                     <h3>No se encontraron pacientes</h3>
                                     <p>No hay registros que coincidan con los filtros o el término de búsqueda actual.
                                     </p>
-                                    <button class="btn-reset-empty" (click)="limpiarFiltros()">
-                                        <i class="fas fa-rotate-left"></i> Limpiar filtros
+                                    <button class="btn-reset-filters" (click)="limpiarFiltros()" title="Restablecer todos los filtros">
+                                        <i class="fas fa-filter-circle-xmark"></i> <span>Limpiar Filtros</span>
                                     </button>
                                 </div>
                             </td>
@@ -541,12 +541,12 @@
                 <div class="patient-card-footer">
                     <button class="btn-card-action btn-completar" (click)="abrirModalCompletada(paciente)"
                         [disabled]="paciente.estadoVisita === 'pendiente' && (paciente.diasPendiente ?? 0) < 20">
-                        <i class="fas fa-check"></i> Completar
+                        <i class="fas fa-check"></i> <span>Completar</span>
                     </button>
 
                     <button class="btn-card-action btn-pendiente" (click)="marcarPendiente(paciente)"
                         [class.disabled-style]="paciente.estadoVisita === 'pendiente'">
-                        <i class="fas fa-clock"></i> Pendiente
+                        <i class="fas fa-clock"></i> <span>Pendiente</span>
                     </button>
 
                     <button class="btn-card-action btn-incidencia" (click)="abrirIncidencia(paciente)"
@@ -573,8 +573,8 @@
                 </div>
                 <h3>No se encontraron pacientes</h3>
                 <p>No hay pacientes que coincidan con la búsqueda o filtro seleccionado.</p>
-                <button class="btn-reset-empty" (click)="limpiarFiltros()">
-                    <i class="fas fa-rotate-left"></i> Limpiar filtros
+                <button class="btn-reset-filters" (click)="limpiarFiltros()" title="Restablecer todos los filtros">
+                    <i class="fas fa-filter-circle-xmark"></i> <span>Limpiar Filtros</span>
                 </button>
             </div>
         </div>

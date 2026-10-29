@@ -1,8 +1,8 @@
 // src/app/pages/dashboard-salud/dashboard-salud.component.scss
 
 .dashboard-container {
-    padding: 20px 24px;
-    background: linear-gradient(180deg, #FAF6F0 0%, #F3ECE3 100%);
+    padding: 22px 26px;
+    background: linear-gradient(145deg, #FFF6EE 0%, #FFEBEF 28%, #F7EEF4 60%, #F0E6DD 100%);
     min-height: 100vh;
     height: 100%;
     overflow-y: auto;
@@ -15,7 +15,7 @@
 }
 
 .dashboard-container::-webkit-scrollbar-track {
-    background: #e0d6ce;
+    background: #E8DED4;
     border-radius: 10px;
 }
 
@@ -28,20 +28,20 @@
     background: #8b2e4a;
 }
 
-/* HEADER */
+/* HEADER CON IDENTIDAD INSTITUCIONAL CUIDALIA */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #FFFFFF;
-    padding: 18px 26px;
-    border-radius: 16px;
-    margin-bottom: 22px;
-    box-shadow: 0 4px 18px rgba(112, 31, 47, 0.07);
-    border: 1px solid #EADBCE;
-    border-top: 4px solid #701F2F;
+    background: linear-gradient(135deg, #520D2F 0%, #701F2F 55%, #8B2E4A 100%);
+    padding: 20px 28px;
+    border-radius: 18px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(82, 13, 47, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 4px solid #FF6B55;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
 
     .header-left {
         display: flex;
@@ -49,20 +49,24 @@
         gap: 16px;
 
         h1 {
-            font-size: 22px;
+            font-size: 23px;
             font-weight: 800;
-            color: #520D2F;
+            color: #FFFFFF;
             margin: 0;
+            display: inline-flex;
+            align-items: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
             i {
-                margin-right: 10px;
-                color: #701F2F;
+                margin-right: 12px;
+                color: #FF8A75;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
             }
         }
 
         .header-subtitle {
-            font-size: 13px;
-            color: #7A675B;
+            font-size: 13.5px;
+            color: rgba(255, 245, 247, 0.9);
             font-weight: 500;
         }
     }
@@ -70,38 +74,43 @@
     .header-right {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 14px;
 
         .last-update {
-            font-size: 12px;
-            color: #7A675B;
-            font-weight: 500;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.14);
+            padding: 7px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(4px);
 
             i {
-                margin-right: 6px;
-                color: #701f2f;
+                margin-right: 7px;
+                color: #FFB4A2;
             }
         }
 
         .btn-refresh {
-            background: linear-gradient(135deg, #701F2F 0%, #8B2E4A 100%);
-            color: white;
-            border: none;
-            padding: 9px 20px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
+            background: linear-gradient(135deg, #FF6B55 0%, #E8503A 100%);
+            color: #FFFFFF;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            padding: 9px 22px;
+            border-radius: 12px;
+            font-size: 13.5px;
+            font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
             transition: all 0.25s ease;
-            box-shadow: 0 3px 10px rgba(112, 31, 47, 0.25);
+            box-shadow: 0 4px 14px rgba(255, 107, 85, 0.35);
 
             &:hover:not(:disabled) {
-                background: linear-gradient(135deg, #8B2E4A 0%, #A33758 100%);
+                background: linear-gradient(135deg, #FF826E 0%, #FF6B55 100%);
                 transform: translateY(-2px);
-                box-shadow: 0 6px 18px rgba(112, 31, 47, 0.35);
+                box-shadow: 0 6px 20px rgba(255, 107, 85, 0.45);
             }
 
             &:disabled {
@@ -395,15 +404,26 @@
             i {
                 color: #FFFFFF;
                 background: linear-gradient(135deg, #701F2F 0%, #8B2E4A 100%);
-                width: 32px;
-                height: 32px;
-                border-radius: 9px;
-                display: inline-flex;
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+                border-radius: 10px;
+                display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 15px;
                 margin-right: 12px;
                 box-shadow: 0 3px 8px rgba(112, 31, 47, 0.22);
+                line-height: 1;
+                text-align: center;
+                flex-shrink: 0;
+
+                &::before {
+                    display: inline-block;
+                    line-height: 1;
+                    margin: 0 auto;
+                    vertical-align: middle;
+                }
             }
         }
 

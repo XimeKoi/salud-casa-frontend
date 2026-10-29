@@ -7,6 +7,14 @@
     <span class="active-dot"></span>
   </button>
 
+  <!-- ⭐ BOTÓN FLOTANTE DESKTOP: RESTAURAR PANEL LATERAL CUANDO ESTÁ MINIMIZADO ⭐ -->
+  <button *ngIf="infoPanelCollapsed" class="btn-info-restore-floating" (click)="toggleInfoPanelCollapse()"
+    title="Mostrar panel de Control Territorial">
+    <i class="fas fa-chart-pie"></i>
+    <span class="restore-title">Control Territorial</span>
+    <i class="fas fa-angles-left"></i>
+  </button>
+
   <!-- ⭐ MAPA PRINCIPAL: SIEMPRE VISIBLE ⭐ -->
   <div class="map-wrapper">
     <app-map></app-map>
@@ -18,15 +26,18 @@
   <!-- ⭐ BACKDROP OSCURO PARA MÓVIL CUANDO EL PANEL ESTÁ ABIERTO ⭐ -->
   <div class="info-panel-backdrop" *ngIf="infoPanelMobileOpen" (click)="cerrarInfoPanelMobile()"></div>
 
-  <!-- ⭐ PANEL DE CONTROL TERRITORIAL (DESKTOP: LATERAL | MÓVIL: BOTTOM SHEET) ⭐ -->
-  <div class="info-wrapper" [class.mobile-sheet-open]="infoPanelMobileOpen">
+  <!-- ⭐ PANEL DE CONTROL TERRITORIAL (LATERAL DESKTOP Y LATERAL DRAWER MÓVIL) ⭐ -->
+  <div class="info-wrapper" [class.mobile-sheet-open]="infoPanelMobileOpen" [class.info-collapsed]="infoPanelCollapsed">
     <div class="mobile-sheet-header">
       <div class="mobile-sheet-title">
         <i class="fas fa-chart-pie"></i>
         <span>Control Territorial</span>
       </div>
-      <button type="button" class="btn-close-sheet" (click)="cerrarInfoPanelMobile()" aria-label="Cerrar panel">
+      <button type="button" class="btn-close-sheet btn-close-mobile-only" (click)="cerrarInfoPanelMobile()" aria-label="Cerrar panel">
         <i class="fas fa-times"></i>
+      </button>
+      <button type="button" class="btn-close-sheet btn-collapse-desktop-only" (click)="toggleInfoPanelCollapse()" title="Ocultar panel / Ver mapa a pantalla completa">
+        <i class="fas fa-angles-right"></i>
       </button>
     </div>
     <app-info-panel></app-info-panel>
