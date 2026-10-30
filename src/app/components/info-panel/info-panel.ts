@@ -43,6 +43,7 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     total: 0,
     visitas: 0,
     p: { a: 0, d: 0, f: 0 },
+    pCounts: { a: 0, d: 0, f: 0 },
     g: { g1: 0, g2: 0, g3: 0, g4: 0 }
   };
 
@@ -50,6 +51,7 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     total: 0,
     visitas: 0,
     p: { a: 0, d: 0, f: 0 },
+    pCounts: { a: 0, d: 0, f: 0 },
     g: { g1: 0, g2: 0, g3: 0, g4: 0 }
   };
 
@@ -299,6 +301,7 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
       total: total,
       visitas: visitas,
       p: { a: pAdulto, d: pDiscapacitado, f: pFinado },
+      pCounts: { a: adultoMayor, d: discapacitado, f: finado },
       g: { g1, g2, g3, g4 }
     };
   }
@@ -681,6 +684,7 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
       total: total,
       visitas: visitas,
       p: { a: pAdulto, d: pDiscapacitado, f: pFinado },
+      pCounts: { a: adultoMayor, d: discapacitado, f: finado },
       g: { g1, g2, g3, g4 }
     };
   }
@@ -742,6 +746,30 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
       this.riesgosSeleccionados.g3 || this.riesgosSeleccionados.g4 ||
       this.zonaSeleccionada !== '';
     return hayFiltros ? this.filteredData.p.f : this.currentData.p.f;
+  }
+
+  get conteoAdulto(): number {
+    const hayFiltros = this.perfiles.adulto || this.perfiles.discapacitado || this.perfiles.finado ||
+      this.riesgosSeleccionados.g1 || this.riesgosSeleccionados.g2 ||
+      this.riesgosSeleccionados.g3 || this.riesgosSeleccionados.g4 ||
+      this.zonaSeleccionada !== '';
+    return hayFiltros ? (this.filteredData.pCounts?.a || 0) : (this.currentData.pCounts?.a || 0);
+  }
+
+  get conteoDiscapacitado(): number {
+    const hayFiltros = this.perfiles.adulto || this.perfiles.discapacitado || this.perfiles.finado ||
+      this.riesgosSeleccionados.g1 || this.riesgosSeleccionados.g2 ||
+      this.riesgosSeleccionados.g3 || this.riesgosSeleccionados.g4 ||
+      this.zonaSeleccionada !== '';
+    return hayFiltros ? (this.filteredData.pCounts?.d || 0) : (this.currentData.pCounts?.d || 0);
+  }
+
+  get conteoFinado(): number {
+    const hayFiltros = this.perfiles.adulto || this.perfiles.discapacitado || this.perfiles.finado ||
+      this.riesgosSeleccionados.g1 || this.riesgosSeleccionados.g2 ||
+      this.riesgosSeleccionados.g3 || this.riesgosSeleccionados.g4 ||
+      this.zonaSeleccionada !== '';
+    return hayFiltros ? (this.filteredData.pCounts?.f || 0) : (this.currentData.pCounts?.f || 0);
   }
 
   get riesgoG1(): number {

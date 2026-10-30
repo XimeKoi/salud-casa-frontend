@@ -436,18 +436,6 @@
             <i class="fas fa-shield-check"></i> Registro completado y archivado
           </span>
 
-          <div class="incident-card-actions">
-            <button *ngIf="incidencia.datosPaciente?.telefono" type="button" class="btn-notify-wa-sm"
-              (click)="notificarIncidenciaWhatsApp(incidencia)" title="Enviar aviso al paciente por WhatsApp">
-              <i class="fab fa-whatsapp"></i>
-              <span>WhatsApp</span>
-            </button>
-            <button *ngIf="incidencia.datosPaciente?.telefono" type="button" class="btn-notify-sms-sm"
-              (click)="notificarIncidenciaSMS(incidencia)" title="Enviar aviso al paciente por SMS">
-              <i class="fas fa-comment-sms"></i>
-              <span>SMS</span>
-            </button>
-          </div>
         </div>
 
       </div>

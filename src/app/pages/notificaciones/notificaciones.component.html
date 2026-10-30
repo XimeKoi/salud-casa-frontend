@@ -142,6 +142,7 @@
       <!-- ⭐ FEED DE NOTIFICACIONES -->
       <div class="notifications-feed">
         <div *ngFor="let notificacion of notificacionesPaginadas; let i = index" class="notification-card"
+          [ngClass]="'cat-' + notificacion.tipo"
           [class.leida]="notificacion.leida" [class.no-leida]="!notificacion.leida"
           [class.seleccionada]="isSeleccionada(notificacion.id)">
           <!-- Checkbox de selección -->
