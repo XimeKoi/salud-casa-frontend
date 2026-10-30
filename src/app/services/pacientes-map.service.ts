@@ -54,9 +54,20 @@ export class PacientesMapService {
 
     public obtenerIdEnfermeraActual(): number {
         try {
+            const rol = localStorage.getItem('rol');
             const userStr = localStorage.getItem('userData');
+            let userObj: any = null;
             if (userStr) {
-                const userObj = JSON.parse(userStr);
+                userObj = JSON.parse(userStr);
+            }
+
+            const esEnlace = rol === 'enlace' || rol === 'distrital' || userObj?.role === 'enlace' || userObj?.role === 'distrital';
+            if (esEnlace) {
+                const saved = sessionStorage.getItem('enlace_enfermera_mapa');
+                if (saved) return Number(saved);
+            }
+
+            if (userObj) {
                 return userObj.id_personal_enfermeria || userObj.id || 1;
             }
         } catch (e) { }

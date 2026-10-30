@@ -1217,6 +1217,11 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
       background: #e2d7cb;
       color: $text-main;
 
+      &.info {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
       &.warning {
         background: #fef3c7;
         color: #b45309;
@@ -1383,7 +1388,20 @@ $shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.09);
     color: #c2410c;
     border: 1px solid #fed7aa;
 
-    &.resolved {
+    &.recibida {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    &.en-proceso {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+
+    &.resolved,
+    &.resuelta {
       background: #f0fdf4;
       color: #15803d;
       border-color: #bbf7d0;

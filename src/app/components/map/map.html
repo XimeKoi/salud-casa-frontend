@@ -2,6 +2,27 @@
 
 <div class="map-container">
 
+  <!-- ⭐ SELECTOR FLOTANTE DE ENFERMERO PARA EL ROL ENLACE EN EL MAPA -->
+  <div class="map-enlace-selector-bar" *ngIf="isEnlace">
+    <div class="enlace-pill-badge">
+      <i class="fas fa-user-shield"></i>
+      <span>SUPERVISIÓN ENLACE:</span>
+    </div>
+    <div class="nurse-select-container">
+      <i class="fas fa-user-nurse icon-nurse"></i>
+      <select [ngModel]="idEnfermera" (ngModelChange)="cambiarEnfermeraSupervisada($event)" class="map-nurse-dropdown" title="Seleccionar enfermero para auditar en el mapa">
+        <option *ngFor="let enf of listaEnfermeras" [value]="enf.id">
+          👩‍⚕️ {{ enf.nombre_completo }} • {{ enf.zona }} (ZS {{ enf.zs }})
+        </option>
+      </select>
+    </div>
+    <div class="map-nurse-status-chip" *ngIf="enfermeraSupervisadaActual">
+      <i class="fas fa-map-pin"></i>
+      <span>{{ enfermeraSupervisadaActual.zona }}</span>
+      <b class="chip-count">{{ pacientes.length }} pacientes</b>
+    </div>
+  </div>
+
   <!-- ⭐ SEARCH CONTAINER -->
   <div class="search-container">
 

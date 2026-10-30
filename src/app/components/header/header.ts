@@ -170,9 +170,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
       case 'perfil':
         this.router.navigate(['/perfil']);
         break;
-      case 'calendario':
-        this.router.navigate(['/calendario']);
-        break;
       default:
         this.router.navigate(['/dashboard']);
     }

@@ -167,6 +167,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
     // 4. Cargar y agrupar personas por colonias
     this.cargarYAgruparColonias();
+
+    // 5. Escuchar cambio de enfermera supervisada por Enlace
+    window.addEventListener('cambioEnfermeraSupervisada', () => {
+      console.log('🔄 [Layout] Cambio de enfermera supervisada, recargando colonias...');
+      this.cargarYAgruparColonias();
+    });
   }
 
   private cargarYAgruparColonias() {

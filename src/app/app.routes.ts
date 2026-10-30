@@ -6,7 +6,6 @@ import { PerfilComponent } from './pages/perfil/perfil.component';
 import { NotificacionesComponent } from './pages/notificaciones/notificaciones.component';
 import { IncidenciasComponent } from './pages/incidencias/incidencias.component';
 import { PacientesComponent } from './pages/pacientes/pacientes.component';
-import { CalendarioPageComponent } from './pages/calendario/calendario-page.component';
 import { DashboardSaludComponent } from './pages/dashboard-salud/dashboard-salud.component';
 import { EnlaceDashboardComponent } from './pages/enlace/dashboard/enlace-dashboard.component';
 import { EnlaceEnfermerasComponent } from './pages/enlace/enfermeras/enlace-enfermeras.component';
@@ -40,7 +39,6 @@ export const routes: Routes = [
       { path: 'perfil', component: PerfilComponent },
       { path: 'pacientes', component: PacientesComponent },
       { path: 'incidencias', component: IncidenciasComponent },
-      { path: 'calendario', component: CalendarioPageComponent },
     ]
   },
   { path: '**', redirectTo: 'login' }

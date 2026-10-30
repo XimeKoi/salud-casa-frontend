@@ -317,10 +317,16 @@
           <span class="tab-count">{{ incidencias.length }}</span>
         </button>
 
-        <button class="tab-item" [class.active]="filtroActual === 'pendientes'" (click)="cambiarFiltro('pendientes')">
-          <i class="fas fa-clock"></i>
-          <span>Pendientes</span>
-          <span class="tab-count warning" *ngIf="incidenciasPendientes > 0">{{ incidenciasPendientes }}</span>
+        <button class="tab-item" [class.active]="filtroActual === 'recibidas'" (click)="cambiarFiltro('recibidas')">
+          <i class="fas fa-inbox"></i>
+          <span>Recibidas</span>
+          <span class="tab-count info" *ngIf="incidenciasRecibidas > 0">{{ incidenciasRecibidas }}</span>
+        </button>
+
+        <button class="tab-item" [class.active]="filtroActual === 'en_proceso'" (click)="cambiarFiltro('en_proceso')">
+          <i class="fas fa-arrows-rotate"></i>
+          <span>En Proceso</span>
+          <span class="tab-count warning" *ngIf="incidenciasEnProceso > 0">{{ incidenciasEnProceso }}</span>
         </button>
 
         <button class="tab-item" [class.active]="filtroActual === 'resueltas'" (click)="cambiarFiltro('resueltas')">
@@ -342,6 +348,12 @@
           <i class="fas fa-clipboard-check"></i>
         </div>
         <h3>No hay incidencias en esta categoría</h3>
+        <p *ngIf="filtroActual === 'recibidas'">
+          No hay incidencias en estado recibida.
+        </p>
+        <p *ngIf="filtroActual === 'en_proceso'">
+          No hay incidencias en proceso de atención en este momento.
+        </p>
         <p *ngIf="filtroActual === 'pendientes'">
           ¡Excelente! Todas las incidencias registradas han sido resueltas oportunamente.
         </p>
@@ -374,9 +386,9 @@
             </div>
           </div>
 
-          <div class="incident-status-pill" [class.resolved]="incidencia.resuelta">
-            <i class="fas" [class.fa-clock]="!incidencia.resuelta" [class.fa-circle-check]="incidencia.resuelta"></i>
-            <span>{{ incidencia.resuelta ? 'Resuelta' : 'Pendiente' }}</span>
+          <div class="incident-status-pill" [ngClass]="obtenerClaseEstado(incidencia)">
+            <i class="fas" [ngClass]="obtenerIconoEstado(incidencia)"></i>
+            <span>{{ obtenerEtiquetaEstado(incidencia) }}</span>
           </div>
         </div>
 

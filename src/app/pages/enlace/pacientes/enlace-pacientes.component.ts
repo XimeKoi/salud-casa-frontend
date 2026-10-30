@@ -16,7 +16,8 @@ import { PageHeaderNavComponent } from '../../../components/page-header-nav/page
 })
 export class EnlacePacientesComponent implements OnInit {
   enfermeras: EnfermeraResumen[] = [];
-  idEnfermeraSeleccionada: number | 'todas' = 'todas';
+  idEnfermeraSeleccionada: number = 1;
+  enfermeraActual: EnfermeraResumen | null = null;
 
   todosLosPacientes: any[] = [];
   pacientesFiltrados: any[] = [];
@@ -39,14 +40,14 @@ export class EnlacePacientesComponent implements OnInit {
 
   ngOnInit(): void {
     this.enlaceService.getEnfermeras().subscribe(enfs => {
-      this.enfermeras = enfs;
+      this.enfermeras = enfs || [];
 
       this.route.queryParams.subscribe(params => {
         const enfParam = params['enfermera'];
         if (enfParam) {
           this.idEnfermeraSeleccionada = Number(enfParam);
-        } else {
-          this.idEnfermeraSeleccionada = 1; // Por defecto cargar enfermera 1 para agilidad
+        } else if (this.enfermeras.length > 0) {
+          this.idEnfermeraSeleccionada = this.enfermeras[0].id;
         }
         this.cargarPacientes();
       });
@@ -55,29 +56,32 @@ export class EnlacePacientesComponent implements OnInit {
 
   cargarPacientes(): void {
     this.loading = true;
+    const id = Number(this.idEnfermeraSeleccionada) || 1;
+    this.enfermeraActual = this.enfermeras.find(e => e.id === id) || null;
 
-    if (this.idEnfermeraSeleccionada === 'todas') {
-      // Cargar primeros pacientes de enfermeras 1, 2, 8 para muestra global inicial
-      this.enlaceService.getPacientesPorEnfermera(1).subscribe(p1 => {
-        this.enlaceService.getPacientesPorEnfermera(8).subscribe(p8 => {
-          this.todosLosPacientes = [...p1, ...p8];
-          this.aplicarFiltros();
-          this.loading = false;
-        });
-      });
-    } else {
-      const id = Number(this.idEnfermeraSeleccionada);
-      this.enlaceService.getPacientesPorEnfermera(id).subscribe({
-        next: (pacs) => {
-          this.todosLosPacientes = pacs;
-          this.aplicarFiltros();
-          this.loading = false;
-        },
-        error: () => {
-          this.loading = false;
-        }
-      });
-    }
+    this.enlaceService.getPacientesPorEnfermera(id).subscribe({
+      next: (pacs) => {
+        this.todosLosPacientes = pacs;
+        this.aplicarFiltros();
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
+    });
+  }
+
+  seleccionarEnfermera(id: number): void {
+    this.idEnfermeraSeleccionada = id;
+    this.searchTerm = '';
+    this.filtroPrograma = 'todos';
+    this.filtroEstatus = 'todos';
+    this.cargarPacientes();
+  }
+
+  verEnMapa(): void {
+    sessionStorage.setItem('enlace_enfermera_mapa', String(this.idEnfermeraSeleccionada));
+    this.router.navigate(['/dashboard']);
   }
 
   onEnfermeraChange(): void {
@@ -133,3 +137,4 @@ export class EnlacePacientesComponent implements OnInit {
     this.router.navigate([ruta]);
   }
 }
+

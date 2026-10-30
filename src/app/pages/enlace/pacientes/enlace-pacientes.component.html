@@ -27,7 +27,6 @@
             <option *ngFor="let enf of enfermeras" [value]="enf.id">
               👩‍⚕️ {{ enf.nombre_completo }} • {{ enf.zona }} ({{ enf.totalPacientes }} pac.)
             </option>
-            <option value="todas">👥 Muestra Multizona (Todas)</option>
           </select>
         </div>
       </div>
@@ -64,6 +63,54 @@
 
   <!-- CUERPO PRINCIPAL -->
   <main class="enlace-main-body">
+
+    <!-- SELECTOR HORIZONTAL DE ENFERMERAS (UNA ENFERMERA A LA VEZ) -->
+    <section class="nurse-tabs-strip">
+      <div class="strip-header">
+        <span class="strip-title">
+          <i class="fas fa-user-nurse"></i> Selecciona la Enfermera a Auditar:
+        </span>
+        <span class="strip-hint">Haz clic en una enfermera para ver exclusivamente sus pacientes asignados</span>
+      </div>
+      <div class="nurse-pill-buttons">
+        <button
+          *ngFor="let enf of enfermeras"
+          type="button"
+          class="nurse-tab-btn"
+          [class.active]="enf.id === idEnfermeraSeleccionada"
+          (click)="seleccionarEnfermera(enf.id)">
+          <div class="nurse-tab-avatar">
+            {{ enf.nombre_completo.substring(0, 2) }}
+          </div>
+          <div class="nurse-tab-info">
+            <span class="tab-name">{{ enf.nombre_completo }}</span>
+            <span class="tab-zone">{{ enf.zona }} • {{ enf.totalPacientes }} pac.</span>
+          </div>
+          <i class="fas fa-check-circle check-icon" *ngIf="enf.id === idEnfermeraSeleccionada"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- BANNER DE LA ENFERMERA SELECCIONADA -->
+    <div class="active-nurse-banner" *ngIf="enfermeraActual">
+      <div class="an-info">
+        <div class="an-badge-row">
+          <span class="an-badge zone"><i class="fas fa-map-pin"></i> {{ enfermeraActual.zona }}</span>
+          <span class="an-badge zs">ZS {{ enfermeraActual.zs }} • {{ enfermeraActual.region }}</span>
+          <span class="an-badge id">{{ enfermeraActual.id_interno || ('ENF-0' + enfermeraActual.id) }}</span>
+        </div>
+        <h2>Pacientes de: {{ enfermeraActual.nombre_completo }}</h2>
+        <span class="an-sub">
+          Tel: <b>{{ enfermeraActual.telefono }}</b> • Total: <b>{{ enfermeraActual.totalPacientes }}</b> pacientes asignados
+          ({{ enfermeraActual.visitados }} visitados · {{ enfermeraActual.pendientes }} pendientes)
+        </span>
+      </div>
+      <div class="an-actions">
+        <button class="btn-an-map" (click)="verEnMapa()" title="Ver los pacientes de esta enfermera en el mapa">
+          <i class="fas fa-map-location-dot"></i> Ver en Mapa Operativo
+        </button>
+      </div>
+    </div>
 
     <!-- BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS -->
     <section class="filters-card">
@@ -253,3 +300,4 @@
   </div>
 
 </div>
+

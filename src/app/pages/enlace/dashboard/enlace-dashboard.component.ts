@@ -83,3 +83,4 @@ export class EnlaceDashboardComponent implements OnInit {
     return nombre.substring(0, 2).toUpperCase();
   }
 }
+

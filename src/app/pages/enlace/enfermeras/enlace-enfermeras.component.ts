@@ -99,3 +99,4 @@ export class EnlaceEnfermerasComponent implements OnInit {
     return nombre.substring(0, 2).toUpperCase();
   }
 }
+

@@ -29,6 +29,7 @@ import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { CalendarioService, VisitaData } from '../../services/calendario.service';
 import { VisitasHoyService } from '../../services/visitas-hoy.service';
+import { EnlaceService, EnfermeraResumen } from '../../services/enlace.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { timeout } from 'rxjs';
@@ -159,7 +160,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private _resizeListener: (() => void) | null = null;
 
   private apiUrl = environment.apiUrl;
-  private idEnfermera: number = 1;
+  public idEnfermera: number = 1;
+  public isEnlace: boolean = false;
+  public listaEnfermeras: EnfermeraResumen[] = [];
+  public enfermeraSupervisadaActual: EnfermeraResumen | null = null;
   private datosCargados: boolean = false;
 
   private toastTimeout: any = null;
@@ -179,15 +183,32 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     private calendarioService: CalendarioService,
     private http: HttpClient,
     public visitasHoyService: VisitasHoyService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private enlaceService: EnlaceService
   ) {
     console.log('🏗️ [MapComponent] Constructor ejecutado');
     console.log('🌍 [MapComponent] API URL:', this.apiUrl);
     try {
+      const rol = localStorage.getItem('rol');
       const userStr = localStorage.getItem('userData');
+      let userObj: any = null;
       if (userStr) {
-        const userObj = JSON.parse(userStr);
-        this.idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
+        userObj = JSON.parse(userStr);
+      }
+      this.isEnlace = rol === 'enlace' || rol === 'distrital' || userObj?.role === 'enlace' || userObj?.role === 'distrital';
+      if (this.isEnlace) {
+        const saved = sessionStorage.getItem('enlace_enfermera_mapa');
+        if (saved) {
+          this.idEnfermera = Number(saved);
+        } else {
+          this.idEnfermera = 1;
+        }
+        this.enlaceService.getEnfermeras().subscribe(enfs => {
+          this.listaEnfermeras = enfs || [];
+          this.enfermeraSupervisadaActual = this.listaEnfermeras.find(e => e.id === Number(this.idEnfermera)) || null;
+        });
+      } else {
+        this.idEnfermera = userObj?.id_personal_enfermeria || userObj?.id || 1;
       }
     } catch (e) { }
 
@@ -212,14 +233,38 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  cambiarEnfermeraSupervisada(id: any) {
+    this.idEnfermera = Number(id);
+    sessionStorage.setItem('enlace_enfermera_mapa', String(this.idEnfermera));
+    this.enfermeraSupervisadaActual = this.listaEnfermeras.find(e => e.id === Number(this.idEnfermera)) || null;
+    console.log(`🗺️ [MapComponent Enlace] Supervisando mapa para enfermera #${this.idEnfermera}:`, this.enfermeraSupervisadaActual?.nombre_completo);
+
+    // Limpiar marcadores y recargar en mapa
+    this.limpiarMarcadoresPacientes();
+    this.pacientesMapService.clearCache();
+    this.cargarPacientesDirectamente(true);
+
+    // Emitir evento para layout y sidebar
+    window.dispatchEvent(new CustomEvent('cambioEnfermeraSupervisada', {
+      detail: { idEnfermera: this.idEnfermera, enfermera: this.enfermeraSupervisadaActual }
+    }));
+  }
+
   cargarPacientesDirectamente(forceRefresh: boolean = false) {
     if (this.loadingPacientes) return;
 
     try {
-      const userStr = localStorage.getItem('userData');
-      if (userStr) {
-        const userObj = JSON.parse(userStr);
-        this.idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
+      if (this.isEnlace) {
+        const saved = sessionStorage.getItem('enlace_enfermera_mapa');
+        if (saved) {
+          this.idEnfermera = Number(saved);
+        }
+      } else {
+        const userStr = localStorage.getItem('userData');
+        if (userStr) {
+          const userObj = JSON.parse(userStr);
+          this.idEnfermera = userObj.id_personal_enfermeria || userObj.id || 1;
+        }
       }
     } catch (e) { }
 

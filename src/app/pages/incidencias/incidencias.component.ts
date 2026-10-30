@@ -17,6 +17,7 @@ interface Incidencia {
     fecha: Date;
     fotos: string[];
     resuelta: boolean;
+    estado?: string;
     pacienteId?: number;
     datosPaciente?: {
         id: number;
@@ -366,7 +367,8 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                             direccion: inc.direccion,
                             fecha: new Date(inc.fecha),
                             fotos: inc.fotos || [],
-                            resuelta: inc.resuelta || false,
+                            resuelta: inc.resuelta || inc.estado === 'resuelta' || inc.estado === 'resuelto' || false,
+                            estado: inc.estado || (inc.resuelta ? 'resuelta' : 'recibida'),
                             pacienteId: inc.pacienteId,
                             datosPaciente: inc.datosPaciente,
                             otroTexto: inc.otroTexto || ''
@@ -398,7 +400,9 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                 if (Array.isArray(data)) {
                     this.incidencias = data.map((inc: any) => ({
                         ...inc,
-                        fecha: new Date(inc.fecha)
+                        fecha: new Date(inc.fecha),
+                        resuelta: inc.resuelta || inc.estado === 'resuelta' || inc.estado === 'resuelto' || false,
+                        estado: inc.estado || (inc.resuelta ? 'resuelta' : 'recibida')
                     }));
                     console.log(`📋 Cargadas ${this.incidencias.length} incidencias desde localStorage`);
                 } else {
@@ -436,6 +440,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
             fecha: incidencia.fecha.toISOString(),
             fotos: incidencia.fotos || [],
             resuelta: incidencia.resuelta,
+            estado: 'recibida',
             pacienteId: incidencia.pacienteId,
             datosPaciente: incidencia.datosPaciente,
             otroTexto: incidencia.otroTexto || ''
@@ -451,7 +456,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe({
                 next: (response: any) => {
                     console.log('✅ Incidencia y fotos guardadas en BD:', response);
-                    const nuevaIncidencia = { ...incidencia, id: response.id || Date.now() };
+                    const nuevaIncidencia = { ...incidencia, id: response.id || Date.now(), estado: 'recibida' };
                     this.incidencias.unshift(nuevaIncidencia);
                     this.guardarIncidencias();
                     this.aplicarFiltro();
@@ -469,7 +474,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
                 error: (error) => {
                     console.error('❌ Error al guardar incidencia en BD:', error);
                     this.loading = false;
-                    const nuevaIncidencia = { ...incidencia, id: Date.now() };
+                    const nuevaIncidencia = { ...incidencia, id: Date.now(), estado: 'recibida' };
                     this.incidencias.unshift(nuevaIncidencia);
                     this.guardarIncidencias();
                     this.aplicarFiltro();
@@ -615,19 +620,62 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
-    get incidenciasPendientes(): number {
-        return this.incidencias.filter(i => !i.resuelta).length;
+    obtenerEstadoNormalizado(inc: Incidencia): 'recibida' | 'en proceso' | 'resuelta' {
+        if (inc.resuelta || (inc.estado && (inc.estado === 'resuelta' || inc.estado === 'resuelto'))) {
+            return 'resuelta';
+        }
+        if (inc.estado === 'en proceso' || inc.estado === 'en_proceso') {
+            return 'en proceso';
+        }
+        return 'recibida';
+    }
+
+    obtenerEtiquetaEstado(inc: Incidencia): string {
+        const est = this.obtenerEstadoNormalizado(inc);
+        if (est === 'resuelta') return 'Resuelta por Enlace';
+        if (est === 'en proceso') return 'En proceso de solución';
+        return 'Recibida por Enlace';
+    }
+
+    obtenerClaseEstado(inc: Incidencia): string {
+        const est = this.obtenerEstadoNormalizado(inc);
+        if (est === 'resuelta') return 'resolved resuelta';
+        if (est === 'en proceso') return 'en-proceso';
+        return 'recibida';
+    }
+
+    obtenerIconoEstado(inc: Incidencia): string {
+        const est = this.obtenerEstadoNormalizado(inc);
+        if (est === 'resuelta') return 'fa-circle-check';
+        if (est === 'en proceso') return 'fa-arrows-rotate';
+        return 'fa-inbox';
+    }
+
+    get incidenciasRecibidas(): number {
+        return this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) === 'recibida').length;
+    }
+
+    get incidenciasEnProceso(): number {
+        return this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) === 'en proceso').length;
     }
 
     get incidenciasResueltas(): number {
-        return this.incidencias.filter(i => i.resuelta).length;
+        return this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) === 'resuelta').length;
+    }
+
+    get incidenciasPendientes(): number {
+        return this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) !== 'resuelta').length;
     }
 
     aplicarFiltro() {
-        if (this.filtroActual === 'pendientes') {
-            this.incidenciasFiltradas = this.incidencias.filter(i => !i.resuelta);
+        if (this.filtroActual === 'recibidas') {
+            this.incidenciasFiltradas = this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) === 'recibida');
+        } else if (this.filtroActual === 'en_proceso') {
+            this.incidenciasFiltradas = this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) === 'en proceso');
         } else if (this.filtroActual === 'resueltas') {
-            this.incidenciasFiltradas = this.incidencias.filter(i => i.resuelta);
+            this.incidenciasFiltradas = this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) === 'resuelta');
+        } else if (this.filtroActual === 'pendientes') {
+            this.incidenciasFiltradas = this.incidencias.filter(i => this.obtenerEstadoNormalizado(i) !== 'resuelta');
         } else {
             this.incidenciasFiltradas = [...this.incidencias];
         }

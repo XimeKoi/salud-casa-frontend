@@ -110,17 +110,38 @@ export class EnlaceIncidenciasComponent implements OnInit {
     this.incidenciaDetalle = null;
   }
 
-  marcarAtendida(inc: IncidenciaEnlace): void {
-    inc.resuelta = true;
-    inc.estado = 'resuelta';
-    this.aplicarFiltros();
-    Swal.fire({
-      icon: 'success',
-      title: 'Incidencia Actualizada',
-      text: 'Se ha registrado la revisión y seguimiento de supervisión.',
-      timer: 2000,
-      showConfirmButton: false
+  cambiarEstado(inc: IncidenciaEnlace, nuevoEstado: string): void {
+    const estadoAnterior = inc.estado;
+    inc.estado = nuevoEstado;
+    inc.resuelta = nuevoEstado === 'resuelta';
+
+    this.enlaceService.actualizarEstadoIncidencia(inc.id, nuevoEstado).subscribe({
+      next: () => {
+        this.aplicarFiltros();
+        Swal.fire({
+          icon: 'success',
+          title: 'Estatus Actualizado',
+          text: `La incidencia #${inc.id} cambió a "${nuevoEstado.toUpperCase()}". El enfermero verá este estatus inmediatamente.`,
+          timer: 2200,
+          showConfirmButton: false
+        });
+      },
+      error: (err) => {
+        console.warn('⚠️ Error al conectar con servidor, guardando estatus en local:', err);
+        this.aplicarFiltros();
+        Swal.fire({
+          icon: 'info',
+          title: 'Estatus Guardado',
+          text: `Incidencia #${inc.id} marcada como "${nuevoEstado.toUpperCase()}".`,
+          timer: 1800,
+          showConfirmButton: false
+        });
+      }
     });
+  }
+
+  marcarAtendida(inc: IncidenciaEnlace): void {
+    this.cambiarEstado(inc, 'resuelta');
   }
 
   abrirEnGoogleMaps(direccion: string): void {
@@ -144,3 +165,4 @@ export class EnlaceIncidenciasComponent implements OnInit {
     }
   }
 }
+

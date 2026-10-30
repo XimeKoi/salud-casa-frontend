@@ -551,9 +551,28 @@ export class EnlaceService {
     return 'León, Gto.';
   }
 
+  public actualizarEstadoIncidencia(id: number, nuevoEstado: string): Observable<any> {
+    const resuelta = nuevoEstado === 'resuelta';
+    return this.http.patch(`${this.apiUrl}/incidencias/${id}`, {
+      estado: nuevoEstado,
+      resuelta: resuelta
+    }).pipe(
+      tap(() => {
+        if (this.cacheIncidencias) {
+          const item = this.cacheIncidencias.find(i => i.id === id);
+          if (item) {
+            item.estado = nuevoEstado;
+            item.resuelta = resuelta;
+          }
+        }
+      })
+    );
+  }
+
   public limpiarCache() {
     this.cacheEnfermeras = null;
     this.cachePacientesPorEnfermera.clear();
     this.cacheIncidencias = null;
   }
 }
+
