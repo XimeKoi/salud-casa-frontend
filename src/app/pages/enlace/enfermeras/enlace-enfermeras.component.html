@@ -1,0 +1,291 @@
+<!-- src/app/pages/enlace/enfermeras/enlace-enfermeras.component.html -->
+
+<div class="enlace-page-container">
+
+  <!-- CABECERA INSTITUCIONAL ENLACE -->
+  <header class="enlace-hero-header">
+    <div class="hero-content">
+      <div class="hero-left">
+        <app-page-header-nav></app-page-header-nav>
+        <div class="role-badge">
+          <i class="fas fa-user-nurse"></i>
+          <span>ADMINISTRACIÓN DE PERSONAL • DISTRITO 03 LEÓN</span>
+        </div>
+        <h1 class="hero-title">
+          Directorio de Enfermeras
+        </h1>
+        <p class="hero-sub">
+          Gestión integral de las enfermeras en campo, zonas territoriales y expedientes de supervisión
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <div class="header-stat-capsule">
+          <span class="capsule-num">{{ enfermeras.length }}</span>
+          <span class="capsule-lbl">Enfermeras Registradas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN SUPERIOR -->
+    <nav class="enlace-nav-tabs">
+      <button class="nav-tab" (click)="navegarA('/enlace/dashboard')">
+        <i class="fas fa-chart-line"></i>
+        <span>Panel General</span>
+      </button>
+      <button class="nav-tab active" (click)="navegarA('/enlace/enfermeras')">
+        <i class="fas fa-user-nurse"></i>
+        <span>Enfermeras ({{ enfermeras.length }})</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/rendimiento')">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Rendimientos</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/pacientes')">
+        <i class="fas fa-users-medical"></i>
+        <span>Padrón de Pacientes</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/incidencias')">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Incidencias</span>
+      </button>
+      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
+        <i class="fas fa-map-location-dot"></i>
+        <span>Mapa Operativo</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- CUERPO PRINCIPAL -->
+  <main class="enlace-main-body">
+
+    <!-- FILTROS Y BARRA DE BÚSQUEDA -->
+    <section class="search-filter-panel">
+      <div class="search-box">
+        <i class="fas fa-search search-icon"></i>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="aplicarFiltros()"
+          placeholder="Buscar enfermera por nombre, zona (ej. 11-LEON-251), ID o teléfono..."
+          class="search-input"
+        />
+        <button *ngIf="searchTerm" (click)="searchTerm = ''; aplicarFiltros()" class="btn-clear-search">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter-group">
+          <span class="filter-label">Zona de Supervisión:</span>
+          <div class="pills-group">
+            <button class="pill-btn" [class.active]="filtroZs === 'todas'" (click)="filtroZs = 'todas'; aplicarFiltros()">Todas</button>
+            <button class="pill-btn" [class.active]="filtroZs === '5'" (click)="filtroZs = '5'; aplicarFiltros()">ZS 5 (5 enf.)</button>
+            <button class="pill-btn" [class.active]="filtroZs === '6'" (click)="filtroZs = '6'; aplicarFiltros()">ZS 6 (5 enf.)</button>
+          </div>
+        </div>
+
+        <div class="counter-badge">
+          <span>Mostrando: <b>{{ enfermerasFiltradas.length }}</b> de {{ enfermeras.length }} enfermeras</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRID DE TARJETAS DE ENFERMERAS -->
+    <section class="nurses-cards-grid" *ngIf="!loading">
+      <div class="nurse-card" *ngFor="let enf of enfermerasFiltradas">
+        
+        <!-- CABECERA DE LA TARJETA -->
+        <div class="card-head">
+          <div class="nurse-avatar-large">
+            {{ getIniciales(enf.nombre_completo) }}
+          </div>
+          <div class="head-info">
+            <span class="nurse-id-pill">{{ enf.id_interno || ('ENF-0' + enf.id) }}</span>
+            <h3 class="nurse-card-name" (click)="abrirExpediente(enf)" title="Ver expediente">
+              {{ enf.nombre_completo }}
+            </h3>
+            <span class="nurse-academic">{{ enf.nivel_academico || 'Licenciatura en Enfermería' }}</span>
+          </div>
+        </div>
+
+        <!-- ZONA Y SUPERVISIÓN -->
+        <div class="card-zone-row">
+          <div class="zone-tag">
+            <i class="fas fa-location-dot"></i>
+            <span>{{ enf.zona }}</span>
+          </div>
+          <span class="zs-pill">ZS {{ enf.zs }} • {{ enf.region }}</span>
+        </div>
+
+        <!-- MÉTRICAS CLAVE -->
+        <div class="card-metrics-grid">
+          <div class="metric-item">
+            <span class="m-val">{{ enf.totalPacientes | number }}</span>
+            <span class="m-lbl">Pacientes</span>
+          </div>
+          <div class="metric-item">
+            <span class="m-val text-emerald">{{ enf.visitados | number }}</span>
+            <span class="m-lbl">Visitados</span>
+          </div>
+          <div class="metric-item">
+            <span class="m-val text-amber">{{ enf.pendientes | number }}</span>
+            <span class="m-lbl">Pendientes</span>
+          </div>
+          <div class="metric-item">
+            <span class="m-val text-rose">{{ enf.incidencias }}</span>
+            <span class="m-lbl">Incidencias</span>
+          </div>
+        </div>
+
+        <!-- BARRA DE AVANCE -->
+        <div class="card-progress-section">
+          <div class="prog-text-row">
+            <span>Cumplimiento del padrón</span>
+            <b>{{ enf.progresoPct }}%</b>
+          </div>
+          <div class="nurse-progress-bar">
+            <div class="nurse-progress-fill" [style.width.%]="enf.progresoPct"></div>
+          </div>
+        </div>
+
+        <!-- CONTACTO RÁPIDO -->
+        <div class="card-contact-row">
+          <a [href]="'tel:' + enf.telefono" class="btn-contact btn-call" title="Llamar por teléfono">
+            <i class="fas fa-phone"></i>
+            <span>{{ enf.telefono }}</span>
+          </a>
+          <a [href]="'https://wa.me/52' + enf.telefono" target="_blank" class="btn-contact btn-wa" title="Enviar WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+            <span>WhatsApp</span>
+          </a>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN DE SUPERVISIÓN -->
+        <div class="card-footer-actions">
+          <button class="btn-card-action primary" (click)="verPacientes(enf)">
+            <i class="fas fa-hospital-user"></i>
+            <span>Pacientes</span>
+          </button>
+          <button class="btn-card-action secondary" (click)="verRendimiento(enf)">
+            <i class="fas fa-chart-line"></i>
+            <span>Rendimiento</span>
+          </button>
+          <button class="btn-card-action outline" (click)="abrirExpediente(enf)" title="Expediente Completo">
+            <i class="fas fa-folder-open"></i>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- LOADING -->
+    <div class="loading-state" *ngIf="loading">
+      <i class="fas fa-spinner fa-spin fa-2x"></i>
+      <p>Cargando directorio de personal...</p>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="!loading && enfermerasFiltradas.length === 0">
+      <i class="fas fa-user-slash"></i>
+      <h3>No se encontraron enfermeras</h3>
+      <p>Intenta con otros términos de búsqueda o elimina los filtros activos.</p>
+    </div>
+
+  </main>
+
+  <!-- MODAL DE EXPEDIENTE COMPLETO DE ENFERMERA -->
+  <div class="modal-backdrop" *ngIf="mostrarModalExpediente" (click)="cerrarModal()">
+    <div class="modal-expediente-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <div class="modal-title-wrap">
+          <i class="fas fa-id-card-clip"></i>
+          <div>
+            <h2>Expediente de Personal de Enfermería</h2>
+            <span>Cuidalia • Guanajuato • Distrito 03</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" (click)="cerrarModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="enfermeraSeleccionada">
+        <!-- PERFIL RESUMEN -->
+        <div class="profile-summary-box">
+          <div class="prof-avatar">
+            {{ getIniciales(enfermeraSeleccionada.nombre_completo) }}
+          </div>
+          <div class="prof-info">
+            <h3>{{ enfermeraSeleccionada.nombre_completo }}</h3>
+            <span class="prof-role">Personal de Enfermería en Campo</span>
+            <div class="prof-badges">
+              <span class="b-pill zone">{{ enfermeraSeleccionada.zona }}</span>
+              <span class="b-pill zs">ZS {{ enfermeraSeleccionada.zs }}</span>
+              <span class="b-pill reg">{{ enfermeraSeleccionada.region }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETALLES INSTITUCIONALES -->
+        <div class="details-grid">
+          <div class="detail-cell">
+            <span class="d-label">ID de Empleada / Interno</span>
+            <span class="d-val">{{ enfermeraSeleccionada.id_interno || 'No especificado' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="d-label">Cédula Profesional</span>
+            <span class="d-val">{{ enfermeraSeleccionada.no_cedula || 'En trámite institucional' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="d-label">CURP</span>
+            <span class="d-val">{{ enfermeraSeleccionada.curp || 'No especificada' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="d-label">Nivel Académico</span>
+            <span class="d-val">{{ enfermeraSeleccionada.nivel_academico || 'Licenciatura' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="d-label">Teléfono de Contacto</span>
+            <span class="d-val">{{ enfermeraSeleccionada.telefono }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="d-label">Distrito Asignado</span>
+            <span class="d-val">{{ enfermeraSeleccionada.distrito }}</span>
+          </div>
+        </div>
+
+        <!-- ESTADÍSTICAS DEL EXPEDIENTE -->
+        <h4 class="sub-heading">Desempeño Operativo del Padrón</h4>
+        <div class="stats-banner-row">
+          <div class="stat-box">
+            <span class="s-num">{{ enfermeraSeleccionada.totalPacientes }}</span>
+            <span class="s-lbl">Pacientes Asignados</span>
+          </div>
+          <div class="stat-box">
+            <span class="s-num text-emerald">{{ enfermeraSeleccionada.visitados }}</span>
+            <span class="s-lbl">Visitas Exitosas</span>
+          </div>
+          <div class="stat-box">
+            <span class="s-num text-amber">{{ enfermeraSeleccionada.pendientes }}</span>
+            <span class="s-lbl">Pendientes</span>
+          </div>
+          <div class="stat-box">
+            <span class="s-num text-rose">{{ enfermeraSeleccionada.incidencias }}</span>
+            <span class="s-lbl">Incidencias</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn-modal-action secondary" (click)="verRendimiento(enfermeraSeleccionada!)">
+          <i class="fas fa-chart-line"></i> Ver Rendimiento
+        </button>
+        <button class="btn-modal-action primary" (click)="verPacientes(enfermeraSeleccionada!)">
+          <i class="fas fa-hospital-user"></i> Ver Padrón de Pacientes
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

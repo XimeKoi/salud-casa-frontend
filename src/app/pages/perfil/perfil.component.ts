@@ -124,4 +124,8 @@ export class PerfilComponent implements OnInit {
   volverAlMapa() {
     this.router.navigate(['/dashboard']);
   }
+
+  irAPanelEnlace() {
+    this.router.navigate(['/enlace/dashboard']);
+  }
 }

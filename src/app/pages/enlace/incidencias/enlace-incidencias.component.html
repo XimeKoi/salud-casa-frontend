@@ -1,0 +1,247 @@
+<!-- src/app/pages/enlace/incidencias/enlace-incidencias.component.html -->
+
+<div class="enlace-page-container">
+
+  <!-- CABECERA INSTITUCIONAL ENLACE -->
+  <header class="enlace-hero-header">
+    <div class="hero-content">
+      <div class="hero-left">
+        <app-page-header-nav></app-page-header-nav>
+        <div class="role-badge">
+          <i class="fas fa-shield-cat"></i>
+          <span>CENTRO DE MANDO DE INCIDENCIAS • SUPERVISIÓN</span>
+        </div>
+        <h1 class="hero-title">
+          Incidencias y Reportes de Campo
+        </h1>
+        <p class="hero-sub">
+          Evidencia fotográfica, motivos de no localización y seguimiento operativo reportado por las enfermeras
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <div class="header-count-capsule">
+          <span class="count-num">{{ incidencias.length }}</span>
+          <span class="count-lbl">Incidencias Registradas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN SUPERIOR -->
+    <nav class="enlace-nav-tabs">
+      <button class="nav-tab" (click)="navegarA('/enlace/dashboard')">
+        <i class="fas fa-chart-line"></i>
+        <span>Panel General</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/enfermeras')">
+        <i class="fas fa-user-nurse"></i>
+        <span>Enfermeras</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/rendimiento')">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Rendimientos</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/pacientes')">
+        <i class="fas fa-users-medical"></i>
+        <span>Padrón de Pacientes</span>
+      </button>
+      <button class="nav-tab active" (click)="navegarA('/enlace/incidencias')">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Incidencias ({{ incidencias.length }})</span>
+      </button>
+      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
+        <i class="fas fa-map-location-dot"></i>
+        <span>Mapa Operativo</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- CUERPO PRINCIPAL -->
+  <main class="enlace-main-body">
+
+    <!-- FILTROS -->
+    <section class="filters-panel">
+      <div class="search-bar-row">
+        <div class="search-input-box">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="aplicarFiltros()"
+            placeholder="Buscar por paciente, dirección, motivo o enfermera..."
+            class="search-input"
+          />
+          <button *ngIf="searchTerm" (click)="searchTerm = ''; aplicarFiltros()" class="btn-clear">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="filters-row">
+        <!-- FILTRO POR ENFERMERA -->
+        <div class="filter-item">
+          <label class="f-label">Enfermera:</label>
+          <select [(ngModel)]="filtroEnfermera" (change)="aplicarFiltros()" class="f-select">
+            <option value="todas">👥 Todas las enfermeras</option>
+            <option *ngFor="let enf of enfermeras" [value]="enf.id">
+              👩‍⚕️ {{ enf.nombre_completo }}
+            </option>
+          </select>
+        </div>
+
+        <!-- FILTRO POR TIPO -->
+        <div class="filter-item">
+          <label class="f-label">Tipo de Incidencia:</label>
+          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="f-select">
+            <option value="todos">Todos los motivos</option>
+            <option value="no_localizado">No Localizado</option>
+            <option value="rechazo">Rechazo de Visita</option>
+            <option value="cambio_domicilio">Cambio de Domicilio</option>
+            <option value="finado">Defunción / Finado</option>
+            <option value="zona_insegura">Zona de Difícil Acceso</option>
+          </select>
+        </div>
+
+        <!-- FILTRO POR ESTADO -->
+        <div class="filter-item">
+          <label class="f-label">Estado:</label>
+          <div class="status-pills">
+            <button class="s-pill" [class.active]="filtroEstado === 'todos'" (click)="filtroEstado = 'todos'; aplicarFiltros()">Todos</button>
+            <button class="s-pill pending" [class.active]="filtroEstado === 'pendiente'" (click)="filtroEstado = 'pendiente'; aplicarFiltros()">Pendientes</button>
+            <button class="s-pill done" [class.active]="filtroEstado === 'resuelta'" (click)="filtroEstado = 'resuelta'; aplicarFiltros()">Atendidas</button>
+          </div>
+        </div>
+
+        <div class="counter-label">
+          <span>Mostrando: <b>{{ incidenciasFiltradas.length }}</b> de {{ incidencias.length }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOADING -->
+    <div class="loading-state" *ngIf="loading">
+      <i class="fas fa-spinner fa-spin fa-2x"></i>
+      <p>Cargando incidencias del distrito...</p>
+    </div>
+
+    <!-- GRID DE INCIDENCIAS -->
+    <section class="incidents-grid" *ngIf="!loading">
+      <div class="incident-card" *ngFor="let inc of incidenciasFiltradas">
+        
+        <!-- CABECERA DE LA INCIDENCIA -->
+        <div class="inc-card-head">
+          <span class="inc-badge-type">
+            <i class="fas fa-triangle-exclamation"></i>
+            {{ getTipoLabel(inc.tipo) }}
+          </span>
+          <span class="inc-badge-status" [class.done]="inc.resuelta || inc.estado === 'resuelta'">
+            {{ (inc.resuelta || inc.estado === 'resuelta') ? 'Atendida' : 'Pendiente' }}
+          </span>
+        </div>
+
+        <!-- ENFERMERA QUE REPORTÓ -->
+        <div class="nurse-reporter-strip">
+          <i class="fas fa-user-nurse"></i>
+          <span>Reportado por: <b>{{ inc.enfermeraNombre }}</b> ({{ inc.enfermeraZona }})</span>
+        </div>
+
+        <!-- PACIENTE Y FECHA -->
+        <h3 class="patient-title">{{ inc.datosPaciente?.nombre || 'Paciente Registrado' }}</h3>
+        <span class="inc-timestamp">
+          <i class="fas fa-clock"></i> {{ inc.fecha | date:'dd/MM/yyyy HH:mm' }} hrs
+        </span>
+
+        <!-- DIRECCIÓN -->
+        <div class="inc-address-box">
+          <i class="fas fa-location-dot"></i>
+          <span>{{ inc.direccion }}</span>
+        </div>
+
+        <!-- MOTIVO / DESCRIPCIÓN -->
+        <div class="inc-desc-box">
+          <p>{{ inc.descripcion }}</p>
+          <span *ngIf="inc.otroTexto" class="inc-extra-note">Nota: {{ inc.otroTexto }}</span>
+        </div>
+
+        <!-- FOTOS DE EVIDENCIA -->
+        <div class="inc-photos-strip" *ngIf="inc.fotos && inc.fotos.length > 0">
+          <div class="photo-thumb-wrap" *ngFor="let f of inc.fotos" (click)="abrirFoto(f)" title="Ampliar evidencia fotográfica">
+            <img [src]="f" alt="Evidencia en campo" class="photo-thumb" />
+            <div class="photo-overlay"><i class="fas fa-search-plus"></i></div>
+          </div>
+        </div>
+
+        <!-- ACCIONES DE SUPERVISIÓN -->
+        <div class="inc-footer-actions">
+          <button class="btn-inc-action maps" (click)="abrirEnGoogleMaps(inc.direccion)" title="Abrir en Google Maps">
+            <i class="fas fa-map-location-dot"></i> Ver Mapa
+          </button>
+          <button class="btn-inc-action inspect" (click)="abrirDetalle(inc)">
+            <i class="fas fa-eye"></i> Detalle
+          </button>
+          <button class="btn-inc-action resolve" *ngIf="!inc.resuelta && inc.estado !== 'resuelta'" (click)="marcarAtendida(inc)">
+            <i class="fas fa-check"></i> Atender
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="!loading && incidenciasFiltradas.length === 0">
+      <i class="fas fa-shield-check"></i>
+      <h3>No se encontraron incidencias</h3>
+      <p>No hay reportes que coincidan con los filtros seleccionados.</p>
+    </div>
+
+  </main>
+
+  <!-- MODAL LIGHTBOX DE FOTO -->
+  <div class="lightbox-backdrop" *ngIf="mostrarModalFoto" (click)="cerrarModalFoto()">
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <button class="btn-close-lightbox" (click)="cerrarModalFoto()"><i class="fas fa-times"></i></button>
+      <img [src]="fotoSeleccionada" alt="Evidencia ampliada" class="lightbox-img" />
+      <span class="lightbox-caption">Evidencia fotográfica capturada por personal de enfermería en campo</span>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE DE INCIDENCIA -->
+  <div class="lightbox-backdrop" *ngIf="mostrarModalDetalle" (click)="cerrarModalDetalle()">
+    <div class="modal-detail-card" (click)="$event.stopPropagation()">
+      <div class="modal-detail-head">
+        <h3>Detalle Completo de Incidencia</h3>
+        <button class="btn-close-lightbox" (click)="cerrarModalDetalle()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-detail-body" *ngIf="incidenciaDetalle">
+        <div class="m-row">
+          <span class="m-lbl">Enfermera:</span>
+          <span class="m-val">{{ incidenciaDetalle.enfermeraNombre }} ({{ incidenciaDetalle.enfermeraZona }})</span>
+        </div>
+        <div class="m-row">
+          <span class="m-lbl">Paciente:</span>
+          <span class="m-val">{{ incidenciaDetalle.datosPaciente?.nombre }}</span>
+        </div>
+        <div class="m-row">
+          <span class="m-lbl">Tipo:</span>
+          <span class="m-val">{{ getTipoLabel(incidenciaDetalle.tipo) }}</span>
+        </div>
+        <div class="m-row">
+          <span class="m-lbl">Fecha y Hora:</span>
+          <span class="m-val">{{ incidenciaDetalle.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+        </div>
+        <div class="m-row">
+          <span class="m-lbl">Dirección:</span>
+          <span class="m-val">{{ incidenciaDetalle.direccion }}</span>
+        </div>
+        <div class="m-row">
+          <span class="m-lbl">Observaciones:</span>
+          <span class="m-val">{{ incidenciaDetalle.descripcion }}</span>
+        </div>
+      </div>
+      <div class="modal-detail-foot">
+        <button class="btn-close-foot" (click)="cerrarModalDetalle()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+</div>

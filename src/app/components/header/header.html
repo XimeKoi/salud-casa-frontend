@@ -38,6 +38,12 @@
       <span class="status-dot"></span>
       <span class="status-text">{{ isOnline ? 'En línea' : 'Sin conexión' }}</span>
     </div>
+    <!-- Acceso al Panel de Enlace cuando el rol es Enlace -->
+    <button class="btn-nav btn-enlace" *ngIf="isEnlace" (click)="navigateTo('enlace-dashboard')" title="Panel de Supervisión Enlace">
+      <i class="fas fa-user-shield"></i>
+      <span class="btn-text">Panel Enlace</span>
+    </button>
+
     <button class="btn-nav btn-mapa" (click)="irAlMapa()" title="Mapa Operativo">
       <i class="fas fa-map-location-dot"></i>
       <span class="btn-text">Mapa</span>
@@ -72,6 +78,64 @@
 
   <div class="sidebar-modules-list">
     <ul class="modules-nav-list">
+      <!-- MÓDULOS EXCLUSIVOS DEL ROL ENLACE -->
+      <ng-container *ngIf="isEnlace">
+        <li (click)="navigateTo('enlace-dashboard')" class="nav-module-item item-enlace">
+          <div class="icon-bubble icon-enlace">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Panel de Enlace</span>
+            <span class="module-desc">Supervisión y control global</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <li (click)="navigateTo('enlace-enfermeras')" class="nav-module-item item-enlace">
+          <div class="icon-bubble icon-nurses">
+            <i class="fas fa-user-nurse"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Directorio de Enfermeras</span>
+            <span class="module-desc">Personal, zonas y fichas</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <li (click)="navigateTo('enlace-rendimiento')" class="nav-module-item item-enlace">
+          <div class="icon-bubble icon-perf">
+            <i class="fas fa-tachometer-alt"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Rendimiento de Personal</span>
+            <span class="module-desc">Metas diarias y auditoría</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <li (click)="navigateTo('enlace-pacientes')" class="nav-module-item item-enlace">
+          <div class="icon-bubble icon-patients">
+            <i class="fas fa-users-medical"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Padrón de Pacientes</span>
+            <span class="module-desc">Pacientes por enfermera</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <li (click)="navigateTo('enlace-incidencias')" class="nav-module-item item-enlace">
+          <div class="icon-bubble icon-incidents">
+            <i class="fas fa-triangle-exclamation"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Centro de Incidencias</span>
+            <span class="module-desc">Evidencias y reportes</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+      </ng-container>
+
       <li (click)="navigateTo('dashboard')" class="nav-module-item">
         <div class="icon-bubble icon-map">
           <i class="fas fa-map-location-dot"></i>

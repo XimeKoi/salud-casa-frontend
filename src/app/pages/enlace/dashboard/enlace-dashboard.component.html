@@ -1,0 +1,369 @@
+<!-- src/app/pages/enlace/dashboard/enlace-dashboard.component.html -->
+
+<div class="enlace-page-container">
+
+  <!-- CABECERA INSTITUCIONAL ENLACE -->
+  <header class="enlace-hero-header">
+    <div class="hero-content">
+      <div class="hero-left">
+        <app-page-header-nav></app-page-header-nav>
+        <div class="role-badge">
+          <i class="fas fa-user-shield"></i>
+          <span>ROL ENLACE OPERATIVO • SUPERVISIÓN</span>
+        </div>
+        <h1 class="hero-title">
+          Panel de Control y Supervisión
+        </h1>
+        <p class="hero-sub">
+          Administración territorial del personal de enfermería en campo •
+          <span class="district-highlight">{{ usuarioEnlace?.distrito || 'DISTRITO 03 • LEÓN' }}</span>
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <div class="user-supervisor-card">
+          <div class="supervisor-avatar">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <div class="supervisor-info">
+            <span class="supervisor-label">Coordinadora / Enlace</span>
+            <span class="supervisor-name">
+              {{ usuarioEnlace?.nombre }} {{ usuarioEnlace?.apellidoPaterno }} {{ usuarioEnlace?.apellidoMaterno }}
+            </span>
+            <span class="supervisor-id">ID Usuario: {{ usuarioEnlace?.username || 'enlace3' }}</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-refresh-enlace" (click)="cargarDatos()" [disabled]="loading" title="Actualizar datos">
+            <i class="fas" [class.fa-sync-alt]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
+            <span>{{ loading ? 'Actualizando...' : 'Actualizar Monitor' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN SUPERIOR DEL ROL ENLACE -->
+    <nav class="enlace-nav-tabs">
+      <button class="nav-tab active" (click)="navegarA('/enlace/dashboard')">
+        <i class="fas fa-chart-line"></i>
+        <span>Panel General</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/enfermeras')">
+        <i class="fas fa-user-nurse"></i>
+        <span>Enfermeras ({{ resumen?.totalEnfermeras || 10 }})</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/rendimiento')">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Rendimientos</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/pacientes')">
+        <i class="fas fa-users-medical"></i>
+        <span>Padrón de Pacientes</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/incidencias')">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Incidencias</span>
+      </button>
+      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
+        <i class="fas fa-map-location-dot"></i>
+        <span>Mapa Operativo</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="enlace-main-body">
+
+    <!-- KPI SUMMARY CARDS -->
+    <section class="kpi-grid">
+      <!-- 1. TOTAL ENFERMERAS -->
+      <div class="kpi-card card-nurses" (click)="navegarA('/enlace/enfermeras')">
+        <div class="kpi-icon-wrap">
+          <i class="fas fa-user-nurse"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Personal de Enfermería</span>
+          <span class="kpi-value">{{ resumen?.totalEnfermeras || 10 }}</span>
+          <span class="kpi-foot text-emerald">
+            <i class="fas fa-circle-check"></i> 100% con zonas asignadas
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. PADRÓN GLOBAL -->
+      <div class="kpi-card card-patients" (click)="navegarA('/enlace/pacientes')">
+        <div class="kpi-icon-wrap">
+          <i class="fas fa-hospital-user"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Padrón Supervisado</span>
+          <span class="kpi-value">{{ resumen?.totalPacientes | number }}</span>
+          <span class="kpi-foot">
+            <span class="badge-sub-pam">PAM: {{ resumen?.pamTotal | number }}</span>
+            <span class="badge-sub-pcd">PCD: {{ resumen?.pcdTotal | number }}</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. VISITAS COMPLETADAS -->
+      <div class="kpi-card card-visits" (click)="navegarA('/enlace/rendimiento')">
+        <div class="kpi-icon-wrap">
+          <i class="fas fa-clipboard-check"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Visitas Realizadas</span>
+          <div class="kpi-val-group">
+            <span class="kpi-value">{{ resumen?.totalVisitados | number }}</span>
+            <span class="kpi-pct-badge">{{ resumen?.porcentajeGlobal }}%</span>
+          </div>
+          <div class="kpi-progress-bar">
+            <div class="kpi-progress-fill" [style.width.%]="resumen?.porcentajeGlobal"></div>
+          </div>
+          <span class="kpi-foot text-muted">
+            {{ resumen?.totalPendientes | number }} pendientes en el distrito
+          </span>
+        </div>
+      </div>
+
+      <!-- 4. VISITAS HOY -->
+      <div class="kpi-card card-today">
+        <div class="kpi-icon-wrap">
+          <i class="fas fa-calendar-day"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Productividad de Hoy</span>
+          <div class="kpi-val-group">
+            <span class="kpi-value">{{ resumen?.visitasHoyTotal }}</span>
+            <span class="kpi-meta-sub">/ {{ resumen?.metaTotalDiaria }} meta</span>
+          </div>
+          <span class="kpi-foot text-amber">
+            <i class="fas fa-bolt"></i> Meta diaria: 15 visitas / enfermera
+          </span>
+        </div>
+      </div>
+
+      <!-- 5. INCIDENCIAS REPORTADAS -->
+      <div class="kpi-card card-incidents" (click)="navegarA('/enlace/incidencias')">
+        <div class="kpi-icon-wrap">
+          <i class="fas fa-shield-cat"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Incidencias Reportadas</span>
+          <span class="kpi-value">{{ resumen?.totalIncidencias || 163 }}</span>
+          <span class="kpi-foot text-rose">
+            <i class="fas fa-camera"></i> Con evidencia fotográfica
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- BANNER DE ACCIÓN RÁPIDA -->
+    <section class="enlace-quick-banner">
+      <div class="banner-info">
+        <div class="banner-icon">
+          <i class="fas fa-shield-heart"></i>
+        </div>
+        <div class="banner-text">
+          <h3>Supervisión Activa del Programa Cuidalia</h3>
+          <p>
+            Monitorea el avance de visitas casa por casa, gestiona incidencias de campo y da seguimiento
+            al rendimiento del equipo de enfermería en León.
+          </p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button class="btn-banner-action" (click)="navegarA('/enlace/enfermeras')">
+          <i class="fas fa-user-nurse"></i> Ver Directorio
+        </button>
+        <button class="btn-banner-action secondary" (click)="navegarA('/enlace/incidencias')">
+          <i class="fas fa-camera-rotate"></i> Revisar Incidencias
+        </button>
+      </div>
+    </section>
+
+    <!-- TABLA Y RANKING DE ENFERMERAS SUPERVISADAS -->
+    <section class="section-container">
+      <div class="section-header-row">
+        <div>
+          <h2 class="section-title">
+            <i class="fas fa-ranking-star"></i>
+            Desempeño y Estado del Personal de Enfermería
+          </h2>
+          <span class="section-subtitle">
+            Monitoreo en tiempo real de avance de visitas y metas diarias por enfermera
+          </span>
+        </div>
+        <button class="btn-view-all" (click)="navegarA('/enlace/enfermeras')">
+          <span>Ver todas las enfermeras</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <div class="nurses-table-wrap">
+        <table class="nurses-table">
+          <thead>
+            <tr>
+              <th>Enfermera / Personal</th>
+              <th>Zona Asignada</th>
+              <th>ZS</th>
+              <th class="text-center">Pacientes</th>
+              <th class="text-center">Visitados</th>
+              <th class="text-center">Pendientes</th>
+              <th>Avance Global</th>
+              <th class="text-center">Hoy / Meta</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let enf of enfermeras">
+              <td class="nurse-profile-cell">
+                <div class="nurse-avatar-circle">
+                  {{ getIniciales(enf.nombre_completo) }}
+                </div>
+                <div class="nurse-name-box">
+                  <span class="nurse-full-name">{{ enf.nombre_completo }}</span>
+                  <span class="nurse-meta-id">
+                    <i class="fas fa-id-badge"></i> {{ enf.id_interno || ('ENF-' + enf.id) }} •
+                    <a [href]="'tel:' + enf.telefono" class="nurse-phone-link">
+                      <i class="fas fa-phone"></i> {{ enf.telefono }}
+                    </a>
+                  </span>
+                </div>
+              </td>
+              <td>
+                <span class="badge-zone">
+                  <i class="fas fa-map-pin"></i> {{ enf.zona }}
+                </span>
+              </td>
+              <td>
+                <span class="badge-zs">ZS {{ enf.zs }}</span>
+              </td>
+              <td class="text-center font-bold">{{ enf.totalPacientes | number }}</td>
+              <td class="text-center text-emerald font-bold">{{ enf.visitados | number }}</td>
+              <td class="text-center text-amber">{{ enf.pendientes | number }}</td>
+              <td>
+                <div class="table-progress-wrap">
+                  <div class="progress-bar-sm">
+                    <div class="fill" [style.width.%]="enf.progresoPct"></div>
+                  </div>
+                  <span class="pct-text">{{ enf.progresoPct }}%</span>
+                </div>
+              </td>
+              <td class="text-center">
+                <span class="badge-today-visits" [class.badge-completed]="enf.visitasHoy >= enf.metaDiaria">
+                  {{ enf.visitasHoy }} / {{ enf.metaDiaria }}
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="table-actions-cell">
+                  <button class="btn-action-icon btn-pacientes" (click)="verPacientesDeEnfermera(enf.id)" title="Ver Pacientes">
+                    <i class="fas fa-hospital-user"></i>
+                  </button>
+                  <button class="btn-action-icon btn-rendimiento" (click)="verRendimientoDeEnfermera(enf.id)" title="Ver Rendimiento">
+                    <i class="fas fa-chart-line"></i>
+                  </button>
+                  <a [href]="'https://wa.me/52' + enf.telefono" target="_blank" class="btn-action-icon btn-whatsapp" title="Contactar por WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- BLOQUES INFERIORES: DISTRIBUCIÓN Y ÚLTIMAS INCIDENCIAS -->
+    <div class="bottom-dual-grid">
+
+      <!-- DISTRIBUCIÓN DEL DISTRITO -->
+      <section class="section-container card-distribution">
+        <h2 class="section-title">
+          <i class="fas fa-chart-pie"></i>
+          Distribución Operativa del Distrito
+        </h2>
+
+        <div class="distribution-bars-list">
+          <div class="dist-row">
+            <div class="dist-header">
+              <span class="dist-name"><i class="fas fa-person-walking"></i> Adultos Mayores (PAM)</span>
+              <span class="dist-count">{{ resumen?.pamTotal | number }} (88%)</span>
+            </div>
+            <div class="dist-bar">
+              <div class="dist-fill pam" style="width: 88%;"></div>
+            </div>
+          </div>
+
+          <div class="dist-row">
+            <div class="dist-header">
+              <span class="dist-name"><i class="fas fa-wheelchair"></i> Personas con Discapacidad (PCD)</span>
+              <span class="dist-count">{{ resumen?.pcdTotal | number }} (12%)</span>
+            </div>
+            <div class="dist-bar">
+              <div class="dist-fill pcd" style="width: 12%;"></div>
+            </div>
+          </div>
+
+          <div class="dist-row">
+            <div class="dist-header">
+              <span class="dist-name"><i class="fas fa-house-chimney-crack"></i> Cambios de Domicilio</span>
+              <span class="dist-count">{{ resumen?.totalCambiosDomicilio || 280 }} casos</span>
+            </div>
+            <div class="dist-bar">
+              <div class="dist-fill cambio" style="width: 25%;"></div>
+            </div>
+          </div>
+
+          <div class="dist-row">
+            <div class="dist-header">
+              <span class="dist-name"><i class="fas fa-circle-xmark"></i> Rechazos del Programa</span>
+              <span class="dist-count">{{ resumen?.totalRechazos || 140 }} casos</span>
+            </div>
+            <div class="dist-bar">
+              <div class="dist-fill rechazo" style="width: 15%;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALERTAS RECIENTES DE INCIDENCIAS -->
+      <section class="section-container card-recent-incidents">
+        <div class="section-header-row">
+          <h2 class="section-title">
+            <i class="fas fa-triangle-exclamation"></i>
+            Reportes e Incidencias Recientes
+          </h2>
+          <button class="btn-link" (click)="navegarA('/enlace/incidencias')">
+            Ver todas ({{ resumen?.totalIncidencias }})
+          </button>
+        </div>
+
+        <div class="recent-incidents-list" *ngIf="incidenciasRecientes.length > 0">
+          <div class="incident-item-card" *ngFor="let inc of incidenciasRecientes">
+            <div class="inc-icon-box">
+              <i class="fas fa-camera"></i>
+            </div>
+            <div class="inc-info-box">
+              <div class="inc-top-row">
+                <span class="inc-type-tag">{{ inc.tipo | uppercase }}</span>
+                <span class="inc-date">{{ inc.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <span class="inc-patient-name">{{ inc.datosPaciente?.nombre || 'Paciente registrado' }}</span>
+              <span class="inc-dir"><i class="fas fa-location-dot"></i> {{ inc.direccion }}</span>
+              <span class="inc-nurse-tag">
+                <i class="fas fa-user-nurse"></i> Reportado por: {{ inc.enfermeraNombre }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="incidenciasRecientes.length === 0">
+          <i class="fas fa-check-double"></i>
+          <span>No hay incidencias pendientes en este momento</span>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+</div>

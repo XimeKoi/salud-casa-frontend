@@ -1,0 +1,255 @@
+<!-- src/app/pages/enlace/pacientes/enlace-pacientes.component.html -->
+
+<div class="enlace-page-container">
+
+  <!-- CABECERA INSTITUCIONAL ENLACE -->
+  <header class="enlace-hero-header">
+    <div class="hero-content">
+      <div class="hero-left">
+        <app-page-header-nav></app-page-header-nav>
+        <div class="role-badge">
+          <i class="fas fa-hospital-user"></i>
+          <span>SUPERVISIÓN DEL PADRÓN NOMINAL • ROL ENLACE</span>
+        </div>
+        <h1 class="hero-title">
+          Padrón de Pacientes por Enfermera
+        </h1>
+        <p class="hero-sub">
+          Consulta y auditoría de expedientes domiciliarios asignados a cada enfermera del distrito
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <!-- SELECTOR DE ENFERMERA PRINCIPAL -->
+        <div class="nurse-picker-box">
+          <label class="picker-label"><i class="fas fa-user-nurse"></i> Filtrar por Enfermera Responsable:</label>
+          <select [(ngModel)]="idEnfermeraSeleccionada" (change)="onEnfermeraChange()" class="picker-select">
+            <option *ngFor="let enf of enfermeras" [value]="enf.id">
+              👩‍⚕️ {{ enf.nombre_completo }} • {{ enf.zona }} ({{ enf.totalPacientes }} pac.)
+            </option>
+            <option value="todas">👥 Muestra Multizona (Todas)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN SUPERIOR -->
+    <nav class="enlace-nav-tabs">
+      <button class="nav-tab" (click)="navegarA('/enlace/dashboard')">
+        <i class="fas fa-chart-line"></i>
+        <span>Panel General</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/enfermeras')">
+        <i class="fas fa-user-nurse"></i>
+        <span>Enfermeras</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/rendimiento')">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Rendimientos</span>
+      </button>
+      <button class="nav-tab active" (click)="navegarA('/enlace/pacientes')">
+        <i class="fas fa-users-medical"></i>
+        <span>Padrón de Pacientes</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/incidencias')">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Incidencias</span>
+      </button>
+      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
+        <i class="fas fa-map-location-dot"></i>
+        <span>Mapa Operativo</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- CUERPO PRINCIPAL -->
+  <main class="enlace-main-body">
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS -->
+    <section class="filters-card">
+      <div class="search-row">
+        <div class="search-input-wrap">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="aplicarFiltros()"
+            placeholder="Buscar por nombre de paciente, CURP, dirección o colonia..."
+            class="search-field"
+          />
+          <button *ngIf="searchTerm" (click)="searchTerm = ''; aplicarFiltros()" class="btn-clear">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-controls-row">
+        <!-- FILTRO PROGRAMA -->
+        <div class="ctrl-group">
+          <span class="ctrl-label">Programa:</span>
+          <div class="pills-set">
+            <button class="pill" [class.active]="filtroPrograma === 'todos'" (click)="filtroPrograma = 'todos'; aplicarFiltros()">Todos</button>
+            <button class="pill pam" [class.active]="filtroPrograma === 'PAM'" (click)="filtroPrograma = 'PAM'; aplicarFiltros()">PAM</button>
+            <button class="pill pcd" [class.active]="filtroPrograma === 'PCD'" (click)="filtroPrograma = 'PCD'; aplicarFiltros()">PCD</button>
+          </div>
+        </div>
+
+        <!-- FILTRO ESTATUS -->
+        <div class="ctrl-group">
+          <span class="ctrl-label">Estatus de Visita:</span>
+          <div class="pills-set">
+            <button class="pill" [class.active]="filtroEstatus === 'todos'" (click)="filtroEstatus = 'todos'; aplicarFiltros()">Todos</button>
+            <button class="pill" [class.active]="filtroEstatus === 'VISITADO'" (click)="filtroEstatus = 'VISITADO'; aplicarFiltros()">Visitados</button>
+            <button class="pill" [class.active]="filtroEstatus === 'PENDIENTE'" (click)="filtroEstatus = 'PENDIENTE'; aplicarFiltros()">Pendientes</button>
+            <button class="pill" [class.active]="filtroEstatus === 'INCIDENCIA'" (click)="filtroEstatus = 'INCIDENCIA'; aplicarFiltros()">Incidencias</button>
+            <button class="pill" [class.active]="filtroEstatus === 'RECHAZO'" (click)="filtroEstatus = 'RECHAZO'; aplicarFiltros()">Rechazos</button>
+            <button class="pill" [class.active]="filtroEstatus === 'CAMBIO DE DOMICILIO'" (click)="filtroEstatus = 'CAMBIO DE DOMICILIO'; aplicarFiltros()">Cambio Domicilio</button>
+            <button class="pill" [class.active]="filtroEstatus === 'FINADO'" (click)="filtroEstatus = 'FINADO'; aplicarFiltros()">Finados</button>
+          </div>
+        </div>
+
+        <!-- CONTADORES -->
+        <div class="stats-counter-strip">
+          <span class="strip-item">Total: <b>{{ pacientesFiltrados.length }}</b></span>
+          <span class="strip-item pam">PAM: <b>{{ totalPam }}</b></span>
+          <span class="strip-item pcd">PCD: <b>{{ totalPcd }}</b></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LISTA / GRID DE PACIENTES RESPONSIVA -->
+    <div class="loading-state" *ngIf="loading">
+      <i class="fas fa-spinner fa-spin fa-2x"></i>
+      <p>Cargando pacientes de la enfermera seleccionada...</p>
+    </div>
+
+    <section class="patients-grid" *ngIf="!loading">
+      <div class="patient-card" *ngFor="let p of pacientesFiltrados" (click)="verDetallePaciente(p)">
+        
+        <!-- CABECERA DE PACIENTE -->
+        <div class="patient-card-top">
+          <div class="nurse-assigned-badge">
+            <i class="fas fa-user-nurse"></i>
+            <span>{{ p.enfermeraNombre }} • {{ p.enfermeraZona }}</span>
+          </div>
+          <span class="program-badge" [class.pam]="p.programa === 'PAM'" [class.pcd]="p.programa === 'PCD'">
+            {{ p.programa }}
+          </span>
+        </div>
+
+        <!-- NOMBRE Y CURP -->
+        <h3 class="patient-name">{{ p.nombreCompleto || 'Sin nombre registrado' }}</h3>
+        <span class="patient-curp">
+          <i class="fas fa-address-card"></i> CURP: {{ p.curp }}
+        </span>
+
+        <!-- DIRECCIÓN Y COLONIA -->
+        <div class="patient-address-box">
+          <i class="fas fa-location-dot"></i>
+          <span>{{ p.direccion }}</span>
+        </div>
+
+        <!-- ESTATUS Y CONTACTO -->
+        <div class="patient-footer-row">
+          <span class="status-pill" [class.status-visitado]="p.estatus === 'VISITADO'"
+                                    [class.status-pendiente]="p.estatus === 'PENDIENTE'"
+                                    [class.status-incidencia]="p.estatus === 'INCIDENCIA'"
+                                    [class.status-rechazo]="p.estatus === 'RECHAZO'"
+                                    [class.status-cambio]="p.estatus === 'CAMBIO DE DOMICILIO'"
+                                    [class.status-finado]="p.estatus === 'FINADO'">
+            {{ p.estatus }}
+          </span>
+
+          <span class="patient-phone" *ngIf="p.telefono && p.telefono !== 'Sin teléfono'">
+            <i class="fas fa-phone"></i> {{ p.telefono }}
+          </span>
+
+          <button class="btn-inspect-patient" title="Ver ficha completa">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" *ngIf="!loading && pacientesFiltrados.length === 0">
+      <i class="fas fa-users-slash"></i>
+      <h3>No se encontraron pacientes</h3>
+      <p>Intenta con otros filtros de programa o cambia la enfermera seleccionada.</p>
+    </div>
+
+  </main>
+
+  <!-- MODAL DE FICHA DE PACIENTE -->
+  <div class="modal-backdrop" *ngIf="mostrarModalPaciente" (click)="cerrarModal()">
+    <div class="modal-patient-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <div class="modal-head-title">
+          <i class="fas fa-file-medical"></i>
+          <div>
+            <h2>Ficha Clínica de Supervisión</h2>
+            <span>Cuidalia • Atención Médica Domiciliaria</span>
+          </div>
+        </div>
+        <button class="btn-close" (click)="cerrarModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="modal-body" *ngIf="pacienteSeleccionado">
+        <div class="patient-profile-header">
+          <div class="pp-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="pp-info">
+            <h3>{{ pacienteSeleccionado.nombreCompleto }}</h3>
+            <span class="pp-curp">CURP: {{ pacienteSeleccionado.curp }}</span>
+            <div class="pp-tags">
+              <span class="pp-prog" [class.pam]="pacienteSeleccionado.programa === 'PAM'">
+                Programa: {{ pacienteSeleccionado.programa }}
+              </span>
+              <span class="pp-status">{{ pacienteSeleccionado.estatus }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-rows-container">
+          <div class="d-row">
+            <span class="d-label">Enfermera Responsable</span>
+            <span class="d-val font-bold text-wine">
+              👩‍⚕️ {{ pacienteSeleccionado.enfermeraNombre }}
+            </span>
+          </div>
+          <div class="d-row">
+            <span class="d-label">Zona Territorial</span>
+            <span class="d-val">{{ pacienteSeleccionado.enfermeraZona }}</span>
+          </div>
+          <div class="d-row">
+            <span class="d-label">Dirección Completa</span>
+            <span class="d-val">{{ pacienteSeleccionado.direccion }}</span>
+          </div>
+          <div class="d-row">
+            <span class="d-label">Colonia</span>
+            <span class="d-val">{{ pacienteSeleccionado.colonia }}</span>
+          </div>
+          <div class="d-row">
+            <span class="d-label">Teléfono de Contacto</span>
+            <span class="d-val">
+              <a [href]="'tel:' + pacienteSeleccionado.telefono" class="phone-link">
+                {{ pacienteSeleccionado.telefono }}
+              </a>
+            </span>
+          </div>
+          <div class="d-row" *ngIf="pacienteSeleccionado.lat && pacienteSeleccionado.lng">
+            <span class="d-label">Coordenadas GPS</span>
+            <span class="d-val">{{ pacienteSeleccionado.lat }}, {{ pacienteSeleccionado.lng }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn-close-foot" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+</div>

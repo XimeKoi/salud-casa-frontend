@@ -120,10 +120,38 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.menuService.cerrarMenu();
   }
 
+  get isEnlace(): boolean {
+    try {
+      const rol = localStorage.getItem('rol');
+      if (rol === 'enlace' || rol === 'distrital' || rol === 'admin') return true;
+      const userStr = localStorage.getItem('userData');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        return u.role === 'enlace' || u.role === 'distrital' || u.role === 'admin';
+      }
+    } catch (e) {}
+    return false;
+  }
+
   navigateTo(section: string) {
     console.log(`Navegando a: ${section}`);
     this.closeSidebar();
     switch (section) {
+      case 'enlace-dashboard':
+        this.router.navigate(['/enlace/dashboard']);
+        break;
+      case 'enlace-enfermeras':
+        this.router.navigate(['/enlace/enfermeras']);
+        break;
+      case 'enlace-rendimiento':
+        this.router.navigate(['/enlace/rendimiento']);
+        break;
+      case 'enlace-pacientes':
+        this.router.navigate(['/enlace/pacientes']);
+        break;
+      case 'enlace-incidencias':
+        this.router.navigate(['/enlace/incidencias']);
+        break;
       case 'dashboard':
         this.router.navigate(['/dashboard']);
         break;

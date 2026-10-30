@@ -1,0 +1,888 @@
+// src/app/pages/enlace/dashboard/enlace-dashboard.component.scss
+
+.enlace-page-container {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #1e293b;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding-bottom: 50px;
+}
+
+// ============================================
+// CABECERA HERO ENLACE
+// ============================================
+.enlace-hero-header {
+  background: linear-gradient(135deg, #5c1422 0%, #7A192B 50%, #9F2241 100%);
+  color: #ffffff;
+  padding: 24px 28px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  position: relative;
+
+  .hero-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 24px;
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  .hero-left {
+    flex: 1;
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      backdrop-filter: blur(4px);
+    }
+
+    .hero-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0 0 6px;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+
+      @media (max-width: 600px) {
+        font-size: 22px;
+      }
+    }
+
+    .hero-sub {
+      margin: 0;
+      font-size: 13.5px;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.4;
+
+      .district-highlight {
+        font-weight: 700;
+        color: #fef08a;
+      }
+    }
+  }
+
+  .hero-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+
+    @media (max-width: 900px) {
+      align-items: flex-start;
+      width: 100%;
+    }
+  }
+
+  .user-supervisor-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+
+    .supervisor-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .supervisor-info {
+      display: flex;
+      flex-direction: column;
+
+      .supervisor-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #fde047;
+        font-weight: 700;
+      }
+
+      .supervisor-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .supervisor-id {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.75);
+      }
+    }
+  }
+
+  .btn-refresh-enlace {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: #7A192B;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// ============================================
+// TABS DE NAVEGACIÓN SUPERIOR
+// ============================================
+.enlace-nav-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 10px 18px;
+    border-radius: 10px 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+
+    &.active {
+      background: #f8fafc;
+      color: #7A192B;
+      font-weight: 700;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    &.map-tab {
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #a7f3d0;
+      margin-left: auto;
+
+      &:hover {
+        background: rgba(16, 185, 129, 0.35);
+        color: #fff;
+      }
+    }
+  }
+}
+
+// ============================================
+// CUERPO PRINCIPAL
+// ============================================
+.enlace-main-body {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+// ============================================
+// KPI GRID
+// ============================================
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+  }
+
+  .kpi-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  &.card-nurses .kpi-icon-wrap {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+  &.card-patients .kpi-icon-wrap {
+    background: #fdf2f8;
+    color: #db2777;
+  }
+  &.card-visits .kpi-icon-wrap {
+    background: #ecfdf5;
+    color: #059669;
+  }
+  &.card-today .kpi-icon-wrap {
+    background: #fffbeb;
+    color: #d97706;
+  }
+  &.card-incidents .kpi-icon-wrap {
+    background: #fff1f2;
+    color: #e11d48;
+  }
+
+  .kpi-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .kpi-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .kpi-val-group {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 4px;
+
+      .kpi-pct-badge {
+        background: #dcfce7;
+        color: #15803d;
+        padding: 2px 7px;
+        border-radius: 12px;
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+
+      .kpi-meta-sub {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+      }
+    }
+
+    .kpi-progress-bar {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 4px 0 6px;
+
+      .kpi-progress-fill {
+        height: 100%;
+        background: #10b981;
+        border-radius: 3px;
+      }
+    }
+
+    .kpi-foot {
+      font-size: 11.5px;
+      font-weight: 600;
+
+      &.text-emerald { color: #059669; }
+      &.text-amber { color: #d97706; }
+      &.text-rose { color: #e11d48; }
+      &.text-muted { color: #64748b; }
+
+      .badge-sub-pam {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-right: 4px;
+      }
+
+      .badge-sub-pcd {
+        background: #fae8ff;
+        color: #86198f;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+    }
+  }
+}
+
+// ============================================
+// QUICK BANNER
+// ============================================
+.enlace-quick-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.15);
+
+  @media (max-width: 800px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .banner-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .banner-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #f43f5e;
+      flex-shrink: 0;
+    }
+
+    .banner-text {
+      h3 {
+        margin: 0 0 4px;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: #94a3b8;
+        max-width: 650px;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .banner-actions {
+    display: flex;
+    gap: 10px;
+
+    @media (max-width: 600px) {
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .btn-banner-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #7A192B;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #9F2241;
+        transform: translateY(-1px);
+      }
+
+      &.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// CONTENEDORES DE SECCIÓN
+// ============================================
+.section-container {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  i {
+    color: #7A192B;
+  }
+}
+
+.section-subtitle {
+  font-size: 12.5px;
+  color: #64748b;
+  display: block;
+  margin-top: 2px;
+}
+
+.btn-view-all, .btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #7A192B;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #fdf2f8;
+  }
+}
+
+// ============================================
+// TABLA DE ENFERMERAS
+// ============================================
+.nurses-table-wrap {
+  overflow-x: auto;
+}
+
+.nurses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  thead tr {
+    border-bottom: 2px solid #e2e8f0;
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f8fafc;
+    }
+
+    td {
+      padding: 12px 14px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+  }
+}
+
+.nurse-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .nurse-avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7A192B, #9F2241);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .nurse-name-box {
+    display: flex;
+    flex-direction: column;
+
+    .nurse-full-name {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 13.5px;
+    }
+
+    .nurse-meta-id {
+      font-size: 11px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .nurse-phone-link {
+        color: #2563eb;
+        text-decoration: none;
+        &:hover { text-decoration: underline; }
+      }
+    }
+  }
+}
+
+.badge-zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.badge-zs {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0284c7;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.table-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+
+  .progress-bar-sm {
+    flex: 1;
+    height: 7px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      border-radius: 4px;
+    }
+  }
+
+  .pct-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0f172a;
+    width: 32px;
+  }
+}
+
+.badge-today-visits {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #fffbeb;
+  color: #b45309;
+  font-size: 11.5px;
+  font-weight: 700;
+
+  &.badge-completed {
+    background: #dcfce7;
+    color: #15803d;
+  }
+}
+
+.table-actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+
+  .btn-action-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &.btn-pacientes {
+      background: #eff6ff;
+      color: #2563eb;
+      &:hover { background: #dbeafe; }
+    }
+    &.btn-rendimiento {
+      background: #fdf2f8;
+      color: #be185d;
+      &:hover { background: #fce7f3; }
+    }
+    &.btn-whatsapp {
+      background: #ecfdf5;
+      color: #10b981;
+      text-decoration: none;
+      &:hover { background: #d1fae5; }
+    }
+  }
+}
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.font-bold { font-weight: 700; }
+.text-emerald { color: #059669; }
+.text-amber { color: #d97706; }
+
+// ============================================
+// DUAL GRID INFERIOR
+// ============================================
+.bottom-dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// DISTRIBUCIÓN BARS
+.distribution-bars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+
+  .dist-row {
+    .dist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12.5px;
+
+      .dist-name {
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        i { color: #7A192B; }
+      }
+
+      .dist-count {
+        font-weight: 700;
+        color: #0f172a;
+      }
+    }
+
+    .dist-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+
+      .dist-fill {
+        height: 100%;
+        border-radius: 4px;
+
+        &.pam { background: #0284c7; }
+        &.pcd { background: #9333ea; }
+        &.cambio { background: #d97706; }
+        &.rechazo { background: #e11d48; }
+      }
+    }
+  }
+}
+
+// ALERTAS DE INCIDENCIAS
+.recent-incidents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.incident-item-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  .inc-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #fee2e2;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .inc-info-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .inc-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .inc-type-tag {
+        font-size: 10.5px;
+        font-weight: 700;
+        background: #fecdd3;
+        color: #9f1239;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .inc-date {
+        font-size: 11px;
+        color: #64748b;
+      }
+    }
+
+    .inc-patient-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 2px;
+    }
+
+    .inc-dir {
+      font-size: 11.5px;
+      color: #64748b;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 480px;
+
+      i { color: #94a3b8; }
+    }
+
+    .inc-nurse-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: #2563eb;
+      margin-top: 2px;
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #64748b;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  i {
+    font-size: 28px;
+    color: #10b981;
+  }
+}

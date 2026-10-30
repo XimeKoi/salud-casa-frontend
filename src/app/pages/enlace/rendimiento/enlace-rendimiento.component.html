@@ -1,0 +1,254 @@
+<!-- src/app/pages/enlace/rendimiento/enlace-rendimiento.component.html -->
+
+<div class="enlace-page-container">
+
+  <!-- CABECERA INSTITUCIONAL ENLACE -->
+  <header class="enlace-hero-header">
+    <div class="hero-content">
+      <div class="hero-left">
+        <app-page-header-nav></app-page-header-nav>
+        <div class="role-badge">
+          <i class="fas fa-chart-line"></i>
+          <span>AUDITORÍA OPERATIVA Y RENDIMIENTO • SUPERVISIÓN</span>
+        </div>
+        <h1 class="hero-title">
+          Monitor de Rendimiento del Personal
+        </h1>
+        <p class="hero-sub">
+          Evaluación de cumplimiento de metas diarias (15 visitas/día), avance del padrón y comparativas
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <!-- SELECTOR DE ENFERMERA / VISTA GLOBAL -->
+        <div class="selector-box">
+          <label class="sel-label"><i class="fas fa-filter"></i> Ámbito de Supervisión:</label>
+          <select [(ngModel)]="idEnfermeraSeleccionada" (change)="onEnfermeraChange()" class="select-nurse">
+            <option value="todas">👥 Todo el Equipo (10 Enfermeras)</option>
+            <option *ngFor="let enf of enfermeras" [value]="enf.id">
+              👩‍⚕️ {{ enf.nombre_completo }} ({{ enf.zona }})
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS DE NAVEGACIÓN SUPERIOR -->
+    <nav class="enlace-nav-tabs">
+      <button class="nav-tab" (click)="navegarA('/enlace/dashboard')">
+        <i class="fas fa-chart-line"></i>
+        <span>Panel General</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/enfermeras')">
+        <i class="fas fa-user-nurse"></i>
+        <span>Enfermeras</span>
+      </button>
+      <button class="nav-tab active" (click)="navegarA('/enlace/rendimiento')">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Rendimientos</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/pacientes')">
+        <i class="fas fa-users-medical"></i>
+        <span>Padrón de Pacientes</span>
+      </button>
+      <button class="nav-tab" (click)="navegarA('/enlace/incidencias')">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Incidencias</span>
+      </button>
+      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
+        <i class="fas fa-map-location-dot"></i>
+        <span>Mapa Operativo</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- CUERPO PRINCIPAL -->
+  <main class="enlace-main-body">
+
+    <!-- KPI ROW SEGÚN ÁMBITO SELECCIONADO -->
+    <!-- CASO 1: ENFERMERA INDIVIDUAL SELECCIONADA -->
+    <div class="single-nurse-header-card" *ngIf="enfermeraDetalle">
+      <div class="nurse-highlight-box">
+        <div class="nh-avatar">
+          {{ getIniciales(enfermeraDetalle.nombre_completo) }}
+        </div>
+        <div class="nh-info">
+          <div class="nh-badge-row">
+            <span class="nh-badge zone"><i class="fas fa-map-pin"></i> {{ enfermeraDetalle.zona }}</span>
+            <span class="nh-badge zs">ZS {{ enfermeraDetalle.zs }} • {{ enfermeraDetalle.region }}</span>
+            <span class="nh-badge id">{{ enfermeraDetalle.id_interno || ('ENF-' + enfermeraDetalle.id) }}</span>
+          </div>
+          <h2>{{ enfermeraDetalle.nombre_completo }}</h2>
+          <span class="nh-sub">Evaluación individual de visitas domiciliarias del programa Cuidalia</span>
+        </div>
+      </div>
+      <div class="nh-actions">
+        <button class="btn-nh-action" (click)="verPacientesDeEnfermera(enfermeraDetalle.id)">
+          <i class="fas fa-hospital-user"></i> Ver sus {{ enfermeraDetalle.totalPacientes }} pacientes
+        </button>
+        <button class="btn-nh-action secondary" (click)="idEnfermeraSeleccionada = 'todas'; onEnfermeraChange()">
+          <i class="fas fa-users"></i> Volver a Vista Global
+        </button>
+      </div>
+    </div>
+
+    <!-- TARJETAS DE MÉTRICAS -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap" style="background: #ecfdf5; color: #059669;">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Visitas Hoy</span>
+          <span class="kpi-value">
+            {{ enfermeraDetalle ? enfermeraDetalle.visitasHoy : resumenGlobal?.visitasHoyTotal }}
+            <small class="meta-small">/ {{ enfermeraDetalle ? enfermeraDetalle.metaDiaria : resumenGlobal?.metaTotalDiaria }}</small>
+          </span>
+          <span class="kpi-foot text-emerald">
+            <i class="fas fa-check-circle"></i> Meta diaria: 15 visitas / día
+          </span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap" style="background: #eff6ff; color: #2563eb;">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Padrón Asignado</span>
+          <span class="kpi-value">
+            {{ (enfermeraDetalle ? enfermeraDetalle.totalPacientes : resumenGlobal?.totalPacientes) | number }}
+          </span>
+          <span class="kpi-foot text-muted">
+            {{ (enfermeraDetalle ? enfermeraDetalle.visitados : resumenGlobal?.totalVisitados) | number }} visitados
+          </span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap" style="background: #fffbeb; color: #d97706;">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Pendientes de Visitar</span>
+          <span class="kpi-value">
+            {{ (enfermeraDetalle ? enfermeraDetalle.pendientes : resumenGlobal?.totalPendientes) | number }}
+          </span>
+          <span class="kpi-foot text-amber">
+            En proceso en la zona
+          </span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap" style="background: #fdf2f8; color: #db2777;">
+          <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Incidencias y Rechazos</span>
+          <span class="kpi-value">
+            {{ enfermeraDetalle ? (enfermeraDetalle.incidencias + enfermeraDetalle.rechazos) : ((resumenGlobal?.totalIncidencias || 0) + (resumenGlobal?.totalRechazos || 0)) }}
+          </span>
+          <span class="kpi-foot text-rose">
+            {{ enfermeraDetalle ? enfermeraDetalle.incidencias : resumenGlobal?.totalIncidencias }} incidencias reportadas
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RANKING COMPARATIVO VISUAL (GRÁFICO DE BARRAS DE RENDIMIENTO) -->
+    <section class="section-container" *ngIf="idEnfermeraSeleccionada === 'todas'">
+      <div class="section-header-row">
+        <div>
+          <h2 class="section-title">
+            <i class="fas fa-chart-column"></i>
+            Ranking Comparativo de Avance por Enfermera
+          </h2>
+          <span class="section-subtitle">
+            Porcentaje de visitas completadas respecto al padrón asignado a cada enfermera
+          </span>
+        </div>
+      </div>
+
+      <div class="ranking-bars-list">
+        <div class="rank-bar-item" *ngFor="let enf of enfermeras" (click)="verPacientesDeEnfermera(enf.id)">
+          <div class="rank-item-head">
+            <div class="nurse-title-group">
+              <span class="rank-pos-badge">{{ getIniciales(enf.nombre_completo) }}</span>
+              <span class="r-name">{{ enf.nombre_completo }}</span>
+              <span class="r-zone-pill">{{ enf.zona }}</span>
+            </div>
+            <div class="r-metrics-group">
+              <span class="r-count">{{ enf.visitados }} / {{ enf.totalPacientes }} visitados</span>
+              <span class="r-pct font-bold">{{ enf.progresoPct }}%</span>
+            </div>
+          </div>
+          <div class="rank-progress-track">
+            <div class="rank-progress-fill" [style.width.%]="enf.progresoPct"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLA DE AUDITORÍA DETALLADA DE PRODUCTIVIDAD -->
+    <section class="section-container">
+      <div class="section-header-row">
+        <div>
+          <h2 class="section-title">
+            <i class="fas fa-clipboard-list"></i>
+            Auditoría de Cumplimiento Territorial
+          </h2>
+          <span class="section-subtitle">
+            Detalle por enfermera de visitas realizadas, cumplimiento diario, incidencias y efectividad
+          </span>
+        </div>
+      </div>
+
+      <div class="audit-table-wrap">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Enfermera</th>
+              <th>Zona</th>
+              <th>ZS</th>
+              <th class="text-center">Hoy</th>
+              <th class="text-center">Meta Día</th>
+              <th class="text-center">Cumplimiento Hoy</th>
+              <th class="text-center">Total Padrón</th>
+              <th class="text-center">Visitados</th>
+              <th class="text-center">Pendientes</th>
+              <th class="text-center">Incidencias</th>
+              <th class="text-center">Rechazos</th>
+              <th class="text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let enf of (enfermeraDetalle ? [enfermeraDetalle] : enfermeras)">
+              <td class="font-bold">{{ enf.nombre_completo }}</td>
+              <td><span class="zone-badge-sm">{{ enf.zona }}</span></td>
+              <td>ZS {{ enf.zs }}</td>
+              <td class="text-center font-bold">{{ enf.visitasHoy }}</td>
+              <td class="text-center text-muted">{{ enf.metaDiaria }}</td>
+              <td class="text-center">
+                <span class="tag-status" [class.success]="enf.visitasHoy >= enf.metaDiaria" [class.warning]="enf.visitasHoy < enf.metaDiaria">
+                  {{ (enf.visitasHoy / enf.metaDiaria * 100) | number:'1.0-0' }}%
+                </span>
+              </td>
+              <td class="text-center font-bold">{{ enf.totalPacientes | number }}</td>
+              <td class="text-center text-emerald font-bold">{{ enf.visitados | number }}</td>
+              <td class="text-center text-amber">{{ enf.pendientes | number }}</td>
+              <td class="text-center text-rose">{{ enf.incidencias }}</td>
+              <td class="text-center text-muted">{{ enf.rechazos }}</td>
+              <td class="text-right">
+                <button class="btn-audit-go" (click)="verPacientesDeEnfermera(enf.id)" title="Ver Pacientes">
+                  <i class="fas fa-arrow-right"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>

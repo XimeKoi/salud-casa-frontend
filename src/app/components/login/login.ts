@@ -170,7 +170,7 @@ export class LoginComponent implements OnInit {
           localStorage.setItem('userData', JSON.stringify(userData));
 
           if (userData.role === 'distrital' || userData.role === 'enlace') {
-            this.router.navigate(['/dashboard-distrital']);
+            this.router.navigate(['/enlace/dashboard']);
           } else {
             this.router.navigate(['/dashboard']);
           }
@@ -209,7 +209,7 @@ export class LoginComponent implements OnInit {
               });
 
               if (cachedUser.role === 'distrital' || cachedUser.role === 'enlace') {
-                this.router.navigate(['/dashboard-distrital']);
+                this.router.navigate(['/enlace/dashboard']);
               } else {
                 this.router.navigate(['/dashboard']);
               }

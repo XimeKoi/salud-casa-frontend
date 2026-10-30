@@ -56,8 +56,8 @@
 
           <div class="hero-info">
             <div class="hero-badge-role">
-              <i class="fas fa-stethoscope"></i>
-              <span>{{ datosUsuario?.nivelAcademico || 'ENFERMERÍA COMUNITARIA' }}</span>
+              <i class="fas" [class.fa-user-shield]="datosUsuario?.role === 'enlace' || datosUsuario?.role === 'distrital'" [class.fa-stethoscope]="datosUsuario?.role !== 'enlace' && datosUsuario?.role !== 'distrital'"></i>
+              <span>{{ (datosUsuario?.role === 'enlace' || datosUsuario?.role === 'distrital') ? 'ENLACE OPERATIVO Y SUPERVISIÓN' : (datosUsuario?.nivelAcademico || 'ENFERMERÍA COMUNITARIA') }}</span>
             </div>
 
             <h2 class="hero-name">{{ datosUsuario?.nombre || 'Personal Médico' }}</h2>

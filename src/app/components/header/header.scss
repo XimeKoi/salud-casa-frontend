@@ -265,6 +265,32 @@ $border-color: #EBDCD5;
     }
   }
 
+  &.btn-enlace {
+    background: #7A192B;
+    border-color: rgba(255, 255, 255, 0.4);
+
+    i {
+      color: #fde047;
+    }
+
+    .btn-text {
+      color: #ffffff;
+    }
+
+    &:hover {
+      background: #9F2241;
+      border-color: #ffffff;
+
+      i {
+        color: #fef08a;
+      }
+
+      .btn-text {
+        color: #ffffff;
+      }
+    }
+  }
+
   &.btn-notificacion {
     .badge-notificacion {
       position: absolute;
@@ -430,6 +456,18 @@ $border-color: #EBDCD5;
       transition: transform 0.2s ease;
     }
 
+    &.item-enlace {
+      background: #FFF7F8;
+      border: 1px solid #FCE7EB;
+      border-radius: 12px;
+      margin-bottom: 6px;
+
+      &:hover {
+        background: #FDF2F4;
+        border-color: #F8B4C0;
+      }
+    }
+
     .icon-bubble {
       width: 38px;
       height: 38px;
@@ -487,6 +525,24 @@ $border-color: #EBDCD5;
         background: #FFF7ED;
         color: #EA580C;
         box-shadow: 0 2px 8px rgba(234, 88, 12, 0.15);
+      }
+
+      &.icon-enlace {
+        background: #FDF2F8;
+        color: #7A192B;
+        box-shadow: 0 2px 8px rgba(122, 25, 43, 0.2);
+      }
+
+      &.icon-nurses {
+        background: #EFF6FF;
+        color: #2563EB;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+      }
+
+      &.icon-perf {
+        background: #FFFBEB;
+        color: #D97706;
+        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);
       }
     }
 
