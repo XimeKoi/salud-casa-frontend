@@ -15,7 +15,7 @@
         <div>
           <h1>Monitor de Rendimiento del Personal</h1>
           <p class="header-subtitle">
-            Auditoría de cumplimiento de metas diarias (15 visitas/día) y avance distrital
+            Auditoría de cumplimiento de metas operativas y avance distrital por enfermera
           </p>
         </div>
       </div>
@@ -29,7 +29,7 @@
           </span>
           <span class="header-pill pill-meta">
             <i class="fas fa-bullseye"></i>
-            <span>Meta: <strong>15 visitas / día</strong></span>
+            <span>Meta: <strong>Por asignación de padrón</strong></span>
           </span>
         </div>
 
@@ -92,7 +92,7 @@
             <small class="meta-small">/ {{ enfermeraDetalle ? enfermeraDetalle.metaDiaria : (resumenGlobal?.metaTotalDiaria || 150) }}</small>
           </span>
           <span class="kpi-foot text-success">
-            <i class="fas fa-circle-check"></i> Meta diaria: 15 visitas / día
+            <i class="fas fa-circle-check"></i> Meta calculada según padrón asignado
           </span>
         </div>
       </div>
@@ -154,7 +154,7 @@
           </div>
         </div>
         <span class="header-pill pill-meta">
-          <i class="fas fa-trophy"></i> Meta Distrital: 15 visitas / día
+          <i class="fas fa-trophy"></i> Avance ponderado distrital
         </span>
       </div>
 
@@ -186,18 +186,70 @@
       </div>
     </section>
 
+    <!-- ⭐ ALERTA DE ATENCIÓN PRIORITARIA: PERSONAL CON MENOR AVANCE -->
+    <section class="card alert-low-progress-card" *ngIf="idEnfermeraSeleccionada === 'todas' && enfermerasBajoRendimiento.length > 0">
+      <div class="alert-low-head">
+        <div class="alert-low-title">
+          <div class="alert-ico-box">
+            <i class="fas fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3>Atención Prioritaria: Personal con Menor Avance</h3>
+            <span class="alert-low-sub">Enfermeras con menor porcentaje de avance que requieren seguimiento o apoyo operativo en campo</span>
+          </div>
+        </div>
+        <button class="btn-filter-bajos" (click)="setFiltroEstado('bajos')">
+          <span>Ver {{ totalBajoRendimiento }} con menor avance</span>
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="low-nurses-grid">
+        <div class="low-nurse-card" *ngFor="let enf of enfermerasBajoRendimiento">
+          <div class="low-nurse-top">
+            <div class="low-avatar">{{ getIniciales(enf.nombre_completo) }}</div>
+            <div class="low-meta">
+              <span class="low-name">{{ enf.nombre_completo }}</span>
+              <span class="low-zone"><i class="fas fa-map-pin"></i> {{ enf.zona }} (ZS {{ enf.zs }})</span>
+            </div>
+            <span class="low-pct-chip">{{ enf.progresoPct }}%</span>
+          </div>
+          <div class="low-prog-track">
+            <div class="low-prog-fill" [style.width.%]="enf.progresoPct"></div>
+          </div>
+          <div class="low-card-footer">
+            <span class="low-stats">{{ enf.visitados }} de {{ enf.totalPacientes }} visitados</span>
+            <div class="low-quick-btns">
+              <a [href]="'tel:' + enf.telefono" class="btn-low-ico" title="Llamar">
+                <i class="fas fa-phone"></i>
+              </a>
+              <a [href]="'https://wa.me/52' + enf.telefono" target="_blank" class="btn-low-ico wa" title="WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+              </a>
+              <button class="btn-low-ico audit" (click)="idEnfermeraSeleccionada = enf.id; onEnfermeraChange()" title="Auditar">
+                <i class="fas fa-chart-line"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ⭐ CONTROLES CARD (TABS SEGMENTADOS + BUSCADOR + FILTROS) -->
     <div class="controls-card">
 
-      <!-- SELECTOR DE ENFERMERA RÁPIDO -->
+      <!-- SELECTOR DE ENFERMERA RÁPIDO (SIN EMOJIS, CON DISEÑO ESTILIZADO) -->
       <div class="selector-row">
         <label class="selector-label"><i class="fas fa-filter"></i> Ámbito de Supervisión:</label>
-        <select [(ngModel)]="idEnfermeraSeleccionada" (change)="onEnfermeraChange()" class="form-select">
-          <option value="todas">👥 Todo el Equipo (10 Enfermeras)</option>
-          <option *ngFor="let enf of enfermeras" [value]="enf.id">
-            👩‍⚕️ {{ enf.nombre_completo }} — {{ enf.zona }}
-          </option>
-        </select>
+        <div class="custom-select-wrap">
+          <i class="fas fa-user-nurse select-icon-prefix"></i>
+          <select [(ngModel)]="idEnfermeraSeleccionada" (change)="onEnfermeraChange()" class="form-select custom-select-styled">
+            <option value="todas">Todo el Equipo Distrital ({{ enfermeras.length }} Enfermeras)</option>
+            <option *ngFor="let enf of enfermeras" [value]="enf.id">
+              {{ enf.nombre_completo }} — {{ enf.zona }} (ZS {{ enf.zs }})
+            </option>
+          </select>
+        </div>
       </div>
 
       <!-- TABS SEGMENTADOS (ESTILO ENFERMERA) -->
@@ -213,7 +265,7 @@
         <button class="tab-item" [class.active]="filtroEstado === 'cumplida'" (click)="setFiltroEstado('cumplida')">
           <div class="tab-label-group">
             <i class="fas fa-circle-check"></i>
-            <span class="tab-title">Meta Cumplida (≥15)</span>
+            <span class="tab-title">Meta Cumplida</span>
           </div>
           <span class="tab-count success">{{ totalCumplidas }}</span>
         </button>
@@ -221,9 +273,17 @@
         <button class="tab-item" [class.active]="filtroEstado === 'progreso'" (click)="setFiltroEstado('progreso')">
           <div class="tab-label-group">
             <i class="fas fa-clock"></i>
-            <span class="tab-title">En Progreso (&lt;15)</span>
+            <span class="tab-title">En Progreso</span>
           </div>
           <span class="tab-count warning">{{ totalEnProgreso }}</span>
+        </button>
+
+        <button class="tab-item" [class.active]="filtroEstado === 'bajos'" (click)="setFiltroEstado('bajos')">
+          <div class="tab-label-group">
+            <i class="fas fa-arrow-trend-down"></i>
+            <span class="tab-title">Menor Avance</span>
+          </div>
+          <span class="tab-count danger-strong">{{ totalBajoRendimiento }}</span>
         </button>
 
         <button class="tab-item" [class.active]="filtroEstado === 'incidencias'" (click)="setFiltroEstado('incidencias')">

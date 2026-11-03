@@ -316,48 +316,79 @@ $radius-pill: 9999px;
 // ============================================
 // SELECTOR HORIZONTAL DE ENFERMERAS (TABS STRIP)
 // ============================================
-.nurse-tabs-strip {
+// ============================================
+// ⭐ SELECTOR INTERACTIVO DE ENFERMERAS A AUDITAR
+// ============================================
+.nurse-audit-selector-card {
   background: #ffffff;
-  border-radius: 18px;
-  border: 1px solid rgba(226, 218, 208, 0.9);
-  padding: 18px 22px;
+  border-radius: 20px;
+  border: 1.5px solid #ebdcd0;
+  padding: 20px 22px;
   margin-bottom: 22px;
-  box-shadow: 0 4px 20px -2px rgba(122, 25, 43, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
-  .strip-header {
+  .selector-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
     flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid #f1ece6;
 
-    .strip-title {
-      font-size: 14.5px;
-      font-weight: 800;
-      color: $primary-deep;
-      display: inline-flex;
+    .sch-left {
+      display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 12px;
 
-      i {
-        color: $primary;
-        font-size: 16px;
+      .sch-icon-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, $primary-deep 0%, $primary 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 4px 10px rgba(122, 25, 43, 0.2);
+      }
+
+      .sch-title {
+        margin: 0;
+        font-size: 16.5px;
+        font-weight: 850;
+        color: #2b0b14;
+        letter-spacing: -0.2px;
+      }
+
+      .sch-subtitle {
+        font-size: 12.5px;
+        color: #64748b;
+        display: block;
+        margin-top: 2px;
       }
     }
 
-    .strip-hint {
+    .sch-count-tag {
+      background: #faf7f4;
+      border: 1px solid #ebdcd0;
+      color: $primary-deep;
+      padding: 5px 12px;
+      border-radius: 9999px;
       font-size: 12px;
-      color: #64748b;
-      font-weight: 600;
+      font-weight: 800;
     }
   }
 
-  .nurse-pill-buttons {
+  .nurse-cards-carousel {
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    padding: 4px 2px 10px;
+    padding: 4px 2px 12px;
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
 
@@ -370,94 +401,131 @@ $radius-pill: 9999px;
     }
   }
 
-  .nurse-tab-btn {
+  .nurse-audit-pill-card {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    background: #fdfcfb;
-    border: 1.5px solid #e7ded5;
+    background: #ffffff;
+    border: 1.5px solid #ebdcd0;
     padding: 10px 16px;
-    border-radius: 14px;
+    border-radius: 16px;
     cursor: pointer;
     text-align: left;
     white-space: nowrap;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    min-width: 220px;
+    min-width: 240px;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 
-    .nurse-tab-avatar {
-      width: 38px;
-      height: 38px;
+    .nap-avatar {
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #e7ded5 0%, #d8cbbe 100%);
-      color: #5c1422;
+      background: linear-gradient(135deg, #f1ece6 0%, #e2d9cf 100%);
+      color: $primary-deep;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 850;
       flex-shrink: 0;
       border: 2px solid #ffffff;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
       transition: all 0.2s ease;
     }
 
-    .nurse-tab-info {
+    .nap-details {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       flex: 1;
 
-      .tab-name {
+      .nap-name {
         font-size: 13.5px;
-        font-weight: 800;
+        font-weight: 850;
         color: #1e293b;
+        letter-spacing: -0.1px;
       }
 
-      .tab-zone {
-        font-size: 11.5px;
-        color: #64748b;
-        font-weight: 600;
+      .nap-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .nap-zone {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748b;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+
+          i {
+            color: $primary;
+            font-size: 10px;
+          }
+        }
+
+        .nap-patients-badge {
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 10.5px;
+          font-weight: 800;
+          padding: 1px 6px;
+          border-radius: 4px;
+        }
       }
     }
 
-    .check-icon {
-      color: #fde047;
-      font-size: 16px;
-      margin-left: 4px;
+    .nap-active-indicator {
+      color: $gold-light;
+      font-size: 18px;
+      margin-left: 2px;
+      animation: fadeIn 0.2s ease;
     }
 
     &:hover:not(.active) {
-      background: #f8f4f0;
+      background: #faf7f4;
       border-color: #d1bfae;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
 
-      .nurse-tab-avatar {
-        background: linear-gradient(135deg, $primary-deep 0%, $primary-light 100%);
+      .nap-avatar {
+        background: linear-gradient(135deg, $primary-deep 0%, $primary 100%);
         color: #ffffff;
       }
     }
 
     &.active {
-      background: linear-gradient(135deg, $primary-deep 0%, $primary 60%, $primary-light 100%);
-      border-color: $primary-dark;
+      background: linear-gradient(135deg, $primary-deep 0%, $primary 100%);
+      border-color: $gold-accent;
       color: #ffffff;
-      box-shadow: 0 6px 18px rgba(122, 25, 43, 0.28);
+      box-shadow: 0 8px 22px rgba(92, 20, 34, 0.35);
       transform: translateY(-2px);
 
-      .nurse-tab-avatar {
-        background: rgba(255, 255, 255, 0.25);
+      .nap-avatar {
+        background: rgba(255, 255, 255, 0.22);
         color: #ffffff;
         border-color: rgba(255, 255, 255, 0.6);
       }
 
-      .nurse-tab-info {
-        .tab-name {
+      .nap-details {
+        .nap-name {
           color: #ffffff;
         }
-        .tab-zone {
-          color: rgba(255, 255, 255, 0.88);
+
+        .nap-meta-row {
+          .nap-zone {
+            color: rgba(255, 255, 255, 0.9);
+            i {
+              color: $gold-light;
+            }
+          }
+
+          .nap-patients-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+          }
         }
       }
     }

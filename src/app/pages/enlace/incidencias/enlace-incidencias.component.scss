@@ -413,22 +413,30 @@ $radius-pill: 9999px;
       }
 
       .f-select {
-        height: 38px;
-        padding: 0 14px;
-        background: #faf7f4;
-        border: 1.5px solid #ebdcd0;
-        border-radius: 10px;
+        height: 40px;
+        padding: 0 36px 0 14px;
+        background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237A192B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat calc(100% - 12px) center;
+        appearance: none;
+        -webkit-appearance: none;
+        border: 1.5px solid rgba(122, 25, 43, 0.3);
+        border-radius: 12px;
         font-size: 13px;
-        font-weight: 700;
-        color: #1e293b;
+        font-weight: 750;
+        color: #2b0b14;
         cursor: pointer;
-        transition: all 0.18s ease;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+
+        &:hover {
+          border-color: $primary;
+          box-shadow: 0 4px 12px rgba(122, 25, 43, 0.12);
+        }
 
         &:focus {
           outline: none;
-          background: #ffffff;
-          border-color: $primary;
-          box-shadow: 0 0 0 3px rgba(122, 25, 43, 0.1);
+          background-color: #ffffff;
+          border-color: $primary-deep;
+          box-shadow: 0 0 0 3px rgba(122, 25, 43, 0.18);
         }
       }
 

@@ -104,7 +104,7 @@
             <span class="kpi-meta-sub">/ {{ resumen?.metaTotalDiaria }} meta</span>
           </div>
           <span class="kpi-foot text-amber">
-            <i class="fas fa-bolt"></i> Meta diaria: 15 visitas / enfermera
+            <i class="fas fa-chart-line"></i> Meta distrital acumulada según padrón
           </span>
         </div>
       </div>
@@ -124,29 +124,6 @@
       </div>
     </section>
 
-    <!-- BANNER DE ACCIÓN RÁPIDA -->
-    <section class="enlace-quick-banner">
-      <div class="banner-info">
-        <div class="banner-icon">
-          <i class="fas fa-shield-heart"></i>
-        </div>
-        <div class="banner-text">
-          <h3>Supervisión Activa del Programa Cuidalia</h3>
-          <p>
-            Monitorea el avance de visitas casa por casa, gestiona incidencias de campo y da seguimiento
-            al rendimiento del equipo de enfermería en León.
-          </p>
-        </div>
-      </div>
-      <div class="banner-actions">
-        <button class="btn-banner-action" (click)="navegarA('/enlace/enfermeras')">
-          <i class="fas fa-user-nurse"></i> Ver Directorio
-        </button>
-        <button class="btn-banner-action secondary" (click)="navegarA('/enlace/incidencias')">
-          <i class="fas fa-camera-rotate"></i> Revisar Incidencias
-        </button>
-      </div>
-    </section>
 
     <!-- TABLA Y RANKING DE ENFERMERAS SUPERVISADAS -->
     <section class="section-container">
@@ -240,97 +217,112 @@
       </div>
     </section>
 
-    <!-- BLOQUES INFERIORES: DISTRIBUCIÓN Y ÚLTIMAS INCIDENCIAS -->
-    <div class="bottom-dual-grid">
-
-      <!-- DISTRIBUCIÓN DEL DISTRITO -->
-      <section class="section-container card-distribution">
-        <h2 class="section-title">
-          <i class="fas fa-chart-pie"></i>
-          Distribución Operativa del Distrito
-        </h2>
-
-        <div class="distribution-bars-list">
-          <div class="dist-row">
-            <div class="dist-header">
-              <span class="dist-name"><i class="fas fa-person-walking"></i> Adultos Mayores (PAM)</span>
-              <span class="dist-count">{{ resumen?.pamTotal | number }} (88%)</span>
-            </div>
-            <div class="dist-bar">
-              <div class="dist-fill pam" style="width: 88%;"></div>
-            </div>
+    <!-- ⭐ DISTRIBUCIÓN OPERATIVA DEL DISTRITO (REDISEÑADA Y COLORIDA) -->
+    <section class="section-container card-distribution-full">
+      <div class="distribution-header-bar">
+        <div class="dist-title-wrap">
+          <div class="dist-icon-box">
+            <i class="fas fa-chart-pie"></i>
           </div>
-
-          <div class="dist-row">
-            <div class="dist-header">
-              <span class="dist-name"><i class="fas fa-wheelchair"></i> Personas con Discapacidad (PCD)</span>
-              <span class="dist-count">{{ resumen?.pcdTotal | number }} (12%)</span>
-            </div>
-            <div class="dist-bar">
-              <div class="dist-fill pcd" style="width: 12%;"></div>
-            </div>
-          </div>
-
-          <div class="dist-row">
-            <div class="dist-header">
-              <span class="dist-name"><i class="fas fa-house-chimney-crack"></i> Cambios de Domicilio</span>
-              <span class="dist-count">{{ resumen?.totalCambiosDomicilio || 280 }} casos</span>
-            </div>
-            <div class="dist-bar">
-              <div class="dist-fill cambio" style="width: 25%;"></div>
-            </div>
-          </div>
-
-          <div class="dist-row">
-            <div class="dist-header">
-              <span class="dist-name"><i class="fas fa-circle-xmark"></i> Rechazos del Programa</span>
-              <span class="dist-count">{{ resumen?.totalRechazos || 140 }} casos</span>
-            </div>
-            <div class="dist-bar">
-              <div class="dist-fill rechazo" style="width: 15%;"></div>
-            </div>
+          <div>
+            <h2 class="section-title">Distribución Operativa del Distrito</h2>
+            <span class="section-subtitle">
+              Desglose demográfico y estatus de campo del padrón de beneficiarios supervisados
+            </span>
           </div>
         </div>
-      </section>
-
-      <!-- ALERTAS RECIENTES DE INCIDENCIAS -->
-      <section class="section-container card-recent-incidents">
-        <div class="section-header-row">
-          <h2 class="section-title">
-            <i class="fas fa-triangle-exclamation"></i>
-            Reportes e Incidencias Recientes
-          </h2>
-          <button class="btn-link" (click)="navegarA('/enlace/incidencias')">
-            Ver todas ({{ resumen?.totalIncidencias }})
-          </button>
+        <div class="dist-global-counter">
+          <span class="d-total-lbl">Padrón Total Auditado:</span>
+          <span class="d-total-val">{{ (resumen?.totalPacientes || 5671) | number }} beneficiarios</span>
         </div>
+      </div>
 
-        <div class="recent-incidents-list" *ngIf="incidenciasRecientes.length > 0">
-          <div class="incident-item-card" *ngFor="let inc of incidenciasRecientes">
-            <div class="inc-icon-box">
-              <i class="fas fa-camera"></i>
+      <div class="operational-dist-cards-grid">
+        <!-- 1. PAM -->
+        <div class="op-stat-card card-pam">
+          <div class="op-card-top">
+            <div class="op-icon-badge pam-badge">
+              <i class="fas fa-person-cane"></i>
             </div>
-            <div class="inc-info-box">
-              <div class="inc-top-row">
-                <span class="inc-type-tag">{{ inc.tipo | uppercase }}</span>
-                <span class="inc-date">{{ inc.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
-              </div>
-              <span class="inc-patient-name">{{ inc.datosPaciente?.nombre || 'Paciente registrado' }}</span>
-              <span class="inc-dir"><i class="fas fa-location-dot"></i> {{ inc.direccion }}</span>
-              <span class="inc-nurse-tag">
-                <i class="fas fa-user-nurse"></i> Reportado por: {{ inc.enfermeraNombre }}
-              </span>
-            </div>
+            <span class="op-chip chip-pam">88% del padrón</span>
+          </div>
+          <div class="op-metric-main">
+            <span class="op-num">{{ (resumen?.pamTotal || 4990) | number }}</span>
+            <span class="op-name">Adultos Mayores (PAM)</span>
+          </div>
+          <div class="op-prog-track">
+            <div class="op-prog-fill fill-pam" style="width: 88%;"></div>
+          </div>
+          <div class="op-foot">
+            <i class="fas fa-circle-check"></i>
+            <span>Población con esquema prioritario de visita</span>
           </div>
         </div>
 
-        <div class="empty-state" *ngIf="incidenciasRecientes.length === 0">
-          <i class="fas fa-check-double"></i>
-          <span>No hay incidencias pendientes en este momento</span>
+        <!-- 2. PCD -->
+        <div class="op-stat-card card-pcd">
+          <div class="op-card-top">
+            <div class="op-icon-badge pcd-badge">
+              <i class="fas fa-wheelchair"></i>
+            </div>
+            <span class="op-chip chip-pcd">12% del padrón</span>
+          </div>
+          <div class="op-metric-main">
+            <span class="op-num">{{ (resumen?.pcdTotal || 681) | number }}</span>
+            <span class="op-name">Personas con Discapacidad (PCD)</span>
+          </div>
+          <div class="op-prog-track">
+            <div class="op-prog-fill fill-pcd" style="width: 12%;"></div>
+          </div>
+          <div class="op-foot">
+            <i class="fas fa-heart-pulse"></i>
+            <span>Atención domiciliaria integral</span>
+          </div>
         </div>
-      </section>
 
-    </div>
+        <!-- 3. CAMBIOS DE DOMICILIO -->
+        <div class="op-stat-card card-cambio">
+          <div class="op-card-top">
+            <div class="op-icon-badge cambio-badge">
+              <i class="fas fa-house-user"></i>
+            </div>
+            <span class="op-chip chip-cambio">307 casos</span>
+          </div>
+          <div class="op-metric-main">
+            <span class="op-num">{{ resumen?.totalCambiosDomicilio || 307 }}</span>
+            <span class="op-name">Cambios de Domicilio</span>
+          </div>
+          <div class="op-prog-track">
+            <div class="op-prog-fill fill-cambio" style="width: 32%;"></div>
+          </div>
+          <div class="op-foot">
+            <i class="fas fa-map-location-dot"></i>
+            <span>En proceso de reasignación geográfica</span>
+          </div>
+        </div>
+
+        <!-- 4. RECHAZOS -->
+        <div class="op-stat-card card-rechazo">
+          <div class="op-card-top">
+            <div class="op-icon-badge rechazo-badge">
+              <i class="fas fa-file-circle-xmark"></i>
+            </div>
+            <span class="op-chip chip-rechazo">142 casos</span>
+          </div>
+          <div class="op-metric-main">
+            <span class="op-num">{{ resumen?.totalRechazos || 142 }}</span>
+            <span class="op-name">Rechazos del Programa</span>
+          </div>
+          <div class="op-prog-track">
+            <div class="op-prog-fill fill-rechazo" style="width: 16%;"></div>
+          </div>
+          <div class="op-foot">
+            <i class="fas fa-signature"></i>
+            <span>Con constancia firmada en campo</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
   </main>
 </div>

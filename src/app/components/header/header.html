@@ -82,6 +82,19 @@
       <!-- ⭐ VISTA EXCLUSIVA PARA ROL ENLACE (SUPERVISOR) -->
       <!-- ============================================ -->
       <ng-container *ngIf="isEnlace">
+        <!-- 1. MAPA OPERATIVO (HASTA ARRIBA DE LA NAVEGACIÓN) -->
+        <li (click)="navigateTo('dashboard')" class="nav-module-item item-map-first" [class.active]="isRutaActiva('/dashboard')">
+          <div class="icon-bubble icon-map">
+            <i class="fas fa-map-location-dot"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Mapa Operativo</span>
+            <span class="module-desc">Georreferenciación y rutas de campo</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <!-- 2. PANEL GENERAL -->
         <li (click)="navigateTo('enlace-dashboard')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/dashboard')">
           <div class="icon-bubble icon-enlace">
             <i class="fas fa-chart-line"></i>
@@ -93,31 +106,34 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
+        <!-- 3. DIRECTORIO DE ENFERMERAS -->
         <li (click)="navigateTo('enlace-enfermeras')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/enfermeras')">
           <div class="icon-bubble icon-nurses">
             <i class="fas fa-user-nurse"></i>
           </div>
           <div class="module-text-wrap">
             <span class="module-title">Enfermeras</span>
-            <span class="module-desc">Personal, zonas y fichas</span>
+            <span class="module-desc">Personal, zonas y expedientes</span>
           </div>
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
+        <!-- 4. MONITOR DE RENDIMIENTOS -->
         <li (click)="navigateTo('enlace-rendimiento')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/rendimiento')">
           <div class="icon-bubble icon-perf">
             <i class="fas fa-tachometer-alt"></i>
           </div>
           <div class="module-text-wrap">
             <span class="module-title">Rendimientos</span>
-            <span class="module-desc">Metas diarias y auditoría</span>
+            <span class="module-desc">Avance distrital y auditoría</span>
           </div>
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
+        <!-- 5. PADRÓN DE PACIENTES -->
         <li (click)="navigateTo('enlace-pacientes')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/pacientes')">
           <div class="icon-bubble icon-patients">
-            <i class="fas fa-users-medical"></i>
+            <i class="fas fa-hospital-user"></i>
           </div>
           <div class="module-text-wrap">
             <span class="module-title">Padrón de Pacientes</span>
@@ -126,29 +142,20 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
+        <!-- 6. INCIDENCIAS Y REPORTES -->
         <li (click)="navigateTo('enlace-incidencias')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/incidencias')">
           <div class="icon-bubble icon-incidents">
             <i class="fas fa-triangle-exclamation"></i>
           </div>
           <div class="module-text-wrap">
-            <span class="module-title">Incidencias (6)</span>
-            <span class="module-desc">Dictamen y atención de reportes</span>
+            <span class="module-title">Incidencias y Reportes</span>
+            <span class="module-desc">Dictamen y atención de campo</span>
           </div>
           <span class="badge-side" style="background: #e11d48; color: white; padding: 2px 8px; border-radius: 9999px; font-weight: 800; font-size: 11px;">6</span>
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('dashboard')" class="nav-module-item" [class.active]="isRutaActiva('/dashboard')">
-          <div class="icon-bubble icon-map">
-            <i class="fas fa-map-location-dot"></i>
-          </div>
-          <div class="module-text-wrap">
-            <span class="module-title">Mapa Operativo</span>
-            <span class="module-desc">Georreferenciación y rutas</span>
-          </div>
-          <i class="fas fa-chevron-right arrow-icon"></i>
-        </li>
-
+        <!-- 7. NOTIFICACIONES -->
         <li (click)="navigateTo('notificaciones')" class="nav-module-item" [class.active]="isRutaActiva('/notificaciones')">
           <div class="icon-bubble icon-notif">
             <i class="fas fa-bell"></i>
@@ -161,6 +168,7 @@
           <i class="fas fa-chevron-right arrow-icon" *ngIf="!totalNotificaciones"></i>
         </li>
 
+        <!-- 8. MI PERFIL ENLACE -->
         <li (click)="navigateTo('perfil')" class="nav-module-item" [class.active]="isRutaActiva('/perfil')">
           <div class="icon-bubble icon-user">
             <i class="fas fa-user-shield"></i>

@@ -97,9 +97,6 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     if (!notificacion.leida) {
       this.toggleLeida(notificacion);
     }
-    if (notificacion.url) {
-      this.router.navigate([notificacion.url]);
-    }
   }
 
   get todasSeleccionadas(): boolean {

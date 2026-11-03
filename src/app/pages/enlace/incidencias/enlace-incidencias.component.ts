@@ -91,8 +91,14 @@ export class EnlaceIncidenciasComponent implements OnInit {
         String(inc.enfermeraId) === this.filtroEnfermera;
 
       // Tipo
+      const tipoLower = (inc.tipo || '').toLowerCase();
       const matchTipo = this.filtroTipo === 'todos' ||
-        (inc.tipo && inc.tipo.toLowerCase() === this.filtroTipo.toLowerCase());
+        tipoLower === this.filtroTipo.toLowerCase() ||
+        (this.filtroTipo === 'otro' && (
+          tipoLower === 'otro' ||
+          tipoLower === 'otros' ||
+          !['no_localizado', 'rechazo', 'cambio_domicilio', 'finado', 'zona_insegura'].includes(tipoLower)
+        ));
 
       // Estado
       const matchEstado = this.filtroEstado === 'todos' ||

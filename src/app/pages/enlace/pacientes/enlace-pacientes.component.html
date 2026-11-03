@@ -8,7 +8,7 @@
       <div class="header-title-box">
         <app-page-header-nav></app-page-header-nav>
         <div class="header-icon-wrapper">
-          <i class="fas fa-users-medical"></i>
+          <i class="fas fa-hospital-user"></i>
         </div>
         <div>
           <h1>Padrón de Pacientes por Enfermera</h1>
@@ -23,7 +23,7 @@
           <label class="picker-label"><i class="fas fa-user-nurse"></i> Enfermera:</label>
           <select [(ngModel)]="idEnfermeraSeleccionada" (change)="onEnfermeraChange()" class="picker-select-sm">
             <option *ngFor="let enf of enfermeras" [value]="enf.id">
-              👩‍⚕️ {{ enf.nombre_completo }} ({{ enf.zona }})
+              {{ enf.nombre_completo }} ({{ enf.zona }})
             </option>
           </select>
         </div>
@@ -39,29 +39,46 @@
   <!-- CUERPO PRINCIPAL -->
   <main class="content-wrapper">
 
-    <!-- SELECTOR HORIZONTAL DE ENFERMERAS (UNA ENFERMERA A LA VEZ) -->
-    <section class="nurse-tabs-strip">
-      <div class="strip-header">
-        <span class="strip-title">
-          <i class="fas fa-user-nurse"></i> Selecciona la Enfermera a Auditar:
-        </span>
-        <span class="strip-hint">Haz clic en una enfermera para ver exclusivamente sus pacientes asignados</span>
+    <!-- ⭐ SELECTOR INTERACTIVO DE ENFERMERAS A AUDITAR (REDISEÑADO Y COLORIDO) -->
+    <section class="nurse-audit-selector-card">
+      <div class="selector-card-header">
+        <div class="sch-left">
+          <div class="sch-icon-box">
+            <i class="fas fa-user-nurse"></i>
+          </div>
+          <div>
+            <h3 class="sch-title">Selecciona la Enfermera a Auditar</h3>
+            <span class="sch-subtitle">Haz clic en cualquier enfermera para consultar su padrón nominal exclusivo</span>
+          </div>
+        </div>
+        <div class="sch-count-tag">
+          <span>{{ enfermeras.length }} enfermeras en campo</span>
+        </div>
       </div>
-      <div class="nurse-pill-buttons">
+
+      <div class="nurse-cards-carousel">
         <button
           *ngFor="let enf of enfermeras"
           type="button"
-          class="nurse-tab-btn"
+          class="nurse-audit-pill-card"
           [class.active]="enf.id === idEnfermeraSeleccionada"
           (click)="seleccionarEnfermera(enf.id)">
-          <div class="nurse-tab-avatar">
-            {{ enf.nombre_completo.substring(0, 2) }}
+          
+          <div class="nap-avatar">
+            {{ getIniciales(enf.nombre_completo) }}
           </div>
-          <div class="nurse-tab-info">
-            <span class="tab-name">{{ enf.nombre_completo }}</span>
-            <span class="tab-zone">{{ enf.zona }} • {{ enf.totalPacientes }} pac.</span>
+
+          <div class="nap-details">
+            <span class="nap-name">{{ enf.nombre_completo }}</span>
+            <div class="nap-meta-row">
+              <span class="nap-zone"><i class="fas fa-map-pin"></i> {{ enf.zona }}</span>
+              <span class="nap-patients-badge">{{ enf.totalPacientes }} pac.</span>
+            </div>
           </div>
-          <i class="fas fa-check-circle check-icon" *ngIf="enf.id === idEnfermeraSeleccionada"></i>
+
+          <div class="nap-active-indicator" *ngIf="enf.id === idEnfermeraSeleccionada">
+            <i class="fas fa-circle-check"></i>
+          </div>
         </button>
       </div>
     </section>

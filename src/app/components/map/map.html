@@ -12,7 +12,7 @@
       <i class="fas fa-user-nurse icon-nurse"></i>
       <select [ngModel]="idEnfermera" (ngModelChange)="cambiarEnfermeraSupervisada($event)" class="map-nurse-dropdown" title="Seleccionar enfermero para auditar en el mapa">
         <option *ngFor="let enf of listaEnfermeras" [value]="enf.id">
-          👩‍⚕️ {{ enf.nombre_completo }} • {{ enf.zona }} (ZS {{ enf.zs }})
+          {{ enf.nombre_completo }} — {{ enf.zona }} (ZS {{ enf.zs }})
         </option>
       </select>
     </div>

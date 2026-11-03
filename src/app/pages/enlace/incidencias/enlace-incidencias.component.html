@@ -62,26 +62,31 @@
       <div class="filters-row">
         <!-- FILTRO POR ENFERMERA -->
         <div class="filter-item">
-          <label class="f-label">Enfermera:</label>
-          <select [(ngModel)]="filtroEnfermera" (change)="aplicarFiltros()" class="f-select">
-            <option value="todas">👥 Todas las enfermeras</option>
-            <option *ngFor="let enf of enfermeras" [value]="enf.id">
-              👩‍⚕️ {{ enf.nombre_completo }}
-            </option>
-          </select>
+          <label class="f-label"><i class="fas fa-user-nurse"></i> Enfermera:</label>
+          <div class="f-select-wrap">
+            <select [(ngModel)]="filtroEnfermera" (change)="aplicarFiltros()" class="f-select styled-f-select">
+              <option value="todas">Todas las enfermeras ({{ enfermeras.length }})</option>
+              <option *ngFor="let enf of enfermeras" [value]="enf.id">
+                {{ enf.nombre_completo }} — {{ enf.zona }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <!-- FILTRO POR TIPO -->
         <div class="filter-item">
-          <label class="f-label">Tipo de Incidencia:</label>
-          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="f-select">
-            <option value="todos">Todos los motivos</option>
-            <option value="no_localizado">No Localizado</option>
-            <option value="rechazo">Rechazo de Visita</option>
-            <option value="cambio_domicilio">Cambio de Domicilio</option>
-            <option value="finado">Defunción / Finado</option>
-            <option value="zona_insegura">Zona de Difícil Acceso</option>
-          </select>
+          <label class="f-label"><i class="fas fa-filter"></i> Tipo de Incidencia:</label>
+          <div class="f-select-wrap">
+            <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="f-select styled-f-select">
+              <option value="todos">Todos los motivos</option>
+              <option value="no_localizado">No Localizado</option>
+              <option value="rechazo">Rechazo de Visita</option>
+              <option value="cambio_domicilio">Cambio de Domicilio</option>
+              <option value="finado">Defunción / Finado</option>
+              <option value="zona_insegura">Zona de Difícil Acceso</option>
+              <option value="otro">Otro Motivo / Descripción Personalizada</option>
+            </select>
+          </div>
         </div>
 
         <!-- FILTRO POR ESTADO -->

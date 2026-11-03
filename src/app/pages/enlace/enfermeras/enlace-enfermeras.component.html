@@ -271,28 +271,32 @@
         <!-- DETALLES INSTITUCIONALES -->
         <div class="details-grid">
           <div class="detail-cell">
-            <span class="d-label">ID de Empleada / Interno</span>
+            <span class="d-label"><i class="fas fa-id-badge"></i> ID de Empleada / Interno</span>
             <span class="d-val">{{ enfermeraSeleccionada.id_interno || 'No especificado' }}</span>
           </div>
           <div class="detail-cell">
-            <span class="d-label">Cédula Profesional</span>
+            <span class="d-label"><i class="fas fa-certificate"></i> Cédula Profesional</span>
             <span class="d-val">{{ enfermeraSeleccionada.no_cedula || 'En trámite institucional' }}</span>
           </div>
           <div class="detail-cell">
-            <span class="d-label">CURP</span>
-            <span class="d-val">{{ enfermeraSeleccionada.curp || 'No especificada' }}</span>
+            <span class="d-label"><i class="fas fa-fingerprint"></i> CURP</span>
+            <span class="d-val font-mono">{{ enfermeraSeleccionada.curp || 'No especificada' }}</span>
           </div>
           <div class="detail-cell">
-            <span class="d-label">Nivel Académico</span>
-            <span class="d-val">{{ enfermeraSeleccionada.nivel_academico || 'Licenciatura' }}</span>
+            <span class="d-label"><i class="fas fa-graduation-cap"></i> Nivel Académico</span>
+            <span class="d-val">{{ enfermeraSeleccionada.nivel_academico || 'Licenciatura en Enfermería' }}</span>
           </div>
           <div class="detail-cell">
-            <span class="d-label">Teléfono de Contacto</span>
-            <span class="d-val">{{ enfermeraSeleccionada.telefono }}</span>
+            <span class="d-label"><i class="fas fa-phone"></i> Teléfono de Contacto</span>
+            <span class="d-val">
+              <a [href]="'tel:' + enfermeraSeleccionada.telefono" class="modal-phone-link">
+                {{ enfermeraSeleccionada.telefono }}
+              </a>
+            </span>
           </div>
           <div class="detail-cell">
-            <span class="d-label">Distrito Asignado</span>
-            <span class="d-val">{{ enfermeraSeleccionada.distrito }}</span>
+            <span class="d-label"><i class="fas fa-map-location-dot"></i> Distrito Asignado</span>
+            <span class="d-val">{{ enfermeraSeleccionada.distrito || 'DISTRITO 03' }}</span>
           </div>
         </div>
 

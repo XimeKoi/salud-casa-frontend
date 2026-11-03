@@ -25,7 +25,7 @@ export class EnlaceRendimientoComponent implements OnInit {
 
   // Filtros, búsqueda y orden
   busqueda: string = '';
-  filtroEstado: 'todos' | 'cumplida' | 'progreso' | 'incidencias' = 'todos';
+  filtroEstado: 'todos' | 'cumplida' | 'progreso' | 'bajos' | 'incidencias' = 'todos';
   ordenCampo: 'nombre' | 'visitasHoy' | 'cumplimiento' | 'padron' | 'incidencias' = 'visitasHoy';
   ordenAsc: boolean = false;
 
@@ -104,7 +104,9 @@ export class EnlaceRendimientoComponent implements OnInit {
     if (this.filtroEstado === 'cumplida') {
       list = list.filter(e => e.visitasHoy >= e.metaDiaria);
     } else if (this.filtroEstado === 'progreso') {
-      list = list.filter(e => e.visitasHoy < e.metaDiaria);
+      list = list.filter(e => e.visitasHoy < e.metaDiaria && e.progresoPct >= 50);
+    } else if (this.filtroEstado === 'bajos') {
+      list = list.filter(e => e.progresoPct < 50);
     } else if (this.filtroEstado === 'incidencias') {
       list = list.filter(e => (e.incidencias || 0) > 0);
     }
@@ -162,6 +164,16 @@ export class EnlaceRendimientoComponent implements OnInit {
     return this.enfermeras.filter(e => (e.incidencias || 0) > 0).length;
   }
 
+  get totalBajoRendimiento(): number {
+    return this.enfermeras.filter(e => e.progresoPct < 50).length;
+  }
+
+  get enfermerasBajoRendimiento(): EnfermeraResumen[] {
+    return [...this.enfermeras]
+      .sort((a, b) => a.progresoPct - b.progresoPct)
+      .slice(0, 3);
+  }
+
   get porcentajeCumplimientoGlobal(): number {
     const metaTotal = (this.resumenGlobal?.metaTotalDiaria) || (this.enfermeras.length * 15);
     const visitasHoy = (this.resumenGlobal?.visitasHoyTotal) || 0;
@@ -188,7 +200,7 @@ export class EnlaceRendimientoComponent implements OnInit {
     }
   }
 
-  setFiltroEstado(estado: 'todos' | 'cumplida' | 'progreso' | 'incidencias'): void {
+  setFiltroEstado(estado: 'todos' | 'cumplida' | 'progreso' | 'bajos' | 'incidencias'): void {
     this.filtroEstado = estado;
     this.paginaActual = 1;
   }
