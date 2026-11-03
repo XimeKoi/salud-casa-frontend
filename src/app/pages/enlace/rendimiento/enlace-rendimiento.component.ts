@@ -206,7 +206,7 @@ export class EnlaceRendimientoComponent implements OnInit {
   }
 
   contactarEnfermera(enf: EnfermeraResumen): void {
-    const tel = enf.telefono || '4772763103';
+    const tel = enf.telefono || '4771596959';
     Swal.fire({
       title: `Supervisión: ${enf.nombre_completo}`,
       html: `
