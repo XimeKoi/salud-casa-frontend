@@ -65,39 +65,6 @@
         </button>
       </div>
     </section>
-    <!-- BARRA DE PAGINACIÓN DE PACIENTES -->
-    <div class="pagination-bar" *ngIf="!loading && pacientesFiltrados.length > 0">
-      <div class="pagination-info">
-        <i class="fas fa-users-medical"></i>
-        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }}</strong> - <strong>{{ Math.min(paginaActual * pageSize, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length }}</strong> pacientes</span>
-      </div>
-
-      <div class="pagination-controls-wrap">
-        <div class="page-size-picker">
-          <label class="size-lbl">Por página:</label>
-          <div class="size-buttons">
-            <button *ngFor="let s of pageSizes" class="btn-size" [class.active]="s === pageSize" (click)="cambiarPageSize(s)">
-              {{ s }}
-            </button>
-          </div>
-        </div>
-
-        <div class="pagination-buttons">
-          <button class="btn-page" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1" title="Página anterior">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <div class="page-nums">
-            <button *ngFor="let p of paginasVisibles" class="btn-num" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
-              {{ p }}
-            </button>
-          </div>
-          <button class="btn-page" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas" title="Página siguiente">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
 
     <!-- BANNER DE LA ENFERMERA SELECCIONADA -->
     <div class="active-nurse-banner" *ngIf="enfermeraActual">
@@ -154,12 +121,24 @@
           <span class="ctrl-label">Estatus de Visita:</span>
           <div class="pills-set">
             <button class="pill" [class.active]="filtroEstatus === 'todos'" (click)="filtroEstatus = 'todos'; aplicarFiltros()">Todos</button>
-            <button class="pill" [class.active]="filtroEstatus === 'VISITADO'" (click)="filtroEstatus = 'VISITADO'; aplicarFiltros()">Visitados</button>
-            <button class="pill" [class.active]="filtroEstatus === 'PENDIENTE'" (click)="filtroEstatus = 'PENDIENTE'; aplicarFiltros()">Pendientes</button>
-            <button class="pill" [class.active]="filtroEstatus === 'INCIDENCIA'" (click)="filtroEstatus = 'INCIDENCIA'; aplicarFiltros()">Incidencias</button>
-            <button class="pill" [class.active]="filtroEstatus === 'RECHAZO'" (click)="filtroEstatus = 'RECHAZO'; aplicarFiltros()">Rechazos</button>
-            <button class="pill" [class.active]="filtroEstatus === 'CAMBIO DE DOMICILIO'" (click)="filtroEstatus = 'CAMBIO DE DOMICILIO'; aplicarFiltros()">Cambio Domicilio</button>
-            <button class="pill" [class.active]="filtroEstatus === 'FINADO'" (click)="filtroEstatus = 'FINADO'; aplicarFiltros()">Finados</button>
+            <button class="pill pill-vis" [class.active]="filtroEstatus === 'VISITADO'" (click)="filtroEstatus = 'VISITADO'; aplicarFiltros()">
+              <i class="fas fa-circle-check"></i> Visitados
+            </button>
+            <button class="pill pill-pen" [class.active]="filtroEstatus === 'PENDIENTE'" (click)="filtroEstatus = 'PENDIENTE'; aplicarFiltros()">
+              <i class="fas fa-clock"></i> Pendientes
+            </button>
+            <button class="pill pill-inc" [class.active]="filtroEstatus === 'INCIDENCIA'" (click)="filtroEstatus = 'INCIDENCIA'; aplicarFiltros()">
+              <i class="fas fa-triangle-exclamation"></i> Incidencias
+            </button>
+            <button class="pill pill-rec" [class.active]="filtroEstatus === 'RECHAZO'" (click)="filtroEstatus = 'RECHAZO'; aplicarFiltros()">
+              <i class="fas fa-ban"></i> Rechazos
+            </button>
+            <button class="pill pill-cam" [class.active]="filtroEstatus === 'CAMBIO DE DOMICILIO'" (click)="filtroEstatus = 'CAMBIO DE DOMICILIO'; aplicarFiltros()">
+              <i class="fas fa-truck-ramp-box"></i> Cambio Domicilio
+            </button>
+            <button class="pill pill-fin" [class.active]="filtroEstatus === 'FINADO'" (click)="filtroEstatus = 'FINADO'; aplicarFiltros()">
+              <i class="fas fa-cross"></i> Finados
+            </button>
           </div>
         </div>
 
@@ -172,6 +151,37 @@
       </div>
     </section>
 
+    <!-- ⭐ BARRA DE PAGINACIÓN DE PACIENTES (SUPERIOR) -->
+    <div class="pagination-modern-bar" *ngIf="!loading && pacientesFiltrados.length > 0">
+      <div class="pagination-info-badge">
+        <i class="fas fa-users-medical"></i>
+        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }} - {{ Math.min(paginaActual * pageSize, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length }}</strong> pacientes</span>
+      </div>
+
+      <div class="pagination-nav-center" *ngIf="totalPaginas > 1">
+        <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1" title="Página anterior">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="pagination-pills-list">
+          <button *ngFor="let p of paginasVisibles" class="page-num-pill" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
+            {{ p }}
+          </button>
+        </div>
+        <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas" title="Página siguiente">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="pagination-rows-selector">
+        <span class="rows-label">Por página:</span>
+        <div class="select-rows-wrap">
+          <select [ngModel]="pageSize" (ngModelChange)="cambiarPageSize($event)" class="select-rows-dropdown">
+            <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- LISTA / GRID DE PACIENTES RESPONSIVA -->
     <div class="loading-state" *ngIf="loading">
       <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -179,53 +189,115 @@
     </div>
 
     <section class="patients-grid" *ngIf="!loading">
-      <div class="patient-card" *ngFor="let p of pacientesPaginados" (click)="verDetallePaciente(p)">
+      <div class="patient-card" *ngFor="let p of pacientesPaginados" (click)="verDetallePaciente(p)"
+           [class.card-visitado]="p.estatus === 'VISITADO'"
+           [class.card-pendiente]="p.estatus === 'PENDIENTE'"
+           [class.card-incidencia]="p.estatus === 'INCIDENCIA'"
+           [class.card-rechazo]="p.estatus === 'RECHAZO'"
+           [class.card-cambio]="p.estatus === 'CAMBIO DE DOMICILIO'"
+           [class.card-finado]="p.estatus === 'FINADO'">
         
         <!-- CABECERA DE PACIENTE -->
-        <div class="patient-card-top">
-          <div class="nurse-assigned-badge">
-            <i class="fas fa-user-nurse"></i>
-            <span>{{ p.enfermeraNombre }} • {{ p.enfermeraZona }}</span>
+        <div class="patient-card-header">
+          <div class="patient-avatar-box">
+            <div class="avatar-circle">
+              {{ getIniciales(p.nombreCompleto) }}
+            </div>
+            <div class="patient-name-box">
+              <h4 class="card-patient-name" [title]="p.nombreCompleto">{{ p.nombreCompleto || 'Sin nombre registrado' }}</h4>
+              <span class="card-curp-text" *ngIf="p.curp"><i class="fas fa-id-card"></i> {{ p.curp }}</span>
+            </div>
           </div>
-          <span class="program-badge" [class.pam]="p.programa === 'PAM'" [class.pcd]="p.programa === 'PCD'">
-            {{ p.programa }}
-          </span>
+
+          <div class="patient-card-status">
+            <span class="status-badge" [class.status-visitado]="p.estatus === 'VISITADO'"
+                                      [class.status-pendiente]="p.estatus === 'PENDIENTE'"
+                                      [class.status-incidencia]="p.estatus === 'INCIDENCIA'"
+                                      [class.status-rechazo]="p.estatus === 'RECHAZO'"
+                                      [class.status-cambio]="p.estatus === 'CAMBIO DE DOMICILIO'"
+                                      [class.status-finado]="p.estatus === 'FINADO'">
+              <i class="fas" [class.fa-circle-check]="p.estatus === 'VISITADO'"
+                             [class.fa-clock]="p.estatus === 'PENDIENTE'"
+                             [class.fa-triangle-exclamation]="p.estatus === 'INCIDENCIA'"
+                             [class.fa-ban]="p.estatus === 'RECHAZO'"
+                             [class.fa-truck-ramp-box]="p.estatus === 'CAMBIO DE DOMICILIO'"
+                             [class.fa-cross]="p.estatus === 'FINADO'"></i>
+              {{ p.estatus }}
+            </span>
+          </div>
         </div>
 
-        <!-- NOMBRE Y CURP -->
-        <h3 class="patient-name">{{ p.nombreCompleto || 'Sin nombre registrado' }}</h3>
-        <span class="patient-curp">
-          <i class="fas fa-address-card"></i> CURP: {{ p.curp }}
-        </span>
+        <!-- CUERPO DE TARJETA -->
+        <div class="patient-card-body">
+          <div class="card-info-item">
+            <i class="fas fa-location-dot icon-dim"></i>
+            <span class="card-address-text">{{ p.direccion }}</span>
+          </div>
 
-        <!-- DIRECCIÓN Y COLONIA -->
-        <div class="patient-address-box">
-          <i class="fas fa-location-dot"></i>
-          <span>{{ p.direccion }}</span>
+          <div class="card-info-item" *ngIf="p.colonia">
+            <i class="fas fa-city icon-dim"></i>
+            <span class="card-colonia-text">{{ p.colonia }}</span>
+          </div>
+
+          <div class="card-info-item" *ngIf="p.telefono && p.telefono !== 'Sin teléfono'">
+            <i class="fas fa-phone-volume icon-dim"></i>
+            <a [href]="'tel:' + p.telefono" (click)="$event.stopPropagation()" class="card-phone-link">
+              {{ p.telefono }}
+            </a>
+          </div>
+
+          <div class="card-meta-chips">
+            <span class="programa-badge" [class.pam]="p.programa === 'PAM'" [class.pcd]="p.programa === 'PCD'">
+              <i class="fas fa-tag"></i> {{ p.programa }}
+            </span>
+            <span class="nurse-mini-chip">
+              <i class="fas fa-user-nurse"></i> {{ p.enfermeraZona }}
+            </span>
+          </div>
         </div>
 
-        <!-- ESTATUS Y CONTACTO -->
-        <div class="patient-footer-row">
-          <span class="status-pill" [class.status-visitado]="p.estatus === 'VISITADO'"
-                                    [class.status-pendiente]="p.estatus === 'PENDIENTE'"
-                                    [class.status-incidencia]="p.estatus === 'INCIDENCIA'"
-                                    [class.status-rechazo]="p.estatus === 'RECHAZO'"
-                                    [class.status-cambio]="p.estatus === 'CAMBIO DE DOMICILIO'"
-                                    [class.status-finado]="p.estatus === 'FINADO'">
-            {{ p.estatus }}
-          </span>
-
-          <span class="patient-phone" *ngIf="p.telefono && p.telefono !== 'Sin teléfono'">
-            <i class="fas fa-phone"></i> {{ p.telefono }}
-          </span>
-
-          <button class="btn-inspect-patient" title="Ver ficha completa">
+        <!-- FOOTER DE TARJETA -->
+        <div class="patient-card-footer">
+          <span class="footer-label">Expediente Clínico</span>
+          <button class="btn-inspect-patient" (click)="verDetallePaciente(p); $event.stopPropagation()" title="Ver ficha completa">
+            <span>Ver Ficha</span>
             <i class="fas fa-chevron-right"></i>
           </button>
         </div>
 
       </div>
     </section>
+
+    <!-- ⭐ BARRA DE PAGINACIÓN DE PACIENTES (INFERIOR) -->
+    <div class="pagination-modern-bar" *ngIf="!loading && pacientesFiltrados.length > 0">
+      <div class="pagination-info-badge">
+        <i class="fas fa-users-medical"></i>
+        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }} - {{ Math.min(paginaActual * pageSize, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length }}</strong> pacientes</span>
+      </div>
+
+      <div class="pagination-nav-center" *ngIf="totalPaginas > 1">
+        <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1" title="Página anterior">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="pagination-pills-list">
+          <button *ngFor="let p of paginasVisibles" class="page-num-pill" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
+            {{ p }}
+          </button>
+        </div>
+        <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas" title="Página siguiente">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="pagination-rows-selector">
+        <span class="rows-label">Por página:</span>
+        <div class="select-rows-wrap">
+          <select [ngModel]="pageSize" (ngModelChange)="cambiarPageSize($event)" class="select-rows-dropdown">
+            <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
     <!-- EMPTY STATE -->
     <div class="empty-state" *ngIf="!loading && pacientesFiltrados.length === 0">

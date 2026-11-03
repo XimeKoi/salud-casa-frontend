@@ -198,11 +198,13 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 // ============================================
 .content-wrapper {
   flex: 1;
-  padding: 16px 24px 48px 24px;
+  padding: 18px 28px 60px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 // ============================================

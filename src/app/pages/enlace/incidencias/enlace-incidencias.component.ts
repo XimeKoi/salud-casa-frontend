@@ -24,7 +24,13 @@ export class EnlaceIncidenciasComponent implements OnInit {
   // Paginación y contadores
   paginaActual: number = 1;
   pageSize: number = 9;
+  pageSizes: number[] = [9, 18, 36];
   Math = Math;
+
+  cambiarPageSize(size: any): void {
+    this.pageSize = Number(size);
+    this.paginaActual = 1;
+  }
 
   // Filtros
   searchTerm: string = '';

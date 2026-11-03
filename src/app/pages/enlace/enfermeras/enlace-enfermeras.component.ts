@@ -24,7 +24,13 @@ export class EnlaceEnfermerasComponent implements OnInit {
   // Paginación
   paginaActual: number = 1;
   pageSize: number = 6;
+  pageSizes: number[] = [6, 12, 24];
   Math = Math;
+
+  cambiarPageSize(size: any): void {
+    this.pageSize = Number(size);
+    this.paginaActual = 1;
+  }
 
   // Modal de Expediente de Enfermera
   enfermeraSeleccionada: EnfermeraResumen | null = null;

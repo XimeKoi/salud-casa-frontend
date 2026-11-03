@@ -156,14 +156,161 @@ $radius-pill: 9999px;
 // ============================================
 .content-wrapper, .enlace-main-body {
   flex: 1;
-  padding: 16px 24px 48px 24px;
+  padding: 18px 28px 60px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-height: 0;
-  max-width: 1440px;
-  margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
+}
+
+// ============================================
+// ⭐ NUEVA PAGINACIÓN REDISEÑADA Y MODERNA
+// ============================================
+.pagination-modern-bar {
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 12px 20px;
+  border: 1.5px solid #e9e0d6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pagination-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #64748b;
+  background: #fbf8f5;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid #f2ebe3;
+
+  i {
+    color: #7E101F;
+    font-size: 13px;
+  }
+
+  strong {
+    color: #1e293b;
+    font-weight: 800;
+  }
+}
+
+.pagination-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-nav-arrow {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid #e9e0d6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #7E101F;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover:not(:disabled) {
+    background: #7E101F;
+    color: #ffffff;
+    border-color: #7E101F;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(126, 16, 31, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+}
+
+.pagination-pills-list {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.page-num-pill {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1.5px solid #e9e0d6;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover:not(.active) {
+    border-color: #7E101F;
+    color: #7E101F;
+    background: #fdfaf8;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #7E101F, #9b2839);
+    color: #ffffff;
+    border-color: #7E101F;
+    box-shadow: 0 3px 10px rgba(126, 16, 31, 0.3);
+    font-weight: 800;
+  }
+}
+
+.pagination-rows-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #64748b;
+
+  .rows-label {
+    font-weight: 600;
+  }
+
+  .select-rows-wrap {
+    position: relative;
+
+    .select-rows-dropdown {
+      padding: 6px 12px;
+      border: 1.5px solid #e9e0d6;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #1e293b;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+
+      &:focus {
+        border-color: #7E101F;
+      }
+    }
+  }
 }
 
 // ============================================
@@ -553,6 +700,36 @@ $radius-pill: 9999px;
           &.pcd.active {
             color: #4338ca;
           }
+
+          &.pill-vis.active {
+            color: #047857;
+            i { color: #10b981; }
+          }
+
+          &.pill-pen.active {
+            color: #b45309;
+            i { color: #f59e0b; }
+          }
+
+          &.pill-inc.active {
+            color: #be123c;
+            i { color: #e11d48; }
+          }
+
+          &.pill-rec.active {
+            color: #b91c1c;
+            i { color: #ef4444; }
+          }
+
+          &.pill-cam.active {
+            color: #0369a1;
+            i { color: #0284c7; }
+          }
+
+          &.pill-fin.active {
+            color: #334155;
+            i { color: #64748b; }
+          }
         }
       }
     }
@@ -609,27 +786,36 @@ $radius-pill: 9999px;
 
 .patient-card {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1.5px solid #ebdcd0;
+  border-left: 5px solid #7E101F;
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
   position: relative;
   overflow: hidden;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, $primary-deep 0%, $primary 50%, $primary-light 100%);
-    opacity: 0.9;
+  &.card-visitado {
+    border-left-color: #16a34a;
+  }
+  &.card-pendiente {
+    border-left-color: #ea580c;
+  }
+  &.card-incidencia {
+    border-left-color: #e11d48;
+  }
+  &.card-rechazo {
+    border-left-color: #dc2626;
+  }
+  &.card-cambio {
+    border-left-color: #0284c7;
+  }
+  &.card-finado {
+    border-left-color: #475569;
   }
 
   &:hover {
@@ -640,181 +826,250 @@ $radius-pill: 9999px;
     .btn-inspect-patient {
       background: $primary;
       color: #ffffff;
-      transform: translateX(2px);
-    }
-  }
-
-  .patient-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-
-    .nurse-assigned-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #7A192B;
-      background: rgba(122, 25, 43, 0.07);
-      padding: 3px 8px;
-      border-radius: 6px;
+      border-color: $primary;
 
       i {
-        font-size: 11px;
-      }
-    }
-
-    .program-badge {
-      font-size: 11px;
-      font-weight: 800;
-      padding: 3px 10px;
-      border-radius: 9999px;
-      letter-spacing: 0.4px;
-
-      &.pam {
-        background: #fdf2f4;
-        color: #9F2241;
-        border: 1px solid #f9cbd4;
-      }
-
-      &.pcd {
-        background: #eef2ff;
-        color: #4338ca;
-        border: 1px solid #c7d2fe;
+        transform: translateX(3px);
       }
     }
   }
 
-  .patient-name {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .patient-curp {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #64748b;
-    font-family: 'Consolas', monospace;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-
-    i {
-      color: #94a3b8;
-    }
-  }
-
-  .patient-address-box {
+  .patient-card-header {
     display: flex;
+    justify-content: space-between;
     align-items: flex-start;
-    gap: 8px;
-    background: #faf7f4;
-    border: 1px solid #eee4db;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    color: #334155;
-    line-height: 1.4;
+    gap: 12px;
 
-    i {
-      color: $primary;
-      font-size: 13px;
-      margin-top: 2px;
+    .patient-avatar-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+
+      .avatar-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(126, 16, 31, 0.08);
+        color: #7E101F;
+        border: 2px solid #7E101F;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+
+      .patient-name-box {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+
+        .card-patient-name {
+          margin: 0;
+          font-size: 15.5px;
+          font-weight: 800;
+          color: #0f172a;
+          line-height: 1.25;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .card-curp-text {
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748b;
+          font-family: 'Consolas', monospace;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+
+          i {
+            color: #94a3b8;
+          }
+        }
+      }
+    }
+
+    .patient-card-status {
       flex-shrink: 0;
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+
+        &.status-visitado {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+        }
+        &.status-pendiente {
+          background: #fffbeb;
+          color: #b45309;
+          border: 1px solid #fde68a;
+        }
+        &.status-incidencia {
+          background: #fff1f2;
+          color: #be123c;
+          border: 1px solid #fecdd3;
+        }
+        &.status-rechazo {
+          background: #fef2f2;
+          color: #b91c1c;
+          border: 1px solid #fecaca;
+        }
+        &.status-cambio {
+          background: #f0f9ff;
+          color: #0369a1;
+          border: 1px solid #bae6fd;
+        }
+        &.status-finado {
+          background: #f1f5f9;
+          color: #475569;
+          border: 1px solid #cbd5e1;
+        }
+      }
     }
   }
 
-  .patient-footer-row {
+  .patient-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .card-info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      color: #334155;
+      line-height: 1.4;
+
+      .icon-dim {
+        color: #7E101F;
+        font-size: 13px;
+        margin-top: 2px;
+        flex-shrink: 0;
+      }
+
+      .card-address-text, .card-colonia-text {
+        word-break: break-word;
+      }
+
+      .card-phone-link {
+        color: #15803d;
+        font-weight: 700;
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .card-meta-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+
+      .programa-badge {
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 9px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        &.pam {
+          background: #ede9fe;
+          color: #6d28d9;
+          border: 1px solid #ddd6fe;
+        }
+        &.pcd {
+          background: #ccfbf1;
+          color: #0f766e;
+          border: 1px solid #99f6e4;
+        }
+      }
+
+      .nurse-mini-chip {
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        i {
+          color: #7E101F;
+        }
+      }
+    }
+  }
+
+  .patient-card-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     margin-top: auto;
-    padding-top: 8px;
+    padding-top: 10px;
     border-top: 1px solid #f1ece6;
 
-    .status-pill {
+    .footer-label {
       font-size: 11px;
-      font-weight: 800;
-      padding: 3px 9px;
-      border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-
-      &.status-visitado {
-        background: #ecfdf5;
-        color: #047857;
-        border: 1px solid #a7f3d0;
-      }
-
-      &.status-pendiente {
-        background: #fffbeb;
-        color: #b45309;
-        border: 1px solid #fde68a;
-      }
-
-      &.status-incidencia {
-        background: #fff7ed;
-        color: #c2410c;
-        border: 1px solid #fed7aa;
-      }
-
-      &.status-rechazo {
-        background: #fef2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-      }
-
-      &.status-cambio {
-        background: #f5f3ff;
-        color: #6d28d9;
-        border: 1px solid #ddd6fe;
-      }
-
-      &.status-finado {
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #cbd5e1;
-      }
-    }
-
-    .patient-phone {
-      font-size: 11.5px;
-      color: #64748b;
       font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-
-      i {
-        color: #10b981;
-        font-size: 11px;
-      }
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
 
     .btn-inspect-patient {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #f4ede5;
-      border: none;
-      color: $primary;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      font-size: 11px;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(126, 16, 31, 0.08);
+      border: 1px solid rgba(126, 16, 31, 0.2);
+      color: #7E101F;
+      font-size: 12px;
+      font-weight: 750;
       cursor: pointer;
       transition: all 0.2s ease;
-      margin-left: auto;
+
+      i {
+        font-size: 10px;
+        transition: transform 0.2s ease;
+      }
+
+      &:hover {
+        background: #7E101F;
+        color: #ffffff;
+        border-color: #7E101F;
+
+        i {
+          transform: translateX(3px);
+        }
+      }
     }
   }
 }
@@ -1069,147 +1324,4 @@ $radius-pill: 9999px;
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-
-// ============================================
-// BARRA DE PAGINACIÓN DE PACIENTES
-// ============================================
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1.5px solid #ebd9cc;
-  box-shadow: 0 4px 16px rgba(91, 28, 36, 0.06);
-  margin-top: 24px;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  .pagination-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #5B1C24;
-    font-weight: 600;
-
-    i { color: #D4AF37; }
-    strong { color: #7E101F; }
-  }
-
-  .pagination-controls-wrap {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-
-    .page-size-picker {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      .size-lbl {
-        font-size: 11.5px;
-        font-weight: 750;
-        text-transform: uppercase;
-        color: #78716c;
-      }
-
-      .size-buttons {
-        display: flex;
-        gap: 4px;
-
-        .btn-size {
-          padding: 4px 9px;
-          border-radius: 6px;
-          border: 1px solid #ebd9cc;
-          background: #faf7f4;
-          color: #5B1C24;
-          font-size: 11.5px;
-          font-weight: 750;
-          cursor: pointer;
-          transition: all 0.15s ease;
-
-          &:hover {
-            background: #f5ebe6;
-            border-color: #7E101F;
-          }
-
-          &.active {
-            background: #7E101F;
-            border-color: #7E101F;
-            color: #ffffff;
-          }
-        }
-      }
-    }
-
-    .pagination-buttons {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-
-      .btn-page {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        border: 1.5px solid #ebd9cc;
-        background: #faf7f4;
-        color: #5B1C24;
-        font-size: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-
-        &:hover:not(:disabled) {
-          background: #7E101F;
-          border-color: #7E101F;
-          color: #ffffff;
-        }
-
-        &:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-      }
-
-      .page-nums {
-        display: flex;
-        gap: 4px;
-
-        .btn-num {
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
-          border: 1.5px solid transparent;
-          background: transparent;
-          color: #5B1C24;
-          font-size: 12.5px;
-          font-weight: 800;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.18s ease;
-
-          &:hover {
-            background: #f5ebe6;
-            border-color: #ebd9cc;
-          }
-
-          &.active {
-            background: linear-gradient(135deg, #7E101F 0%, #5B1C24 100%);
-            color: #ffffff;
-            border-color: #D4AF37;
-            box-shadow: 0 3px 10px rgba(126, 16, 31, 0.25);
-          }
-        }
-      }
-    }
-  }
 }

@@ -160,14 +160,13 @@ $radius-pill: 9999px;
 // ============================================
 .content-wrapper, .enlace-main-body {
   flex: 1;
-  padding: 16px 24px 48px 24px;
+  padding: 18px 28px 60px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-height: 0;
-  max-width: 1440px;
-  margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 // ============================================

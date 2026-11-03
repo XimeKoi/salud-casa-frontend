@@ -184,5 +184,14 @@ export class EnlacePacientesComponent implements OnInit {
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
   }
+
+  getIniciales(nombre: string): string {
+    if (!nombre) return 'PA';
+    const partes = nombre.trim().split(' ');
+    if (partes.length >= 2) {
+      return (partes[0][0] + partes[1][0]).toUpperCase();
+    }
+    return nombre.substring(0, 2).toUpperCase();
+  }
 }
 
