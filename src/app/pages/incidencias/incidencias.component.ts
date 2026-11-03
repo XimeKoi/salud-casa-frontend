@@ -1090,7 +1090,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         const detalle = (incidencia.descripcion || '').trim();
 
         const nombreEnfermera = 'Enfermera Ana Guerrero';
-        const telefonoEnfermera = '4777092580';
+        const telefonoEnfermera = '4771596959';
 
         let motivoTexto = tipoLabel;
         if (detalle && detalle.toLowerCase() !== tipoLabel.toLowerCase()) {
@@ -1199,7 +1199,7 @@ export class IncidenciasComponent implements OnInit, AfterViewInit, OnDestroy {
         }
 
         const nombreEnfermera = 'Enfermera Ana Guerrero';
-        const telefonoEnfermera = '4777092580';
+        const telefonoEnfermera = '4771596959';
         const textoMensaje = this.construirMensajeIncidencia(incidencia);
 
         Swal.fire({

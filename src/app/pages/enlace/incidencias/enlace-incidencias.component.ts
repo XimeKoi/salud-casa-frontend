@@ -43,7 +43,7 @@ export class EnlaceIncidenciasComponent implements OnInit {
   constructor(
     private enlaceService: EnlaceService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargarDatos();

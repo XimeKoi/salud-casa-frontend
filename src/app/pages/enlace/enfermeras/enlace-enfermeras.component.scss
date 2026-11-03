@@ -9,7 +9,7 @@ $gold-light: #fef08a;
 
 .enlace-page-container {
   min-height: 100vh;
-  background: 
+  background:
     radial-gradient(at 0% 0%, rgba(159, 34, 65, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(212, 175, 55, 0.07) 0px, transparent 50%),
     radial-gradient(at 50% 100%, rgba(122, 25, 43, 0.04) 0px, transparent 60%),
@@ -143,7 +143,11 @@ $gold-light: #fef08a;
   overflow-x: auto;
   padding-bottom: 12px;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
   position: relative;
   z-index: 1;
 
@@ -513,9 +517,17 @@ $gold-light: #fef08a;
         font-weight: 900;
         color: #0f172a;
 
-        &.text-emerald { color: #059669; }
-        &.text-amber { color: #d97706; }
-        &.text-rose { color: #dc2626; }
+        &.text-emerald {
+          color: #059669;
+        }
+
+        &.text-amber {
+          color: #d97706;
+        }
+
+        &.text-rose {
+          color: #dc2626;
+        }
       }
 
       .m-lbl {
@@ -580,7 +592,9 @@ $gold-light: #fef08a;
         border: 1px solid #cbd5e1;
         color: #334155;
 
-        i { color: #059669; }
+        i {
+          color: #059669;
+        }
 
         &:hover {
           background: #e2e8f0;
@@ -593,7 +607,9 @@ $gold-light: #fef08a;
         border: 1px solid #a7f3d0;
         color: #047857;
 
-        i { color: #16a34a; }
+        i {
+          color: #16a34a;
+        }
 
         &:hover {
           background: #d1fae5;
@@ -766,7 +782,8 @@ $gold-light: #fef08a;
 // ============================================
 // LOADING & EMPTY STATES
 // ============================================
-.loading-state, .empty-state {
+.loading-state,
+.empty-state {
   text-align: center;
   padding: 60px 20px;
   background: #ffffff;
@@ -794,108 +811,23 @@ $gold-light: #fef08a;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-
-// ============================================
-// BARRA DE PAGINACIÓN DE ENFERMERAS
-// ============================================
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1.5px solid #ebd9cc;
-  box-shadow: 0 4px 16px rgba(91, 28, 36, 0.06);
-  margin-top: 24px;
-  gap: 16px;
-  flex-wrap: wrap;
-
-  .pagination-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #5B1C24;
-    font-weight: 600;
-
-    i { color: #D4AF37; }
-    strong { color: #7E101F; }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
 
-  .pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .btn-page {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      border-radius: 10px;
-      border: 1.5px solid #ebd9cc;
-      background: #faf7f4;
-      color: #5B1C24;
-      font-size: 12.5px;
-      font-weight: 750;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      &:hover:not(:disabled) {
-        background: #7E101F;
-        border-color: #7E101F;
-        color: #ffffff;
-        transform: translateY(-1px);
-      }
-
-      &:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
-    }
-
-    .page-numbers {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-
-      .btn-page-num {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        border: 1.5px solid transparent;
-        background: transparent;
-        color: #5B1C24;
-        font-size: 13px;
-        font-weight: 800;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: #f5ebe6;
-          border-color: #ebd9cc;
-        }
-
-        &.active {
-          background: linear-gradient(135deg, #7E101F 0%, #5B1C24 100%);
-          color: #ffffff;
-          box-shadow: 0 3px 10px rgba(126, 16, 31, 0.3);
-          border-color: #D4AF37;
-        }
-      }
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

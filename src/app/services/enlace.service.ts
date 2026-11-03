@@ -251,7 +251,7 @@ export class EnlaceService {
       region: '5-LEON',
       distrito: 'DISTRITO 03',
       id_interno: '11020_LEON_198',
-      telefono: '4771106176',
+      telefono: '4771596959',
       curp: 'GURA910610MGRRSN01',
       no_cedula: '13456789',
       nivel_academico: 'LICENCIATURA',
