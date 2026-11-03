@@ -82,7 +82,7 @@
       <!-- ⭐ VISTA EXCLUSIVA PARA ROL ENLACE (SUPERVISOR) -->
       <!-- ============================================ -->
       <ng-container *ngIf="isEnlace">
-        <li (click)="navigateTo('enlace-dashboard')" class="nav-module-item item-enlace">
+        <li (click)="navigateTo('enlace-dashboard')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/dashboard')">
           <div class="icon-bubble icon-enlace">
             <i class="fas fa-chart-line"></i>
           </div>
@@ -93,7 +93,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('enlace-enfermeras')" class="nav-module-item item-enlace">
+        <li (click)="navigateTo('enlace-enfermeras')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/enfermeras')">
           <div class="icon-bubble icon-nurses">
             <i class="fas fa-user-nurse"></i>
           </div>
@@ -104,7 +104,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('enlace-rendimiento')" class="nav-module-item item-enlace">
+        <li (click)="navigateTo('enlace-rendimiento')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/rendimiento')">
           <div class="icon-bubble icon-perf">
             <i class="fas fa-tachometer-alt"></i>
           </div>
@@ -115,7 +115,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('enlace-pacientes')" class="nav-module-item item-enlace">
+        <li (click)="navigateTo('enlace-pacientes')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/pacientes')">
           <div class="icon-bubble icon-patients">
             <i class="fas fa-users-medical"></i>
           </div>
@@ -126,7 +126,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('enlace-incidencias')" class="nav-module-item item-enlace">
+        <li (click)="navigateTo('enlace-incidencias')" class="nav-module-item item-enlace" [class.active]="isRutaActiva('/enlace/incidencias')">
           <div class="icon-bubble icon-incidents">
             <i class="fas fa-triangle-exclamation"></i>
           </div>
@@ -138,7 +138,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('dashboard')" class="nav-module-item">
+        <li (click)="navigateTo('dashboard')" class="nav-module-item" [class.active]="isRutaActiva('/dashboard')">
           <div class="icon-bubble icon-map">
             <i class="fas fa-map-location-dot"></i>
           </div>
@@ -149,7 +149,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('notificaciones')" class="nav-module-item">
+        <li (click)="navigateTo('notificaciones')" class="nav-module-item" [class.active]="isRutaActiva('/notificaciones')">
           <div class="icon-bubble icon-notif">
             <i class="fas fa-bell"></i>
           </div>
@@ -161,7 +161,7 @@
           <i class="fas fa-chevron-right arrow-icon" *ngIf="!totalNotificaciones"></i>
         </li>
 
-        <li (click)="navigateTo('perfil')" class="nav-module-item">
+        <li (click)="navigateTo('perfil')" class="nav-module-item" [class.active]="isRutaActiva('/perfil')">
           <div class="icon-bubble icon-user">
             <i class="fas fa-user-shield"></i>
           </div>
@@ -177,7 +177,7 @@
       <!-- ⭐ VISTA EXCLUSIVA PARA ENFERMERA (OPERATIVO COMPLETO) -->
       <!-- ============================================ -->
       <ng-container *ngIf="!isEnlace">
-        <li (click)="navigateTo('dashboard')" class="nav-module-item">
+        <li (click)="navigateTo('dashboard')" class="nav-module-item" [class.active]="isRutaActiva('/dashboard')">
           <div class="icon-bubble icon-map">
             <i class="fas fa-map-location-dot"></i>
           </div>
@@ -188,7 +188,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('dashboard-salud')" class="nav-module-item">
+        <li (click)="navigateTo('dashboard-salud')" class="nav-module-item" [class.active]="isRutaActiva('/dashboard-salud')">
           <div class="icon-bubble icon-stats">
             <i class="fas fa-chart-pie"></i>
           </div>
@@ -199,7 +199,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('pacientes')" class="nav-module-item">
+        <li (click)="navigateTo('pacientes')" class="nav-module-item" [class.active]="isRutaActiva('/pacientes')">
           <div class="icon-bubble icon-patients">
             <i class="fas fa-hospital-user"></i>
           </div>
@@ -210,7 +210,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('incidencias')" class="nav-module-item">
+        <li (click)="navigateTo('incidencias')" class="nav-module-item" [class.active]="isRutaActiva('/incidencias')">
           <div class="icon-bubble icon-incidents">
             <i class="fas fa-shield-heart"></i>
           </div>
@@ -221,7 +221,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('calendario')" class="nav-module-item">
+        <li (click)="navigateTo('calendario')" class="nav-module-item" [class.active]="isRutaActiva('/calendario')">
           <div class="icon-bubble icon-cal">
             <i class="fas fa-calendar-check"></i>
           </div>
@@ -232,7 +232,7 @@
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
-        <li (click)="navigateTo('notificaciones')" class="nav-module-item">
+        <li (click)="navigateTo('notificaciones')" class="nav-module-item" [class.active]="isRutaActiva('/notificaciones')">
           <div class="icon-bubble icon-notif">
             <i class="fas fa-bell"></i>
           </div>
@@ -244,7 +244,7 @@
           <i class="fas fa-chevron-right arrow-icon" *ngIf="!cantidadNotificaciones"></i>
         </li>
 
-        <li (click)="navigateTo('perfil')" class="nav-module-item">
+        <li (click)="navigateTo('perfil')" class="nav-module-item" [class.active]="isRutaActiva('/perfil')">
           <div class="icon-bubble icon-user">
             <i class="fas fa-user-doctor"></i>
           </div>

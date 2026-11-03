@@ -96,6 +96,10 @@ export class EnlaceIncidenciasComponent implements OnInit {
     });
   }
 
+  get incidenciasPendientes(): number {
+    return this.incidencias.filter(i => !i.resuelta && (i.estado || '').toLowerCase() !== 'resuelta').length;
+  }
+
   get totalRecibidas(): number {
     return this.incidencias.filter(i => (i.estado || '').toLowerCase() === 'recibida' || (!i.resuelta && !i.estado)).length;
   }

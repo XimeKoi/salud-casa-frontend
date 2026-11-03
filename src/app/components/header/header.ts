@@ -107,6 +107,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
     return this.esRutaMapa;
   }
 
+  isRutaActiva(ruta: string): boolean {
+    const rawUrl = this.router.url.split('?')[0].replace(/\/+$/, '');
+    if (ruta === '/dashboard') {
+      return rawUrl === '/dashboard' || rawUrl === '';
+    }
+    return rawUrl.startsWith(ruta);
+  }
+
   private actualizarEsRutaMapa() {
     this.calcularEsRutaMapa();
     this.cdr.markForCheck();

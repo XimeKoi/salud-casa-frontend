@@ -60,6 +60,10 @@ export class EnlacePacientesComponent implements OnInit {
     });
   }
 
+  cargarDatos(): void {
+    this.cargarPacientes();
+  }
+
   cargarPacientes(): void {
     this.loading = true;
     const id = Number(this.idEnfermeraSeleccionada) || 1;

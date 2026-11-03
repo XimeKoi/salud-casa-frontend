@@ -39,6 +39,10 @@ export class EnlaceEnfermerasComponent implements OnInit {
     this.cargarEnfermeras();
   }
 
+  cargarDatos(): void {
+    this.cargarEnfermeras();
+  }
+
   cargarEnfermeras(): void {
     this.loading = true;
     this.enlaceService.getEnfermeras().subscribe({

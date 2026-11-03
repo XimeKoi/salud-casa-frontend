@@ -1,63 +1,41 @@
 <!-- src/app/pages/enlace/enfermeras/enlace-enfermeras.component.html -->
 
-<div class="enlace-page-container">
+<div class="enlace-page">
 
-  <!-- CABECERA INSTITUCIONAL ENLACE -->
-  <header class="enlace-hero-header">
-    <div class="hero-content">
-      <div class="hero-left">
+  <!-- ⭐ HEADER INSTITUCIONAL (ESTILO ENFERMERA) -->
+  <header class="page-header">
+    <div class="header-main-row">
+      <div class="header-title-box">
         <app-page-header-nav></app-page-header-nav>
-        <div class="role-badge">
+        <div class="header-icon-wrapper">
           <i class="fas fa-user-nurse"></i>
-          <span>ADMINISTRACIÓN DE PERSONAL • DISTRITO 03 LEÓN</span>
         </div>
-        <h1 class="hero-title">
-          Directorio de Enfermeras
-        </h1>
-        <p class="hero-sub">
-          Gestión integral de las enfermeras en campo, zonas territoriales y expedientes de supervisión
-        </p>
+        <div>
+          <h1>Directorio de Enfermeras</h1>
+          <p class="header-subtitle">
+            Gestión integral de las enfermeras en campo, zonas territoriales y expedientes de supervisión
+          </p>
+        </div>
       </div>
 
-      <div class="hero-right">
-        <div class="header-stat-capsule">
-          <span class="capsule-num">{{ enfermeras.length }}</span>
-          <span class="capsule-lbl">Enfermeras Registradas</span>
+      <div class="header-badges-and-actions">
+        <div class="header-quick-badges">
+          <span class="header-pill pill-total">
+            <i class="fas fa-users"></i>
+            <span>Total: <strong>{{ enfermeras.length }}</strong> enfermeras</span>
+          </span>
         </div>
+
+        <button class="btn-header-refresh" (click)="cargarDatos()" [disabled]="loading" title="Actualizar datos">
+          <i class="fas fa-rotate" [class.fa-spin]="loading"></i>
+          <span>{{ loading ? 'Actualizando...' : 'Actualizar' }}</span>
+        </button>
       </div>
     </div>
-
-    <!-- TABS DE NAVEGACIÓN SUPERIOR -->
-    <nav class="enlace-nav-tabs">
-      <button class="nav-tab" (click)="navegarA('/enlace/dashboard')">
-        <i class="fas fa-chart-line"></i>
-        <span>Panel General</span>
-      </button>
-      <button class="nav-tab active" (click)="navegarA('/enlace/enfermeras')">
-        <i class="fas fa-user-nurse"></i>
-        <span>Enfermeras</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/rendimiento')">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Rendimientos</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/pacientes')">
-        <i class="fas fa-users-medical"></i>
-        <span>Padrón de Pacientes</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/incidencias')">
-        <i class="fas fa-triangle-exclamation"></i>
-        <span>Incidencias (6)</span>
-      </button>
-      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
-        <i class="fas fa-map-location-dot"></i>
-        <span>Mapa Operativo</span>
-      </button>
-    </nav>
   </header>
 
   <!-- CUERPO PRINCIPAL -->
-  <main class="enlace-main-body">
+  <main class="content-wrapper">
 
     <!-- FILTROS Y BARRA DE BÚSQUEDA -->
     <section class="search-filter-panel">

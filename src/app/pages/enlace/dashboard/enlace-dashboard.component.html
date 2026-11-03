@@ -1,78 +1,45 @@
 <!-- src/app/pages/enlace/dashboard/enlace-dashboard.component.html -->
 
-<div class="enlace-page-container">
+<div class="enlace-page">
 
-  <!-- CABECERA INSTITUCIONAL ENLACE -->
-  <header class="enlace-hero-header">
-    <div class="hero-content">
-      <div class="hero-left">
+  <!-- ⭐ HEADER INSTITUCIONAL (ESTILO ENFERMERA) -->
+  <header class="page-header">
+    <div class="header-main-row">
+      <div class="header-title-box">
         <app-page-header-nav></app-page-header-nav>
-        <div class="role-badge">
-          <i class="fas fa-user-shield"></i>
-          <span>ROL ENLACE OPERATIVO • SUPERVISIÓN</span>
+        <div class="header-icon-wrapper">
+          <i class="fas fa-chart-line"></i>
         </div>
-        <h1 class="hero-title">
-          Panel de Control y Supervisión
-        </h1>
-        <p class="hero-sub">
-          Administración territorial del personal de enfermería en campo •
-          <span class="district-highlight">{{ usuarioEnlace?.distrito || 'DISTRITO 03 • LEÓN' }}</span>
-        </p>
+        <div>
+          <h1>Panel de Control y Supervisión</h1>
+          <p class="header-subtitle">
+            Administración territorial del personal de enfermería en campo • {{ usuarioEnlace?.distrito || 'DISTRITO 03 • LEÓN' }}
+          </p>
+        </div>
       </div>
 
-      <div class="hero-right">
-        <div class="user-supervisor-card">
-          <div class="supervisor-avatar">
-            <i class="fas fa-user-tie"></i>
-          </div>
-          <div class="supervisor-info">
-            <span class="supervisor-label">Coordinadora / Enlace</span>
-            <span class="supervisor-name">
-              {{ usuarioEnlace?.nombre }} {{ usuarioEnlace?.apellidoPaterno }} {{ usuarioEnlace?.apellidoMaterno }}
-            </span>
-            <span class="supervisor-id">ID Usuario: {{ usuarioEnlace?.username || 'enlace3' }} • Tel: {{ usuarioEnlace?.telefono || '477 276 3103' }}</span>
-          </div>
+      <div class="header-badges-and-actions">
+        <div class="header-quick-badges">
+          <span class="header-pill pill-supervisor">
+            <i class="fas fa-user-shield"></i>
+            <span>{{ usuarioEnlace?.nombre }} {{ usuarioEnlace?.apellidoPaterno }} (Tel: {{ usuarioEnlace?.telefono || '477 276 3103' }})</span>
+          </span>
+          <span class="header-pill pill-distrito">
+            <i class="fas fa-map-location-dot"></i>
+            <span>{{ usuarioEnlace?.distrito || 'DISTRITO 03' }}</span>
+          </span>
         </div>
-        <div class="header-actions">
-          <button class="btn-refresh-enlace" (click)="cargarDatos()" [disabled]="loading" title="Actualizar datos">
-            <i class="fas" [class.fa-sync-alt]="!loading" [class.fa-spinner]="loading" [class.fa-spin]="loading"></i>
-            <span>{{ loading ? 'Actualizando...' : 'Actualizar Monitor' }}</span>
-          </button>
-        </div>
+
+        <button class="btn-header-refresh" (click)="cargarDatos()" [disabled]="loading" title="Actualizar datos">
+          <i class="fas fa-rotate" [class.fa-spin]="loading"></i>
+          <span>{{ loading ? 'Actualizando...' : 'Actualizar' }}</span>
+        </button>
       </div>
     </div>
-
-    <!-- TABS DE NAVEGACIÓN SUPERIOR DEL ROL ENLACE -->
-    <nav class="enlace-nav-tabs">
-      <button class="nav-tab active" (click)="navegarA('/enlace/dashboard')">
-        <i class="fas fa-chart-line"></i>
-        <span>Panel General</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/enfermeras')">
-        <i class="fas fa-user-nurse"></i>
-        <span>Enfermeras</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/rendimiento')">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Rendimientos</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/pacientes')">
-        <i class="fas fa-users-medical"></i>
-        <span>Padrón de Pacientes</span>
-      </button>
-      <button class="nav-tab" (click)="navegarA('/enlace/incidencias')">
-        <i class="fas fa-triangle-exclamation"></i>
-        <span>Incidencias (6)</span>
-      </button>
-      <button class="nav-tab map-tab" (click)="navegarA('/dashboard')">
-        <i class="fas fa-map-location-dot"></i>
-        <span>Mapa Operativo</span>
-      </button>
-    </nav>
   </header>
 
   <!-- CONTENIDO PRINCIPAL -->
-  <main class="enlace-main-body">
+  <main class="content-wrapper">
 
     <!-- KPI SUMMARY CARDS -->
     <section class="kpi-grid">

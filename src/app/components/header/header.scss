@@ -608,6 +608,29 @@ $border-color: #EBDCD5;
         transform: translateX(3px);
       }
     }
+
+    &.active {
+      background: #FFFFFF;
+      border-color: #7A192B;
+      box-shadow: 0 4px 14px rgba(122, 25, 43, 0.16);
+      transform: translateX(3px);
+
+      &::before {
+        transform: scaleY(1);
+        background: #7A192B;
+        width: 4px;
+      }
+
+      .module-title {
+        color: #7A192B;
+        font-weight: 900;
+      }
+
+      .arrow-icon {
+        color: #7A192B;
+        transform: translateX(2px);
+      }
+    }
   }
 }
 
