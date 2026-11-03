@@ -525,9 +525,25 @@ export class EnlaceService {
 
   private formatearPaciente(p: any, idEnfermera: number): any {
     const enf = this.enfermerasBase.find(e => e.id === idEnfermera);
+    const nom = (p.nombre || '').trim();
+    const apP = (p.apellidoPaterno || p.apellido_paterno || '').trim();
+    const apM = (p.apellidoMaterno || p.apellido_materno || '').trim();
+    let nomCompleto = nom;
+    if (nom) {
+      const nUpper = nom.toUpperCase();
+      const contieneP = apP && nUpper.includes(apP.toUpperCase());
+      const contieneM = apM && nUpper.includes(apM.toUpperCase());
+      const partes = [nom];
+      if (apP && !contieneP) partes.push(apP);
+      if (apM && !contieneM) partes.push(apM);
+      nomCompleto = partes.filter(Boolean).join(' ').trim();
+    } else {
+      nomCompleto = `${apP} ${apM}`.trim() || 'Nombre no disponible';
+    }
+
     return {
       ...p,
-      nombreCompleto: `${p.nombre || ''} ${p.apellidoPaterno || p.apellido_paterno || ''} ${p.apellidoMaterno || p.apellido_materno || ''}`.trim(),
+      nombreCompleto: nomCompleto,
       enfermeraId: idEnfermera,
       enfermeraNombre: enf?.nombre_completo || `Enfermera #${idEnfermera}`,
       enfermeraZona: enf?.zona || p.zonaTrabajo || p.zona_trabajo || 'Zona asignada',

@@ -150,11 +150,33 @@ export class PacientesMapService {
     }
 
     private construirNombreCompleto(paciente: any): string {
-        const partes = [];
-        if (paciente.apellidoPaterno) partes.push(paciente.apellidoPaterno);
-        if (paciente.apellidoMaterno) partes.push(paciente.apellidoMaterno);
-        if (paciente.nombre) partes.push(paciente.nombre);
-        return partes.length > 0 ? partes.join(' ').trim() : 'Nombre no disponible';
+        if (!paciente) return 'Nombre no disponible';
+        const nomCompleto = (paciente.nombreCompleto || paciente.nombre_completo || '').trim();
+        if (nomCompleto.length > 3) return nomCompleto;
+
+        const nom = (paciente.nombre || paciente.nombres || '').trim();
+        const apP = (paciente.apellidoPaterno || paciente.apellido_paterno || paciente.apPaterno || paciente.paterno || paciente.apellido || '').trim();
+        const apM = (paciente.apellidoMaterno || paciente.apellido_materno || paciente.apMaterno || paciente.materno || '').trim();
+
+        if (nom) {
+            const nUpper = nom.toUpperCase();
+            const pUpper = apP.toUpperCase();
+            const mUpper = apM.toUpperCase();
+
+            const contieneP = apP && nUpper.includes(pUpper);
+            const contieneM = apM && nUpper.includes(mUpper);
+
+            if (contieneP && contieneM) return nom;
+            if (contieneP && !apM) return nom;
+
+            const partes = [nom];
+            if (apP && !contieneP) partes.push(apP);
+            if (apM && !contieneM) partes.push(apM);
+            return partes.filter(Boolean).join(' ').trim();
+        }
+
+        if (apP || apM) return `${apP} ${apM}`.trim();
+        return 'Nombre no disponible';
     }
 
     private extraerSeccion(zonaTrabajo: string): string {

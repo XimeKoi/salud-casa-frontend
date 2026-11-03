@@ -223,7 +223,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
         let pLat = (lat !== undefined && lat !== null && lat !== 0 && lat !== '0') ? Number(lat) : (p?.lat ? Number(p.lat) : 0);
         let pLng = (lng !== undefined && lng !== null && lng !== 0 && lng !== '0') ? Number(lng) : (p?.lng ? Number(p.lng) : 0);
-        let pNom = (p as any)?.nombreCompleto || p?.nombre || 'Paciente #' + idNum;
+        let pNom = this.construirNombreCompletoPaciente(p);
+        if (!pNom || pNom === 'Nombre no disponible') {
+          pNom = (p as any)?.nombreCompleto || p?.nombre || 'Paciente #' + idNum;
+        }
         let pDir = p?.direccion || '';
         let pCol = p?.colonia || '';
 
@@ -435,7 +438,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           const marker: any = this.marcadoresPacientes.find((m: any) => Number(m._pacienteId) === pacId);
           if (marker) {
             const color = this.obtenerColorPaciente(pacObj);
-            const nombreCompleto = pacObj.nombre || 'Nombre no disponible';
+            const nombreCompleto = this.construirNombreCompletoPaciente(pacObj);
             const direccionLimpia = this.limpiarDireccion(pacObj.direccion || '');
             const coloniaMostrar = this.obtenerColonia(pacObj.direccion || '', pacObj.colonia || '');
             const estatusLower = nuevoEstatus.toLowerCase();
@@ -1921,6 +1924,56 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     return uniqueTokens.join(' ');
   }
 
+  // ⭐ CONSTRUIR NOMBRE COMPLETO CON NOMBRES Y AMBOS APELLIDOS SIN DUPLICADOS ⭐
+  construirNombreCompletoPaciente(paciente: any): string {
+    if (!paciente) return 'Nombre no disponible';
+
+    // 1. Si ya tiene un nombreCompleto o nombre_completo explícito
+    const nomCompletoExplicito = (paciente.nombreCompleto || paciente.nombre_completo || '').trim();
+    if (nomCompletoExplicito.length > 3) {
+      return this.limpiarNombreDuplicado(
+        nomCompletoExplicito,
+        paciente.apellidoPaterno || paciente.apellido_paterno || paciente.apPaterno || paciente.paterno || paciente.apellido,
+        paciente.apellidoMaterno || paciente.apellido_materno || paciente.apMaterno || paciente.materno || paciente['apellido_1'] || paciente['apellido1']
+      );
+    }
+
+    const nom = (paciente.nombre || paciente.nombres || '').trim();
+    const apP = (paciente.apellidoPaterno || paciente.apellido_paterno || paciente.apPaterno || paciente.paterno || paciente.apellido || '').trim();
+    const apM = (paciente.apellidoMaterno || paciente.apellido_materno || paciente.apMaterno || paciente.materno || paciente['apellido_1'] || paciente['apellido1'] || '').trim();
+
+    if (nom) {
+      const nUpper = nom.toUpperCase();
+      const pUpper = apP.toUpperCase();
+      const mUpper = apM.toUpperCase();
+
+      const contieneP = apP && nUpper.includes(pUpper);
+      const contieneM = apM && nUpper.includes(mUpper);
+
+      // Si nom ya contiene ambos apellidos
+      if (contieneP && contieneM) {
+        return this.limpiarNombreDuplicado(nom, apP, apM);
+      }
+      if (contieneP && !apM) {
+        return this.limpiarNombreDuplicado(nom, apP);
+      }
+
+      // Concatenar nombre + apellidos faltantes (NOMBRE APELLIDO_P APELLIDO_M)
+      const partes = [nom];
+      if (apP && !contieneP) partes.push(apP);
+      if (apM && !contieneM) partes.push(apM);
+
+      const nombreUnido = partes.filter(Boolean).join(' ').trim();
+      return this.limpiarNombreDuplicado(nombreUnido, apP, apM);
+    }
+
+    if (apP || apM) {
+      return `${apP} ${apM}`.trim();
+    }
+
+    return 'Nombre no disponible';
+  }
+
   // ⭐⭐⭐ POPUP - GENERAR HTML CON DISEÑO PREMIUM ⭐⭐⭐
   private generarPopupHTML(paciente: any, color: string, estatusLower: string, nombreCompleto: string, direccionLimpia: string, coloniaMostrar: string): string {
     const programaUpper = (paciente.programa || '').toUpperCase();
@@ -1965,7 +2018,15 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       st = { bg: '#F1F5F9', color: '#475569', dot: '#64748B', icon: 'fa-skull', text: 'Finado' };
     }
 
-    const nombreLimpio = this.limpiarNombreDuplicado(nombreCompleto, paciente.apellidoPaterno, paciente.apellidoMaterno);
+    const nombreCompletoCalculado = this.construirNombreCompletoPaciente(paciente);
+    const nombreBase = (nombreCompletoCalculado && nombreCompletoCalculado !== 'Nombre no disponible')
+      ? nombreCompletoCalculado
+      : (nombreCompleto || 'Nombre no disponible');
+    const nombreLimpio = this.limpiarNombreDuplicado(
+      nombreBase,
+      paciente.apellidoPaterno || paciente.apellido_paterno || paciente.apPaterno || paciente.paterno || paciente.apellido,
+      paciente.apellidoMaterno || paciente.apellido_materno || paciente.apMaterno || paciente.materno || paciente['apellido_1'] || paciente['apellido1']
+    );
     const partesNombre = nombreLimpio.split(' ').filter(Boolean);
     let iniciales = 'CU';
     if (partesNombre.length >= 2) {
@@ -1991,7 +2052,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     const tieneCoords = paciente.lat && paciente.lng && paciente.lat !== 0 && paciente.lng !== 0;
     const urlRuta = tieneCoords
       ? `https://www.google.com/maps/dir/?api=1&destination=${paciente.lat},${paciente.lng}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((paciente.direccion || paciente.nombre) + ', León, Gto')}`;
+      : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((paciente.direccion || nombreLimpio) + ', León, Gto')}`;
 
     const estaEnPlan = this.visitasHoyService.estaEnPlanHoy(paciente.id);
 
@@ -2014,7 +2075,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         <div class="cp-profile">
           <div class="cp-avatar">${iniciales}</div>
           <div class="cp-profile-info">
-            <h4 class="cp-name" title="${nombreEscapado}">${nombreCompleto}</h4>
+            <h4 class="cp-name" title="${nombreEscapado}">${nombreLimpio}</h4>
             <div class="cp-status-pill" style="background: ${st.bg}; color: ${st.color};">
               <span class="cp-dot" style="background: ${st.dot};"></span>
               <i class="fas ${st.icon}"></i>
@@ -2628,7 +2689,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       const colorForPopup = this.obtenerColorPaciente(paciente);
-      const nombreCompleto = paciente.nombre || 'Nombre no disponible';
+      const nombreCompleto = this.construirNombreCompletoPaciente(paciente);
       const direccionLimpia = this.limpiarDireccion(paciente.direccion || '');
       const coloniaMostrar = this.obtenerColonia(paciente.direccion || '', paciente.colonia || '');
 
@@ -2990,7 +3051,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     marker.setIcon(newIcon);
     marker.setZIndexOffset(estaEnPlan ? 600 : 100);
 
-    const nombreCompleto = pacienteObj.nombre || 'Nombre no disponible';
+    const nombreCompleto = this.construirNombreCompletoPaciente(pacienteObj);
     const direccionLimpia = this.limpiarDireccion(pacienteObj.direccion || '');
     const coloniaMostrar = this.obtenerColonia(pacienteObj.direccion || '', pacienteObj.colonia || '');
     const estatusLower = (pacienteObj.estatus || '').toLowerCase();
@@ -3044,7 +3105,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       marker.setIcon(newIcon);
       marker.setZIndexOffset(estaEnPlan ? 600 : 100);
 
-      const nombreCompleto = pacienteObj.nombre || 'Nombre no disponible';
+      const nombreCompleto = this.construirNombreCompletoPaciente(pacienteObj);
       const direccionLimpia = this.limpiarDireccion(pacienteObj.direccion || '');
       const coloniaMostrar = this.obtenerColonia(pacienteObj.direccion || '', pacienteObj.colonia || '');
       const estatusLower = (pacienteObj.estatus || '').toLowerCase();

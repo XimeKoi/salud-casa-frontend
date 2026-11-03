@@ -510,15 +510,33 @@ export class PacientesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private construirNombreCompleto(paciente: any): string {
-    const apellidoPaterno = paciente.apellidoPaterno || paciente.paterno || '';
-    const apellidoMaterno = paciente.apellidoMaterno || paciente.materno || '';
-    const nombres = paciente.nombre || paciente.nombres || '';
-    const partes = [];
-    if (apellidoPaterno) partes.push(apellidoPaterno);
-    if (apellidoMaterno) partes.push(apellidoMaterno);
-    if (nombres) partes.push(nombres);
-    if (partes.length === 0) return paciente.nombreCompleto || 'Nombre no disponible';
-    return partes.join(' ').trim();
+    if (!paciente) return 'Nombre no disponible';
+    const nomCompleto = (paciente.nombreCompleto || paciente.nombre_completo || '').trim();
+    if (nomCompleto.length > 3) return nomCompleto;
+
+    const nom = (paciente.nombre || paciente.nombres || '').trim();
+    const apP = (paciente.apellidoPaterno || paciente.apellido_paterno || paciente.paterno || paciente.apellido || '').trim();
+    const apM = (paciente.apellidoMaterno || paciente.apellido_materno || paciente.materno || '').trim();
+
+    if (nom) {
+      const nUpper = nom.toUpperCase();
+      const pUpper = apP.toUpperCase();
+      const mUpper = apM.toUpperCase();
+
+      const contieneP = apP && nUpper.includes(pUpper);
+      const contieneM = apM && nUpper.includes(mUpper);
+
+      if (contieneP && contieneM) return nom;
+      if (contieneP && !apM) return nom;
+
+      const partes = [nom];
+      if (apP && !contieneP) partes.push(apP);
+      if (apM && !contieneM) partes.push(apM);
+      return partes.filter(Boolean).join(' ').trim();
+    }
+
+    if (apP || apM) return `${apP} ${apM}`.trim();
+    return 'Nombre no disponible';
   }
 
   private extraerColonia(direccion: string, coloniaOriginal?: string): string {

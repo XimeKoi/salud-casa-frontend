@@ -580,7 +580,7 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
                 <i class="fas fa-user"></i>
               </div>
               <div style="flex: 1; min-width: 0;">
-                <div style="font-weight: 700; font-size: 13px; color: #701f2f; line-height: 1.2;">${paciente.nombre || 'Nombre no disponible'}</div>
+                <div style="font-weight: 700; font-size: 13px; color: #701f2f; line-height: 1.25; word-break: break-word;">${this.construirNombreCompletoPaciente(paciente)}</div>
                 <div style="font-size: 10px; color: #999;">
                   ${paciente.programa || 'Sin programa'} ${paciente.seccion ? '· Sec: ' + paciente.seccion : ''}
                 </div>
@@ -873,6 +873,36 @@ export class InfoPanelComponent implements OnInit, OnDestroy {
     } else {
       console.log(`📢 ${titulo}: ${mensaje}`);
     }
+  }
+
+  construirNombreCompletoPaciente(paciente: any): string {
+    if (!paciente) return 'Nombre no disponible';
+    const nomCompleto = (paciente.nombreCompleto || paciente.nombre_completo || '').trim();
+    if (nomCompleto.length > 3) return nomCompleto;
+
+    const nom = (paciente.nombre || paciente.nombres || '').trim();
+    const apP = (paciente.apellidoPaterno || paciente.apellido_paterno || paciente.apPaterno || paciente.paterno || paciente.apellido || '').trim();
+    const apM = (paciente.apellidoMaterno || paciente.apellido_materno || paciente.apMaterno || paciente.materno || paciente['apellido_1'] || paciente['apellido1'] || '').trim();
+
+    if (nom) {
+      const nUpper = nom.toUpperCase();
+      const pUpper = apP.toUpperCase();
+      const mUpper = apM.toUpperCase();
+
+      const contieneP = apP && nUpper.includes(pUpper);
+      const contieneM = apM && nUpper.includes(mUpper);
+
+      if (contieneP && contieneM) return nom;
+      if (contieneP && !apM) return nom;
+
+      const partes = [nom];
+      if (apP && !contieneP) partes.push(apP);
+      if (apM && !contieneM) partes.push(apM);
+      return partes.filter(Boolean).join(' ').trim();
+    }
+
+    if (apP || apM) return `${apP} ${apM}`.trim();
+    return 'Nombre no disponible';
   }
 
   ngOnDestroy() {
