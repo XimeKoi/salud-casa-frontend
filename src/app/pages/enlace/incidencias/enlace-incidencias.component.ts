@@ -21,6 +21,11 @@ export class EnlaceIncidenciasComponent implements OnInit {
   enfermeras: EnfermeraResumen[] = [];
   loading: boolean = true;
 
+  // Paginación y contadores
+  paginaActual: number = 1;
+  pageSize: number = 9;
+  Math = Math;
+
   // Filtros
   searchTerm: string = '';
   filtroEnfermera: string = 'todas';
@@ -64,6 +69,7 @@ export class EnlaceIncidenciasComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
+    this.paginaActual = 1;
     const term = (this.searchTerm || '').trim().toLowerCase();
 
     this.incidenciasFiltradas = this.incidencias.filter(inc => {
@@ -88,6 +94,40 @@ export class EnlaceIncidenciasComponent implements OnInit {
 
       return matchText && matchEnf && matchTipo && matchEstado;
     });
+  }
+
+  get totalRecibidas(): number {
+    return this.incidencias.filter(i => (i.estado || '').toLowerCase() === 'recibida' || (!i.resuelta && !i.estado)).length;
+  }
+
+  get totalEnProceso(): number {
+    return this.incidencias.filter(i => (i.estado || '').toLowerCase() === 'en proceso' || (i.estado || '').toLowerCase() === 'en_proceso').length;
+  }
+
+  get totalResueltas(): number {
+    return this.incidencias.filter(i => i.resuelta || (i.estado || '').toLowerCase() === 'resuelta').length;
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.incidenciasFiltradas.length / this.pageSize) || 1;
+  }
+
+  get incidenciasPaginadas(): IncidenciaEnlace[] {
+    const start = (this.paginaActual - 1) * this.pageSize;
+    return this.incidenciasFiltradas.slice(start, start + this.pageSize);
+  }
+
+  get paginasArray(): number[] {
+    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarPagina(pag: number): void {
+    if (pag >= 1 && pag <= this.totalPaginas) {
+      this.paginaActual = pag;
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
   }
 
   abrirFoto(fotoUrl: string): void {

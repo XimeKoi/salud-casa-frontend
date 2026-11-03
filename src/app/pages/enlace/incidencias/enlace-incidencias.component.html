@@ -106,10 +106,10 @@
         <div class="filter-item">
           <label class="f-label">Estado:</label>
           <div class="status-pills">
-            <button class="s-pill" [class.active]="filtroEstado === 'todos'" (click)="filtroEstado = 'todos'; aplicarFiltros()">Todos</button>
-            <button class="s-pill recibida" [class.active]="filtroEstado === 'recibida'" (click)="filtroEstado = 'recibida'; aplicarFiltros()">Recibidas</button>
-            <button class="s-pill proceso" [class.active]="filtroEstado === 'en proceso'" (click)="filtroEstado = 'en proceso'; aplicarFiltros()">En Proceso</button>
-            <button class="s-pill done" [class.active]="filtroEstado === 'resuelta'" (click)="filtroEstado = 'resuelta'; aplicarFiltros()">Resueltas</button>
+            <button class="s-pill" [class.active]="filtroEstado === 'todos'" (click)="filtroEstado = 'todos'; aplicarFiltros()">Todos ({{ incidencias.length }})</button>
+            <button class="s-pill recibida" [class.active]="filtroEstado === 'recibida'" (click)="filtroEstado = 'recibida'; aplicarFiltros()">Recibidas ({{ totalRecibidas }})</button>
+            <button class="s-pill proceso" [class.active]="filtroEstado === 'en proceso'" (click)="filtroEstado = 'en proceso'; aplicarFiltros()">En Proceso ({{ totalEnProceso }})</button>
+            <button class="s-pill done" [class.active]="filtroEstado === 'resuelta'" (click)="filtroEstado = 'resuelta'; aplicarFiltros()">Resueltas ({{ totalResueltas }})</button>
           </div>
         </div>
 
@@ -118,6 +118,27 @@
         </div>
       </div>
     </section>
+    <!-- BARRA DE PAGINACIÓN DE INCIDENCIAS -->
+    <div class="pagination-bar" *ngIf="!loading && incidenciasFiltradas.length > pageSize">
+      <div class="pagination-info">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }}</strong> - <strong>{{ Math.min(paginaActual * pageSize, incidenciasFiltradas.length) }}</strong> de <strong>{{ incidenciasFiltradas.length }}</strong> incidencias</span>
+      </div>
+      <div class="pagination-controls">
+        <button class="btn-page" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">
+          <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <div class="page-numbers">
+          <button *ngFor="let p of paginasArray" class="btn-page-num" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
+            {{ p }}
+          </button>
+        </div>
+        <button class="btn-page" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">
+          Siguiente <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
 
     <!-- LOADING -->
     <div class="loading-state" *ngIf="loading">
@@ -127,7 +148,7 @@
 
     <!-- GRID DE INCIDENCIAS -->
     <section class="incidents-grid" *ngIf="!loading">
-      <div class="incident-card" *ngFor="let inc of incidenciasFiltradas">
+      <div class="incident-card" *ngFor="let inc of incidenciasPaginadas">
         
         <!-- CABECERA DE LA INCIDENCIA -->
         <div class="inc-card-head">

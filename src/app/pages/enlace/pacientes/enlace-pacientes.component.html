@@ -90,6 +90,39 @@
         </button>
       </div>
     </section>
+    <!-- BARRA DE PAGINACIÓN DE PACIENTES -->
+    <div class="pagination-bar" *ngIf="!loading && pacientesFiltrados.length > 0">
+      <div class="pagination-info">
+        <i class="fas fa-users-medical"></i>
+        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }}</strong> - <strong>{{ Math.min(paginaActual * pageSize, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length }}</strong> pacientes</span>
+      </div>
+
+      <div class="pagination-controls-wrap">
+        <div class="page-size-picker">
+          <label class="size-lbl">Por página:</label>
+          <div class="size-buttons">
+            <button *ngFor="let s of pageSizes" class="btn-size" [class.active]="s === pageSize" (click)="cambiarPageSize(s)">
+              {{ s }}
+            </button>
+          </div>
+        </div>
+
+        <div class="pagination-buttons">
+          <button class="btn-page" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1" title="Página anterior">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="page-nums">
+            <button *ngFor="let p of paginasVisibles" class="btn-num" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
+              {{ p }}
+            </button>
+          </div>
+          <button class="btn-page" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas" title="Página siguiente">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- BANNER DE LA ENFERMERA SELECCIONADA -->
     <div class="active-nurse-banner" *ngIf="enfermeraActual">
@@ -171,7 +204,7 @@
     </div>
 
     <section class="patients-grid" *ngIf="!loading">
-      <div class="patient-card" *ngFor="let p of pacientesFiltrados" (click)="verDetallePaciente(p)">
+      <div class="patient-card" *ngFor="let p of pacientesPaginados" (click)="verDetallePaciente(p)">
         
         <!-- CABECERA DE PACIENTE -->
         <div class="patient-card-top">

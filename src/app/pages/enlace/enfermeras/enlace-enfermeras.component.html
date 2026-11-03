@@ -90,10 +90,31 @@
         </div>
       </div>
     </section>
+    <!-- BARRA DE PAGINACIÓN DE ENFERMERAS -->
+    <div class="pagination-bar" *ngIf="!loading && enfermerasFiltradas.length > pageSize">
+      <div class="pagination-info">
+        <i class="fas fa-user-nurse"></i>
+        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }}</strong> - <strong>{{ Math.min(paginaActual * pageSize, enfermerasFiltradas.length) }}</strong> de <strong>{{ enfermerasFiltradas.length }}</strong> enfermeras</span>
+      </div>
+      <div class="pagination-controls">
+        <button class="btn-page" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">
+          <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <div class="page-numbers">
+          <button *ngFor="let p of paginasArray" class="btn-page-num" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
+            {{ p }}
+          </button>
+        </div>
+        <button class="btn-page" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">
+          Siguiente <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
 
     <!-- GRID DE TARJETAS DE ENFERMERAS -->
     <section class="nurses-cards-grid" *ngIf="!loading">
-      <div class="nurse-card" *ngFor="let enf of enfermerasFiltradas">
+      <div class="nurse-card" *ngFor="let enf of enfermerasPaginadas">
         
         <!-- CABECERA DE LA TARJETA -->
         <div class="card-head">

@@ -161,7 +161,7 @@
           </div>
 
           <!-- Cuerpo de la notificación -->
-          <div class="card-main" (click)="toggleLeida(notificacion)">
+          <div class="card-main" (click)="abrirNotificacion(notificacion)">
             <div class="card-header-row">
               <div class="card-title-group">
                 <span class="badge-category" [class]="'cat-' + notificacion.tipo">
@@ -187,6 +187,9 @@
               <span class="badge-read-status" [class.is-read]="notificacion.leida">
                 <i class="fas" [class.fa-check]="notificacion.leida" [class.fa-envelope]="!notificacion.leida"></i>
                 {{ notificacion.leida ? 'Leída' : 'Nueva' }}
+              <a *ngIf="notificacion.url" [routerLink]="notificacion.url" class="btn-notif-action" (click)="$event.stopPropagation()">
+                <i class="fas fa-arrow-up-right-from-square"></i> Ver / Resolver
+              </a>
               </span>
             </div>
           </div>

@@ -21,6 +21,11 @@ export class EnlaceEnfermerasComponent implements OnInit {
   searchTerm: string = '';
   filtroZs: string = 'todas';
 
+  // Paginación
+  paginaActual: number = 1;
+  pageSize: number = 6;
+  Math = Math;
+
   // Modal de Expediente de Enfermera
   enfermeraSeleccionada: EnfermeraResumen | null = null;
   mostrarModalExpediente: boolean = false;
@@ -49,6 +54,7 @@ export class EnlaceEnfermerasComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
+    this.paginaActual = 1;
     const term = (this.searchTerm || '').trim().toLowerCase();
     this.enfermerasFiltradas = this.enfermeras.filter(enf => {
       // Filtro de texto
@@ -88,6 +94,28 @@ export class EnlaceEnfermerasComponent implements OnInit {
 
   navegarA(ruta: string): void {
     this.router.navigate([ruta]);
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.enfermerasFiltradas.length / this.pageSize) || 1;
+  }
+
+  get enfermerasPaginadas(): EnfermeraResumen[] {
+    const start = (this.paginaActual - 1) * this.pageSize;
+    return this.enfermerasFiltradas.slice(start, start + this.pageSize);
+  }
+
+  get paginasArray(): number[] {
+    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarPagina(pag: number): void {
+    if (pag >= 1 && pag <= this.totalPaginas) {
+      this.paginaActual = pag;
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
   }
 
   getIniciales(nombre: string): string {

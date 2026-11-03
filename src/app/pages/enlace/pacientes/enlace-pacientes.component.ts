@@ -23,6 +23,12 @@ export class EnlacePacientesComponent implements OnInit {
   pacientesFiltrados: any[] = [];
   loading: boolean = true;
 
+  // Paginación
+  paginaActual: number = 1;
+  pageSize: number = 12;
+  pageSizes: number[] = [12, 24, 48];
+  Math = Math;
+
   // Filtros
   searchTerm: string = '';
   filtroPrograma: string = 'todos'; // todos | PAM | PCD
@@ -89,6 +95,7 @@ export class EnlacePacientesComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
+    this.paginaActual = 1;
     const term = (this.searchTerm || '').trim().toLowerCase();
 
     this.pacientesFiltrados = this.todosLosPacientes.filter(p => {
@@ -113,6 +120,43 @@ export class EnlacePacientesComponent implements OnInit {
 
       return matchText && matchProg && matchEst;
     });
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.pacientesFiltrados.length / this.pageSize) || 1;
+  }
+
+  get pacientesPaginados(): any[] {
+    const start = (this.paginaActual - 1) * this.pageSize;
+    return this.pacientesFiltrados.slice(start, start + this.pageSize);
+  }
+
+  cambiarPageSize(size: any): void {
+    this.pageSize = Number(size);
+    this.paginaActual = 1;
+  }
+
+  cambiarPagina(pag: number): void {
+    if (pag >= 1 && pag <= this.totalPaginas) {
+      this.paginaActual = pag;
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }
+
+  get paginasVisibles(): number[] {
+    const maxVisible = 5;
+    let start = Math.max(1, this.paginaActual - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPaginas, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    const arr = [];
+    for (let i = start; i <= end; i++) {
+      arr.push(i);
+    }
+    return arr;
   }
 
   get totalPam(): number {

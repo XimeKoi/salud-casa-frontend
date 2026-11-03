@@ -78,7 +78,9 @@
 
   <div class="sidebar-modules-list">
     <ul class="modules-nav-list">
-      <!-- MÓDULOS EXCLUSIVOS DEL ROL ENLACE -->
+      <!-- ============================================ -->
+      <!-- ⭐ VISTA EXCLUSIVA PARA ROL ENLACE (SUPERVISOR) -->
+      <!-- ============================================ -->
       <ng-container *ngIf="isEnlace">
         <li (click)="navigateTo('enlace-dashboard')" class="nav-module-item item-enlace">
           <div class="icon-bubble icon-enlace">
@@ -86,7 +88,7 @@
           </div>
           <div class="module-text-wrap">
             <span class="module-title">Panel de Enlace</span>
-            <span class="module-desc">Supervisión y control global</span>
+            <span class="module-desc">Supervisión y control distrital</span>
           </div>
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
@@ -119,89 +121,139 @@
           </div>
           <div class="module-text-wrap">
             <span class="module-title">Padrón de Pacientes</span>
-            <span class="module-desc">Pacientes por enfermera</span>
+            <span class="module-desc">Consulta por enfermera asignada</span>
           </div>
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
 
         <li (click)="navigateTo('enlace-incidencias')" class="nav-module-item item-enlace">
           <div class="icon-bubble icon-incidents">
-            <i class="fas fa-triangle-exclamation"></i>
+            <i class="fas fa-clipboard-check"></i>
           </div>
           <div class="module-text-wrap">
-            <span class="module-title">Centro de Incidencias</span>
-            <span class="module-desc">Evidencias y reportes</span>
+            <span class="module-title">Resolución de Incidencias</span>
+            <span class="module-desc">Dictamen y atención de reportes</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <li (click)="navigateTo('dashboard')" class="nav-module-item">
+          <div class="icon-bubble icon-map">
+            <i class="fas fa-map-location-dot"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Mapa Operativo</span>
+            <span class="module-desc">Georreferenciación y rutas</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+
+        <li (click)="navigateTo('notificaciones')" class="nav-module-item">
+          <div class="icon-bubble icon-notif">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Notificaciones</span>
+            <span class="module-desc">Alertas de incidencias en campo</span>
+          </div>
+          <span class="badge-side" *ngIf="totalNotificaciones > 0">{{ totalNotificaciones }}</span>
+          <i class="fas fa-chevron-right arrow-icon" *ngIf="!totalNotificaciones"></i>
+        </li>
+
+        <li (click)="navigateTo('perfil')" class="nav-module-item">
+          <div class="icon-bubble icon-user">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Mi Perfil Enlace</span>
+            <span class="module-desc">Datos y credenciales</span>
           </div>
           <i class="fas fa-chevron-right arrow-icon"></i>
         </li>
       </ng-container>
 
-      <li (click)="navigateTo('dashboard')" class="nav-module-item">
-        <div class="icon-bubble icon-map">
-          <i class="fas fa-map-location-dot"></i>
-        </div>
-        <div class="module-text-wrap">
-          <span class="module-title">Mapa Operativo</span>
-          <span class="module-desc">Georreferenciación y rutas</span>
-        </div>
-        <i class="fas fa-chevron-right arrow-icon"></i>
-      </li>
+      <!-- ============================================ -->
+      <!-- ⭐ VISTA EXCLUSIVA PARA ENFERMERA (OPERATIVO COMPLETO) -->
+      <!-- ============================================ -->
+      <ng-container *ngIf="!isEnlace">
+        <li (click)="navigateTo('dashboard')" class="nav-module-item">
+          <div class="icon-bubble icon-map">
+            <i class="fas fa-map-location-dot"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Mapa Operativo</span>
+            <span class="module-desc">Georreferenciación y rutas</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
 
-      <li (click)="navigateTo('dashboard-salud')" class="nav-module-item">
-        <div class="icon-bubble icon-stats">
-          <i class="fas fa-chart-pie"></i>
-        </div>
-        <div class="module-text-wrap">
-          <span class="module-title">Dashboard Salud</span>
-          <span class="module-desc">Métricas y estadísticas</span>
-        </div>
-        <i class="fas fa-chevron-right arrow-icon"></i>
-      </li>
+        <li (click)="navigateTo('dashboard-salud')" class="nav-module-item">
+          <div class="icon-bubble icon-stats">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Dashboard Salud</span>
+            <span class="module-desc">Métricas y estadísticas</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
 
-      <li (click)="navigateTo('pacientes')" class="nav-module-item">
-        <div class="icon-bubble icon-patients">
-          <i class="fas fa-hospital-user"></i>
-        </div>
-        <div class="module-text-wrap">
-          <span class="module-title">Control de Pacientes</span>
-          <span class="module-desc">Expedientes y visitas</span>
-        </div>
-        <i class="fas fa-chevron-right arrow-icon"></i>
-      </li>
+        <li (click)="navigateTo('pacientes')" class="nav-module-item">
+          <div class="icon-bubble icon-patients">
+            <i class="fas fa-hospital-user"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Control de Pacientes</span>
+            <span class="module-desc">Expedientes y visitas</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
 
-      <li (click)="navigateTo('notificaciones')" class="nav-module-item">
-        <div class="icon-bubble icon-notif">
-          <i class="fas fa-bell"></i>
-        </div>
-        <div class="module-text-wrap">
-          <span class="module-title">Notificaciones</span>
-          <span class="module-desc">Avisos y comunicados</span>
-        </div>
-        <span class="badge-side" *ngIf="cantidadNotificaciones > 0">{{ cantidadNotificaciones }}</span>
-        <i class="fas fa-chevron-right arrow-icon" *ngIf="!cantidadNotificaciones"></i>
-      </li>
+        <li (click)="navigateTo('incidencias')" class="nav-module-item">
+          <div class="icon-bubble icon-incidents">
+            <i class="fas fa-shield-heart"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Centro de Incidencias</span>
+            <span class="module-desc">Reportes y evidencias de campo</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
 
-      <li (click)="navigateTo('perfil')" class="nav-module-item">
-        <div class="icon-bubble icon-user">
-          <i class="fas fa-user-doctor"></i>
-        </div>
-        <div class="module-text-wrap">
-          <span class="module-title">Mi Perfil Profesional</span>
-          <span class="module-desc">Datos y credenciales</span>
-        </div>
-        <i class="fas fa-chevron-right arrow-icon"></i>
-      </li>
+        <li (click)="navigateTo('calendario')" class="nav-module-item">
+          <div class="icon-bubble icon-cal">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Calendario de Visitas</span>
+            <span class="module-desc">Agenda y programación</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
 
-      <li (click)="navigateTo('incidencias')" class="nav-module-item">
-        <div class="icon-bubble icon-incidents">
-          <i class="fas fa-shield-heart"></i>
-        </div>
-        <div class="module-text-wrap">
-          <span class="module-title">Centro de Incidencias</span>
-          <span class="module-desc">Reportes y alertas</span>
-        </div>
-        <i class="fas fa-chevron-right arrow-icon"></i>
-      </li>
+        <li (click)="navigateTo('notificaciones')" class="nav-module-item">
+          <div class="icon-bubble icon-notif">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Notificaciones</span>
+            <span class="module-desc">Avisos y comunicados</span>
+          </div>
+          <span class="badge-side" *ngIf="cantidadNotificaciones > 0">{{ cantidadNotificaciones }}</span>
+          <i class="fas fa-chevron-right arrow-icon" *ngIf="!cantidadNotificaciones"></i>
+        </li>
+
+        <li (click)="navigateTo('perfil')" class="nav-module-item">
+          <div class="icon-bubble icon-user">
+            <i class="fas fa-user-doctor"></i>
+          </div>
+          <div class="module-text-wrap">
+            <span class="module-title">Mi Perfil Profesional</span>
+            <span class="module-desc">Datos y credenciales</span>
+          </div>
+          <i class="fas fa-chevron-right arrow-icon"></i>
+        </li>
+      </ng-container>
     </ul>
   </div>
 

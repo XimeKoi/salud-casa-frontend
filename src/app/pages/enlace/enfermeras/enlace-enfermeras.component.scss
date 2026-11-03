@@ -802,3 +802,100 @@ $gold-light: #fef08a;
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+// ============================================
+// BARRA DE PAGINACIÓN DE ENFERMERAS
+// ============================================
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1.5px solid #ebd9cc;
+  box-shadow: 0 4px 16px rgba(91, 28, 36, 0.06);
+  margin-top: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #5B1C24;
+    font-weight: 600;
+
+    i { color: #D4AF37; }
+    strong { color: #7E101F; }
+  }
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .btn-page {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #ebd9cc;
+      background: #faf7f4;
+      color: #5B1C24;
+      font-size: 12.5px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: #7E101F;
+        border-color: #7E101F;
+        color: #ffffff;
+        transform: translateY(-1px);
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    }
+
+    .page-numbers {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      .btn-page-num {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        border: 1.5px solid transparent;
+        background: transparent;
+        color: #5B1C24;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #f5ebe6;
+          border-color: #ebd9cc;
+        }
+
+        &.active {
+          background: linear-gradient(135deg, #7E101F 0%, #5B1C24 100%);
+          color: #ffffff;
+          box-shadow: 0 3px 10px rgba(126, 16, 31, 0.3);
+          border-color: #D4AF37;
+        }
+      }
+    }
+  }
+}

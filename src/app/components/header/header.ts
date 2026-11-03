@@ -120,6 +120,23 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.menuService.cerrarMenu();
   }
 
+  get totalNotificaciones(): number {
+    if (this.isEnlace) {
+      try {
+        const raw = localStorage.getItem('incidencias');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            const pendientes = list.filter((i: any) => !i.resuelta && i.estado !== 'resuelta');
+            return pendientes.length;
+          }
+        }
+      } catch (e) {}
+      return 5;
+    }
+    return this.cantidadNotificaciones;
+  }
+
   get isEnlace(): boolean {
     try {
       const rol = localStorage.getItem('rol');
@@ -157,6 +174,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
         break;
       case 'dashboard-salud':
         this.router.navigate(['/dashboard-salud']);
+        break;
+      case 'calendario':
+        this.router.navigate(['/calendario']);
         break;
       case 'notificaciones':
         this.router.navigate(['/notificaciones']);

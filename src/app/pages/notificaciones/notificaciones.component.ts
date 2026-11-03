@@ -3,9 +3,10 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { NotificacionesService, Notificacion } from '../../services/notificaciones.service';
-import { Subscription } from 'rxjs';
+import { EnlaceService } from '../../services/enlace.service';
+import { Subscription, forkJoin, of, catchError } from 'rxjs';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 
@@ -49,6 +50,8 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
 
   constructor(
     private notificacionesService: NotificacionesService,
+    private enlaceService: EnlaceService,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) {
     console.log('🌍 [Notificaciones] API URL:', this.apiUrl);
@@ -61,6 +64,43 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   ngAfterViewInit() { }
+
+  get isEnlace(): boolean {
+    try {
+      const rol = localStorage.getItem('rol');
+      if (rol === 'enlace' || rol === 'distrital' || rol === 'admin') return true;
+      const userStr = localStorage.getItem('userData');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        return u.role === 'enlace' || u.role === 'distrital' || u.role === 'admin';
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  formatearTipoIncidencia(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'no_localizado': 'No Localizado',
+      'cambio_domicilio': 'Cambio de Domicilio',
+      'fallecimiento': 'Defunción / Finado',
+      'rechazo': 'Rechazo del Programa',
+      'zona_insegura': 'Zona de Riesgo',
+      'paciente_hospitalizado': 'Hospitalizado',
+      'error_datos': 'Inconsistencia de Datos',
+      'agresion': 'Agresión Reportada',
+      'otro': 'Otro Evento'
+    };
+    return tipos[tipo] || tipo || 'Reporte de Campo';
+  }
+
+  abrirNotificacion(notificacion: Notificacion): void {
+    if (!notificacion.leida) {
+      this.toggleLeida(notificacion);
+    }
+    if (notificacion.url) {
+      this.router.navigate([notificacion.url]);
+    }
+  }
 
   get todasSeleccionadas(): boolean {
     return this.notificacionesPaginadas.length > 0 &&
@@ -103,34 +143,60 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     this.paginaActual = 1;
     this.todasLasNotificaciones = [];
 
-    this.notificacionesService.obtenerNotificaciones().subscribe({
-      next: (response: any) => {
-        let data: Notificacion[] = [];
+    const notifs$ = this.notificacionesService.obtenerNotificaciones().pipe(
+      catchError(err => {
+        console.warn('Error al obtener notificaciones generales:', err);
+        return of([]);
+      })
+    );
 
-        if (response && response.data && Array.isArray(response.data)) {
-          data = response.data;
-        } else if (Array.isArray(response)) {
-          data = response;
+    const inc$ = this.isEnlace
+      ? this.enlaceService.getIncidencias().pipe(
+          catchError(err => {
+            console.warn('Error al obtener incidencias para enlace:', err);
+            return of([]);
+          })
+        )
+      : of([]);
+
+    forkJoin({ notifs: notifs$, incidencias: inc$ }).subscribe({
+      next: (res: any) => {
+        let generalData: Notificacion[] = [];
+        if (res.notifs && res.notifs.data && Array.isArray(res.notifs.data)) {
+          generalData = res.notifs.data;
+        } else if (Array.isArray(res.notifs)) {
+          generalData = res.notifs;
         }
 
-        console.log('📊 Notificaciones recibidas:', data?.length || 0);
-
-        if (data && data.length > 0) {
-          this.todasLasNotificaciones = data;
-          this.totalItems = data.length;
-          localStorage.setItem('notificacionesCache', JSON.stringify(data));
-        } else {
-          this.todasLasNotificaciones = [];
-          this.notificaciones = [];
-          this.totalItems = 0;
+        let enlaceData: Notificacion[] = [];
+        if (this.isEnlace && Array.isArray(res.incidencias)) {
+          enlaceData = res.incidencias.map((inc: any) => ({
+            id: 880000 + Number(inc.id || 0),
+            titulo: 'Incidencia en Campo: ' + this.formatearTipoIncidencia(inc.tipo),
+            mensaje: 'Paciente: ' + (inc.datosPaciente?.nombre || 'Paciente') + ' (' + (inc.direccion || 'Sin dirección') + '). Reportada por Enf. ' + (inc.enfermeraNombre || 'Asignada') + ' (' + (inc.enfermeraZona || 'Zona') + '). Estado: ' + (inc.estado ? inc.estado.toUpperCase() : (inc.resuelta ? 'RESUELTA' : 'PENDIENTE')),
+            tipo: 'incidencia',
+            prioridad: (inc.tipo === 'fallecimiento' || inc.tipo === 'agresion') ? 'urgente' : 'alta',
+            leida: inc.resuelta || inc.estado === 'resuelta',
+            metadata: { incidenciaId: inc.id, enfermeraZona: inc.enfermeraZona },
+            url: '/enlace/incidencias',
+            createdAt: inc.fecha || new Date().toISOString()
+          }));
         }
 
+        const combined = [...enlaceData, ...generalData];
+        combined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+        this.todasLasNotificaciones = combined;
+        this.totalItems = combined.length;
+        localStorage.setItem('notificacionesCache', JSON.stringify(combined));
+
+        this.actualizarContadores();
         this.aplicarFiltro();
         this.cargando = false;
         this.cdr.detectChanges();
       },
       error: (error: any) => {
-        console.error('❌ Error:', error);
+        console.error('❌ Error al cargar notificaciones:', error);
         const cached = localStorage.getItem('notificacionesCache');
         if (cached) {
           try {
@@ -138,6 +204,7 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
             if (data && data.length > 0) {
               this.todasLasNotificaciones = data;
               this.totalItems = data.length;
+              this.actualizarContadores();
               this.aplicarFiltro();
             }
           } catch (e) {
@@ -148,6 +215,13 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
         this.cdr.detectChanges();
       }
     });
+  }
+
+  actualizarContadores() {
+    const total = this.todasLasNotificaciones.length;
+    const noLeidas = this.todasLasNotificaciones.filter(n => !n.leida).length;
+    const urgentes = this.todasLasNotificaciones.filter(n => n.prioridad === 'urgente' && !n.leida).length;
+    this.contador = { total, noLeidas, urgentes };
   }
 
   aplicarFiltro() {
@@ -394,6 +468,10 @@ export class NotificacionesComponent implements OnInit, OnDestroy, AfterViewInit
     localStorage.setItem('notificacionesCache', JSON.stringify(this.todasLasNotificaciones));
 
     this.cdr.detectChanges();
+
+    if (notificacion.id >= 880000) {
+      return;
+    }
 
     this.notificacionesService.cambiarEstado(notificacion.id, nuevoEstado).subscribe({
       next: () => {
