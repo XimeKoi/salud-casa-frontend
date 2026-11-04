@@ -101,10 +101,10 @@
           <span class="kpi-label">Productividad de Hoy</span>
           <div class="kpi-val-group">
             <span class="kpi-value">{{ resumen?.visitasHoyTotal }}</span>
-            <span class="kpi-meta-sub">/ {{ resumen?.metaTotalDiaria }} meta</span>
+            <span class="kpi-meta-sub">visitas hoy</span>
           </div>
           <span class="kpi-foot text-amber">
-            <i class="fas fa-chart-line"></i> Meta distrital acumulada según padrón
+            <i class="fas fa-circle-check"></i> Reportadas en tiempo real por el equipo
           </span>
         </div>
       </div>
@@ -134,7 +134,7 @@
             Desempeño y Estado del Personal de Enfermería
           </h2>
           <span class="section-subtitle">
-            Monitoreo en tiempo real de avance de visitas y metas diarias por enfermera
+            Monitoreo en tiempo real de avance de visitas por enfermera
           </span>
         </div>
         <button class="btn-view-all" (click)="navegarA('/enlace/enfermeras')">
@@ -154,8 +154,7 @@
               <th class="text-center">Visitados</th>
               <th class="text-center">Pendientes</th>
               <th>Avance Global</th>
-              <th class="text-center">Hoy / Meta</th>
-              <th class="text-right">Acciones</th>
+              <th class="text-center">Visitas Hoy</th>
             </tr>
           </thead>
           <tbody>
@@ -194,22 +193,9 @@
                 </div>
               </td>
               <td class="text-center">
-                <span class="badge-today-visits" [class.badge-completed]="enf.visitasHoy >= enf.metaDiaria">
-                  {{ enf.visitasHoy }} / {{ enf.metaDiaria }}
+                <span class="badge-today-visits">
+                  <i class="fas fa-circle-check text-emerald"></i> {{ enf.visitasHoy }} visitas
                 </span>
-              </td>
-              <td class="text-right">
-                <div class="table-actions-cell">
-                  <button class="btn-action-icon btn-pacientes" (click)="verPacientesDeEnfermera(enf.id)" title="Ver Pacientes">
-                    <i class="fas fa-hospital-user"></i>
-                  </button>
-                  <button class="btn-action-icon btn-rendimiento" (click)="verRendimientoDeEnfermera(enf.id)" title="Ver Rendimiento">
-                    <i class="fas fa-chart-line"></i>
-                  </button>
-                  <a [href]="'https://wa.me/52' + enf.telefono" target="_blank" class="btn-action-icon btn-whatsapp" title="Contactar por WhatsApp">
-                    <i class="fab fa-whatsapp"></i>
-                  </a>
-                </div>
               </td>
             </tr>
           </tbody>

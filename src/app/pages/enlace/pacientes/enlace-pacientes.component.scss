@@ -112,15 +112,30 @@ $radius-pill: 9999px;
   }
 
   .picker-select-sm {
-    background: #ffffff;
-    border: 1px solid $border-color;
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 12px;
-    font-weight: 650;
-    color: $text-main;
+    background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237E101F' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat calc(100% - 10px) center;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1.5px solid #D4AF37;
+    border-radius: 10px;
+    padding: 6px 30px 6px 12px;
+    font-size: 12.5px;
+    font-weight: 750;
+    color: #420D17;
     outline: none;
-    max-width: 280px;
+    max-width: 320px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+    option {
+      background: #FAF6F3;
+      color: #420D17;
+      font-weight: 750;
+      padding: 8px 12px;
+
+      &:nth-child(even) {
+        background: #ffffff;
+      }
+    }
   }
 }
 
@@ -384,49 +399,49 @@ $radius-pill: 9999px;
     }
   }
 
-  .nurse-cards-carousel {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 4px 2px 12px;
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+  .nurse-cards-grid-wrap {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
 
-    &::-webkit-scrollbar {
-      height: 6px;
+    @media (max-width: 1440px) {
+      grid-template-columns: repeat(3, 1fr);
     }
-    &::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 6px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 560px) {
+      grid-template-columns: 1fr;
     }
   }
 
   .nurse-audit-pill-card {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: #ffffff;
     border: 1.5px solid #ebdcd0;
-    padding: 10px 16px;
-    border-radius: 16px;
+    padding: 10px 14px;
+    border-radius: 14px;
     cursor: pointer;
     text-align: left;
     white-space: nowrap;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    min-width: 240px;
-    flex-shrink: 0;
+    min-width: 0;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 
     .nap-avatar {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: linear-gradient(135deg, #f1ece6 0%, #e2d9cf 100%);
       color: $primary-deep;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 850;
       flex-shrink: 0;
       border: 2px solid #ffffff;
@@ -437,14 +452,18 @@ $radius-pill: 9999px;
     .nap-details {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
       flex: 1;
+      min-width: 0;
 
       .nap-name {
-        font-size: 13.5px;
+        font-size: 12.5px;
         font-weight: 850;
         color: #1e293b;
         letter-spacing: -0.1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .nap-meta-row {
@@ -469,7 +488,7 @@ $radius-pill: 9999px;
         .nap-patients-badge {
           background: #f1f5f9;
           color: #475569;
-          font-size: 10.5px;
+          font-size: 10px;
           font-weight: 800;
           padding: 1px 6px;
           border-radius: 4px;
@@ -479,7 +498,7 @@ $radius-pill: 9999px;
 
     .nap-active-indicator {
       color: $gold-light;
-      font-size: 18px;
+      font-size: 16px;
       margin-left: 2px;
       animation: fadeIn 0.2s ease;
     }
@@ -488,7 +507,7 @@ $radius-pill: 9999px;
       background: #faf7f4;
       border-color: #d1bfae;
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 
       .nap-avatar {
         background: linear-gradient(135deg, $primary-deep 0%, $primary 100%);
@@ -500,7 +519,7 @@ $radius-pill: 9999px;
       background: linear-gradient(135deg, $primary-deep 0%, $primary 100%);
       border-color: $gold-accent;
       color: #ffffff;
-      box-shadow: 0 8px 22px rgba(92, 20, 34, 0.35);
+      box-shadow: 0 6px 18px rgba(92, 20, 34, 0.35);
       transform: translateY(-2px);
 
       .nap-avatar {
@@ -739,63 +758,85 @@ $radius-pill: 9999px;
         flex-wrap: wrap;
 
         .pill {
-          background: transparent;
-          border: none;
+          background: #ffffff;
+          border: 1px solid #ebdcd0;
           color: #475569;
           font-size: 12px;
-          font-weight: 700;
-          padding: 5px 12px;
-          border-radius: 7px;
+          font-weight: 750;
+          padding: 6px 13px;
+          border-radius: 8px;
           cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           transition: all 0.18s ease;
 
           &:hover:not(.active) {
             color: $primary;
-            background: rgba(255, 255, 255, 0.6);
+            background: #faf7f4;
+            border-color: #d1bfae;
+            transform: translateY(-1px);
           }
 
           &.active {
             background: #ffffff;
             color: $primary-dark;
-            font-weight: 800;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            font-weight: 850;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
           }
 
           &.pam.active {
-            color: #7A192B;
+            background: #fdf2f4;
+            border-color: #f8b4c0;
+            color: #9f1239;
           }
 
           &.pcd.active {
-            color: #4338ca;
+            background: #eff6ff;
+            border-color: #93c5fd;
+            color: #1d4ed8;
           }
 
           &.pill-vis.active {
-            color: #047857;
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #065f46;
             i { color: #10b981; }
           }
 
           &.pill-pen.active {
-            color: #b45309;
+            background: #fef3c7;
+            border-color: #fcd34d;
+            color: #92400e;
             i { color: #f59e0b; }
           }
 
           &.pill-inc.active {
-            color: #be123c;
+            background: #ffe4e6;
+            border-color: #fca5a5;
+            color: #9f1239;
             i { color: #e11d48; }
           }
 
           &.pill-rec.active {
-            color: #b91c1c;
+            background: #fee2e2;
+            border-color: #f87171;
+            color: #991b1b;
             i { color: #ef4444; }
           }
 
           &.pill-cam.active {
+            background: #e0f2fe;
+            border-color: #7dd3fc;
             color: #0369a1;
             i { color: #0284c7; }
           }
 
           &.pill-fin.active {
-            color: #334155;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
             i { color: #64748b; }
           }
         }
@@ -805,34 +846,50 @@ $radius-pill: 9999px;
     .stats-counter-strip {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       margin-left: auto;
 
       @media (max-width: 768px) {
         margin-left: 0;
         width: 100%;
-        justify-content: flex-end;
+        justify-content: flex-start;
       }
 
       .strip-item {
         font-size: 12px;
-        color: #64748b;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        padding: 4px 10px;
-        border-radius: 8px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 
         b {
-          color: #0f172a;
-          font-weight: 800;
+          font-weight: 850;
         }
 
-        &.pam b {
-          color: #7A192B;
+        &.count-total {
+          background: #FAF6F3;
+          border: 1.5px solid #ebdcd0;
+          color: #5c1422;
+          b { color: #420d17; }
         }
 
-        &.pcd b {
-          color: #4338ca;
+        &.count-pam {
+          background: #fdf2f4;
+          border: 1.5px solid #f8b4c0;
+          color: #9f1239;
+          b { color: #881337; }
+          i { color: #be123c; }
+        }
+
+        &.count-pcd {
+          background: #e0f2fe;
+          border: 1.5px solid #7dd3fc;
+          color: #0369a1;
+          b { color: #075985; }
+          i { color: #0284c7; }
         }
       }
     }

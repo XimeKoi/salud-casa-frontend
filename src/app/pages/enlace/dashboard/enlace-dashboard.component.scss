@@ -25,7 +25,11 @@ $radius-pill: 9999px;
   flex-direction: column;
   min-height: 100%;
   width: 100%;
-  background: $bg-page;
+  background-color: #FAF6F3;
+  background-image: 
+    radial-gradient(rgba(122, 25, 43, 0.045) 1.2px, transparent 1.2px),
+    linear-gradient(180deg, #FAF6F3 0%, #F5ECE6 50%, #EFE4DC 100%);
+  background-size: 24px 24px, 100% 100%;
 }
 
 // ============================================

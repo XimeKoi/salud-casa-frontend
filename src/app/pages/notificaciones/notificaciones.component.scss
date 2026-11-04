@@ -583,104 +583,81 @@ $shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
   &.cat-paciente {
     border-left-color: #64748b;
     border-color: #e2e8f0;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    background: #ffffff !important;
     &:hover { border-color: #cbd5e1; box-shadow: 0 6px 18px rgba(100, 116, 139, 0.08); }
   }
 
   &.cat-incidencia {
     border-left-color: $primary;
     border-color: #ebdcd0;
-    background: linear-gradient(135deg, #ffffff 0%, #faf6f4 100%);
+    background: #ffffff !important;
     &:hover { border-color: #d1bfae; box-shadow: 0 6px 18px rgba(122, 25, 43, 0.08); }
   }
 
   &.cat-visita {
     border-left-color: #16a34a;
     border-color: #dcfce7;
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    background: #ffffff !important;
     &:hover { border-color: #bbf7d0; box-shadow: 0 6px 18px rgba(22, 163, 74, 0.08); }
   }
 
   &.cat-calendario {
     border-left-color: #b45309;
     border-color: #fef3c7;
-    background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+    background: #ffffff !important;
     &:hover { border-color: #fde68a; box-shadow: 0 6px 18px rgba(180, 83, 9, 0.08); }
   }
 
   &.cat-captura {
     border-left-color: #6b21a8;
     border-color: #f3e8ff;
-    background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+    background: #ffffff !important;
     &:hover { border-color: #e9d5ff; box-shadow: 0 6px 18px rgba(107, 33, 168, 0.08); }
   }
 
   &.cat-emergencia {
     border-left-color: $primary-deep;
-    background: linear-gradient(135deg, #ffffff 0%, #fdf2f4 100%);
-    border-color: #fce7ea;
-    box-shadow: 0 4px 14px rgba(92, 20, 34, 0.1);
+    background: #ffffff !important;
+    border-color: #ebdcd0;
+    box-shadow: 0 4px 14px rgba(92, 20, 34, 0.08);
   }
 
   &.cat-sistema {
     border-left-color: #475569;
     border-color: #e2e8f0;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: #ffffff !important;
   }
 
   &.no-leida {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    background: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 
-    &.cat-paciente {
-      background: linear-gradient(135deg, #ebf4ff 0%, #dbeafe 100%);
-      border-color: #93c5fd;
-      border-left: 6px solid #2563EB;
-    }
-
-    &.cat-incidencia {
-      background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
-      border-color: #fda4af;
-      border-left: 6px solid #DC2626;
-    }
-
-    &.cat-visita {
-      background: linear-gradient(135deg, #e6f9ed 0%, #d1fae5 100%);
-      border-color: #86efac;
-      border-left: 6px solid #16A34A;
-    }
-
-    &.cat-calendario {
-      background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
-      border-color: #fde047;
-      border-left: 6px solid #D97706;
-    }
-
-    &.cat-captura {
-      background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-      border-color: #c084fc;
-      border-left: 6px solid #7C3AED;
-    }
-
+    &.cat-paciente,
+    &.cat-incidencia,
+    &.cat-visita,
+    &.cat-calendario,
+    &.cat-captura,
     &.cat-emergencia {
-      background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
-      border-color: #dc2626;
-      border-left: 6.5px solid #991b1b;
+      background: #ffffff !important;
+      border-color: #ebdcd0;
+      border-left: 5px solid $primary;
     }
   }
 
   &.leida {
+    background: #ffffff !important;
     opacity: 0.94;
     filter: saturate(0.9);
   }
 
   &.seleccionada {
-    background: linear-gradient(135deg, #fff8f8 0%, #ffebeb 100%) !important;
-    border-color: #f87171 !important;
-    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.12) !important;
+    background: #ffffff !important;
+    border-color: #d4af37 !important;
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.15) !important;
   }
 
   &.urgente {
-    border-left: 5.5px solid #dc2626 !important;
+    border-left: 5.5px solid $primary !important;
   }
 }
 

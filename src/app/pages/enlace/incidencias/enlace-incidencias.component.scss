@@ -444,41 +444,53 @@ $radius-pill: 9999px;
         display: flex;
         align-items: center;
         gap: 6px;
-        background: #f4ede5;
-        padding: 4px;
-        border-radius: 10px;
+        background: #fdfaf6;
+        padding: 5px;
+        border-radius: 12px;
+        border: 1.5px solid #ebdcd0;
 
         .s-pill {
-          background: transparent;
-          border: none;
+          background: #ffffff;
+          border: 1px solid #ebdcd0;
           color: #475569;
           font-size: 12px;
-          font-weight: 700;
-          padding: 5px 12px;
-          border-radius: 7px;
+          font-weight: 750;
+          padding: 6px 14px;
+          border-radius: 8px;
           cursor: pointer;
           transition: all 0.18s ease;
 
           &:hover:not(.active) {
             color: $primary;
-            background: rgba(255, 255, 255, 0.6);
+            background: #faf7f4;
+            border-color: #d1bfae;
+            transform: translateY(-1px);
           }
 
           &.active {
-            background: #ffffff;
-            font-weight: 800;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            background: linear-gradient(135deg, $primary-deep 0%, $primary 100%);
+            color: #ffffff;
+            font-weight: 850;
+            border-color: $gold-accent;
+            box-shadow: 0 3px 10px rgba(92, 20, 34, 0.25);
+            transform: translateY(-1px);
 
             &.recibida {
-              color: #1d4ed8;
+              background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
+              border-color: #fb923c;
+              box-shadow: 0 3px 10px rgba(234, 88, 12, 0.25);
             }
 
             &.proceso {
-              color: #b45309;
+              background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+              border-color: #fcd34d;
+              box-shadow: 0 3px 10px rgba(217, 119, 6, 0.25);
             }
 
             &.done {
-              color: #15803d;
+              background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+              border-color: #6ee7b7;
+              box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);
             }
           }
         }
@@ -487,12 +499,14 @@ $radius-pill: 9999px;
 
     .counter-label {
       margin-left: auto;
-      font-size: 12px;
-      color: #64748b;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 5px 12px;
-      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #5c1422;
+      background: #FAF6F3;
+      border: 1.5px solid #ebdcd0;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 
       @media (max-width: 768px) {
         margin-left: 0;
@@ -501,8 +515,8 @@ $radius-pill: 9999px;
       }
 
       b {
-        color: #0f172a;
-        font-weight: 800;
+        color: #420d17;
+        font-weight: 850;
       }
     }
   }

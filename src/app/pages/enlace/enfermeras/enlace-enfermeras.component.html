@@ -69,38 +69,6 @@
       </div>
     </section>
 
-    <!-- ⭐ BARRA DE PAGINACIÓN DE ENFERMERAS (SUPERIOR) -->
-    <div class="pagination-modern-bar" *ngIf="!loading && enfermerasFiltradas.length > 0">
-      <div class="pagination-info-badge">
-        <i class="fas fa-user-nurse"></i>
-        <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }} - {{ Math.min(paginaActual * pageSize, enfermerasFiltradas.length) }}</strong> de <strong>{{ enfermerasFiltradas.length }}</strong> enfermeras</span>
-      </div>
-
-      <div class="pagination-nav-center" *ngIf="totalPaginas > 1">
-        <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1" title="Página anterior">
-          <i class="fas fa-chevron-left"></i>
-        </button>
-        <div class="pagination-pills-list">
-          <button *ngFor="let p of paginasArray" class="page-num-pill" [class.active]="p === paginaActual" (click)="cambiarPagina(p)">
-            {{ p }}
-          </button>
-        </div>
-        <button class="btn-nav-arrow" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas" title="Página siguiente">
-          <i class="fas fa-chevron-right"></i>
-        </button>
-      </div>
-
-      <div class="pagination-rows-selector">
-        <span class="rows-label">Por página:</span>
-        <div class="select-rows-wrap">
-          <select [ngModel]="pageSize" (ngModelChange)="cambiarPageSize($event)" class="select-rows-dropdown">
-            <option *ngFor="let s of pageSizes" [value]="s">{{ s }}</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-
     <!-- GRID DE TARJETAS DE ENFERMERAS -->
     <section class="nurses-cards-grid" *ngIf="!loading">
       <div class="nurse-card" *ngFor="let enf of enfermerasPaginadas">

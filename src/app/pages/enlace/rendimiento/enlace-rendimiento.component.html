@@ -25,11 +25,11 @@
         <div class="header-quick-badges">
           <span class="header-pill pill-visitas">
             <i class="fas fa-calendar-check"></i>
-            <span>Hoy: <strong>{{ resumenGlobal?.visitasHoyTotal || 135 }}</strong> / {{ resumenGlobal?.metaTotalDiaria || 150 }}</span>
+            <span>Hoy: <strong>{{ resumenGlobal?.visitasHoyTotal || 135 }}</strong> visitas realizadas</span>
           </span>
           <span class="header-pill pill-meta">
-            <i class="fas fa-bullseye"></i>
-            <span>Meta: <strong>Por asignación de padrón</strong></span>
+            <i class="fas fa-circle-check"></i>
+            <span>Rendimiento: <strong>Dinámico por enfermero</strong></span>
           </span>
         </div>
 
@@ -89,10 +89,10 @@
           <span class="kpi-label">Visitas Hoy</span>
           <span class="kpi-value">
             {{ enfermeraDetalle ? enfermeraDetalle.visitasHoy : (resumenGlobal?.visitasHoyTotal || 135) }}
-            <small class="meta-small">/ {{ enfermeraDetalle ? enfermeraDetalle.metaDiaria : (resumenGlobal?.metaTotalDiaria || 150) }}</small>
+            <small class="meta-small">visitas</small>
           </span>
           <span class="kpi-foot text-success">
-            <i class="fas fa-circle-check"></i> Meta calculada según padrón asignado
+            <i class="fas fa-circle-check"></i> Reportadas en tiempo real en campo
           </span>
         </div>
       </div>
@@ -171,8 +171,8 @@
             </div>
             <div class="r-metrics-group">
               <span class="r-count">{{ enf.visitados }} / {{ enf.totalPacientes }} pac.</span>
-              <span class="r-today-pill" [class.success]="enf.visitasHoy >= enf.metaDiaria">
-                Hoy: {{ enf.visitasHoy }}/{{ enf.metaDiaria }}
+              <span class="r-today-pill success">
+                <i class="fas fa-person-walking"></i> Hoy: {{ enf.visitasHoy }} visitas
               </span>
               <span class="r-pct font-bold" [class.text-success]="enf.progresoPct >= 60" [class.text-warning]="enf.progresoPct >= 40 && enf.progresoPct < 60" [class.text-danger]="enf.progresoPct < 40">
                 {{ enf.progresoPct }}%

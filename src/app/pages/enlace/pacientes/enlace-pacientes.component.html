@@ -56,7 +56,7 @@
         </div>
       </div>
 
-      <div class="nurse-cards-carousel">
+      <div class="nurse-cards-grid-wrap">
         <button
           *ngFor="let enf of enfermeras"
           type="button"
@@ -161,9 +161,9 @@
 
         <!-- CONTADORES -->
         <div class="stats-counter-strip">
-          <span class="strip-item">Total: <b>{{ pacientesFiltrados.length }}</b></span>
-          <span class="strip-item pam">PAM: <b>{{ totalPam }}</b></span>
-          <span class="strip-item pcd">PCD: <b>{{ totalPcd }}</b></span>
+          <span class="strip-item count-total"><i class="fas fa-users"></i> Total: <b>{{ pacientesFiltrados.length }}</b></span>
+          <span class="strip-item count-pam"><i class="fas fa-person-cane"></i> PAM: <b>{{ totalPam }}</b></span>
+          <span class="strip-item count-pcd"><i class="fas fa-wheelchair"></i> PCD: <b>{{ totalPcd }}</b></span>
         </div>
       </div>
     </section>
@@ -171,7 +171,7 @@
     <!-- ⭐ BARRA DE PAGINACIÓN DE PACIENTES (SUPERIOR) -->
     <div class="pagination-modern-bar" *ngIf="!loading && pacientesFiltrados.length > 0">
       <div class="pagination-info-badge">
-        <i class="fas fa-users-medical"></i>
+        <i class="fas fa-hospital-user"></i>
         <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }} - {{ Math.min(paginaActual * pageSize, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length }}</strong> pacientes</span>
       </div>
 
@@ -288,7 +288,7 @@
     <!-- ⭐ BARRA DE PAGINACIÓN DE PACIENTES (INFERIOR) -->
     <div class="pagination-modern-bar" *ngIf="!loading && pacientesFiltrados.length > 0">
       <div class="pagination-info-badge">
-        <i class="fas fa-users-medical"></i>
+        <i class="fas fa-hospital-user"></i>
         <span>Mostrando <strong>{{ (paginaActual - 1) * pageSize + 1 }} - {{ Math.min(paginaActual * pageSize, pacientesFiltrados.length) }}</strong> de <strong>{{ pacientesFiltrados.length }}</strong> pacientes</span>
       </div>
 

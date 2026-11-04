@@ -27,6 +27,28 @@ export class PerfilComponent implements OnInit {
   cargando: boolean = true;
   copiadoCampo: string = '';
 
+  get nombreCompleto(): string {
+    if (!this.datosUsuario) {
+      return 'ALMA BEATRIZ MONTIEL MORENO';
+    }
+    if (this.datosUsuario.nombre_completo) {
+      return this.datosUsuario.nombre_completo;
+    }
+    const partes = [
+      this.datosUsuario.nombre,
+      this.datosUsuario.apellidoPaterno,
+      this.datosUsuario.apellidoMaterno
+    ].filter(Boolean);
+    const nombreConstruido = partes.join(' ').trim();
+    if (nombreConstruido && !nombreConstruido.includes('undefined')) {
+      return nombreConstruido;
+    }
+    if (this.datosUsuario.nombre && this.datosUsuario.nombre.length > 2) {
+      return this.datosUsuario.nombre;
+    }
+    return 'ALMA BEATRIZ MONTIEL MORENO';
+  }
+
   private apiUrl = environment.apiUrl;
 
   copiarTexto(texto: string, campo: string) {
