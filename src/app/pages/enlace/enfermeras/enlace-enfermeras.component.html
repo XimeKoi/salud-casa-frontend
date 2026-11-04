@@ -58,8 +58,8 @@
           <span class="filter-label">Zona de Supervisión:</span>
           <div class="pills-group">
             <button class="pill-btn" [class.active]="filtroZs === 'todas'" (click)="filtroZs = 'todas'; aplicarFiltros()">Todas</button>
-            <button class="pill-btn" [class.active]="filtroZs === '5'" (click)="filtroZs = '5'; aplicarFiltros()">ZS 5 (5 enf.)</button>
-            <button class="pill-btn" [class.active]="filtroZs === '6'" (click)="filtroZs = '6'; aplicarFiltros()">ZS 6 (5 enf.)</button>
+            <button class="pill-btn" [class.active]="filtroZs === '5'" (click)="filtroZs = '5'; aplicarFiltros()">ZS 5 ({{ totalZs5 }} enf.)</button>
+            <button class="pill-btn" [class.active]="filtroZs === '6'" (click)="filtroZs = '6'; aplicarFiltros()">ZS 6 ({{ totalZs6 }} enf.)</button>
           </div>
         </div>
 

@@ -21,6 +21,14 @@ export class EnlaceEnfermerasComponent implements OnInit {
   searchTerm: string = '';
   filtroZs: string = 'todas';
 
+  get totalZs5(): number {
+    return this.enfermeras.filter(e => String(e.zs) === '5').length;
+  }
+
+  get totalZs6(): number {
+    return this.enfermeras.filter(e => String(e.zs) === '6').length;
+  }
+
   // Paginación
   paginaActual: number = 1;
   pageSize: number = 6;

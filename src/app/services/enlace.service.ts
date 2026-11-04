@@ -311,6 +311,29 @@ export class EnlaceService {
       progresoPct: 56,
       metaDiaria: 15,
       visitasHoy: 13
+    },
+    {
+      id: 11,
+      nombre_completo: 'BRENDA VIRGINIA GOMEZ CARDOZO',
+      zona: '11 LEON 35',
+      zs: 6,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '4027',
+      telefono: '4772876069',
+      curp: 'GOCB840606MSPMRR05',
+      no_cedula: '6518687',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 496,
+      visitados: 260,
+      pendientes: 236,
+      rechazos: 48,
+      cambiosDomicilio: 32,
+      incidencias: 86,
+      finados: 4,
+      progresoPct: 52,
+      metaDiaria: 15,
+      visitasHoy: 12
     }
   ];
 
