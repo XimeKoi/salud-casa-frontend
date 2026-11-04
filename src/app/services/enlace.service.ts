@@ -357,6 +357,29 @@ export class EnlaceService {
       progresoPct: 62,
       metaDiaria: 15,
       visitasHoy: 14
+    },
+    {
+      id: 13,
+      nombre_completo: 'JOSIAS MISAEL CABALLERO SANTIAGO',
+      zona: '11 LEON 189',
+      zs: 6,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '',
+      telefono: '',
+      curp: '',
+      no_cedula: '',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 545,
+      visitados: 361,
+      pendientes: 184,
+      rechazos: 21,
+      cambiosDomicilio: 23,
+      incidencias: 127,
+      finados: 1,
+      progresoPct: 66,
+      metaDiaria: 15,
+      visitasHoy: 14
     }
   ];
 
