@@ -19,8 +19,27 @@
     <div class="map-nurse-status-chip" *ngIf="enfermeraSupervisadaActual">
       <i class="fas fa-map-pin"></i>
       <span>{{ enfermeraSupervisadaActual.zona }}</span>
-      <b class="chip-count">{{ pacientes.length }} pacientes</b>
+      <b class="chip-count">{{ pacientes.length }} en mapa</b>
     </div>
+
+    <!-- ⭐ BOTÓN APARTADO DE DIRECCIONES NO ENCONTRADAS -->
+    <button
+      type="button"
+      class="btn-sin-ubicacion-chip"
+      *ngIf="pacientesSinUbicacion && pacientesSinUbicacion.length > 0"
+      (click)="toggleModalSinUbicacion()"
+      [title]="'Ver ' + pacientesSinUbicacion.length + ' pacientes con dirección no encontrada'">
+      <i class="fas fa-triangle-exclamation"></i>
+      <span><b>{{ pacientesSinUbicacion.length }}</b> Sin Ubicación</span>
+    </button>
+  </div>
+
+  <!-- ⭐ BOTÓN FLOTANTE APARTADO DE NO ENCONTRADAS (MODO ENFERMERA) -->
+  <div class="floating-sin-ubicacion-badge" *ngIf="!isEnlace && pacientesSinUbicacion && pacientesSinUbicacion.length > 0">
+    <button type="button" class="btn-sin-ubicacion-floating" (click)="toggleModalSinUbicacion()" title="Consultar apartado de pacientes con dirección no encontrada">
+      <i class="fas fa-triangle-exclamation"></i>
+      <span><b>{{ pacientesSinUbicacion.length }}</b> Sin Ubicación</span>
+    </button>
   </div>
 
   <!-- ⭐ SEARCH CONTAINER -->
@@ -647,6 +666,161 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ⭐ APARTADO DE DIRECCIONES NO ENCONTRADAS (MODAL EXCLUSIVO) -->
+  <div class="modal-sin-ubicacion-backdrop" *ngIf="mostrarModalSinUbicacion" (click)="cerrarModalSinUbicacion()">
+    <div class="modal-sin-ubicacion-container" (click)="$event.stopPropagation()">
+
+      <!-- ENCABEZADO -->
+      <div class="sin-ub-header">
+        <div class="suh-title-group">
+          <div class="suh-icon-box">
+            <i class="fas fa-map-location-dot"></i>
+          </div>
+          <div>
+            <div class="suh-badge-row">
+              <span class="badge-alerta">
+                <i class="fas fa-triangle-exclamation"></i> Auditoría Territorial Cuidalia
+              </span>
+              <span class="badge-count">
+                {{ pacientesSinUbicacion.length }} pacientes sin geolocalización
+              </span>
+            </div>
+            <h3 class="suh-title">Apartado de Direcciones No Encontradas</h3>
+            <p class="suh-subtitle">
+              Pacientes cuya dirección no pudo ser geocodificada o fue marcada como no encontrada. Están <strong>excluidos del mapa operativo</strong> para evitar errores de ruta en campo.
+            </p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-sin-ub" (click)="cerrarModalSinUbicacion()" title="Cerrar ventana">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- BARRA DE FILTRO Y CONTEXTO -->
+      <div class="sin-ub-toolbar">
+        <div class="sin-ub-search-box">
+          <i class="fas fa-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="busquedaSinUbicacion"
+            placeholder="Buscar por nombre, CURP, teléfono o notas..."
+            class="sin-ub-search-input"
+          />
+          <button *ngIf="busquedaSinUbicacion" (click)="busquedaSinUbicacion = ''" class="btn-clear-search" title="Limpiar búsqueda">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="sin-ub-nurse-info" *ngIf="enfermeraSupervisadaActual">
+          <i class="fas fa-user-nurse"></i>
+          <span>Enfermera: <b>{{ enfermeraSupervisadaActual.nombre_completo }}</b> ({{ enfermeraSupervisadaActual.zona }})</span>
+        </div>
+      </div>
+
+      <!-- LISTA DE PACIENTES -->
+      <div class="sin-ub-body">
+        <div class="sin-ub-empty" *ngIf="pacientesSinUbicacionFiltrados.length === 0">
+          <i class="fas fa-clipboard-check"></i>
+          <p>No se encontraron registros que coincidan con el término de búsqueda.</p>
+        </div>
+
+        <div class="sin-ub-grid" *ngIf="pacientesSinUbicacionFiltrados.length > 0">
+          <div class="sin-ub-card" *ngFor="let p of pacientesSinUbicacionFiltrados">
+
+            <div class="suc-header">
+              <div class="suc-avatar">
+                {{ (p.nombreCompleto || p.nombre || 'PA').substring(0, 2).toUpperCase() }}
+              </div>
+              <div class="suc-name-col">
+                <h4 class="suc-name">{{ p.nombreCompleto || p.nombre }}</h4>
+                <div class="suc-tags">
+                  <span class="suc-tag prog-tag" [class.pcd]="(p.programa || '').toUpperCase() === 'PCD'">
+                    {{ p.programa || 'PAM' }}
+                  </span>
+                  <span class="suc-tag curp-tag" *ngIf="p.curp">
+                    <i class="fas fa-id-card"></i> {{ p.curp }}
+                  </span>
+                  <span class="suc-tag id-tag">
+                    #{{ p.id }}
+                  </span>
+                </div>
+              </div>
+              <div class="suc-status-tag">
+                <span class="badge-unlocated">
+                  <i class="fas fa-location-slash"></i> Sin Mapa
+                </span>
+              </div>
+            </div>
+
+            <div class="suc-body">
+              <!-- ALERTA DE DIRECCIÓN -->
+              <div class="suc-address-alert">
+                <div class="saa-icon">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="saa-content">
+                  <div class="saa-title">Dirección no localizada en cartografía</div>
+                  <div class="saa-text">{{ p.direccion || 'Dirección no encontrada' }}</div>
+                  <div class="saa-colonia" *ngIf="p.colonia">
+                    <i class="fas fa-map-pin"></i> Referencia: {{ p.colonia }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- TELÉFONO Y ESTATUS -->
+              <div class="suc-meta-row">
+                <div class="suc-phone-box" *ngIf="p.telefono && p.telefono !== 'Sin teléfono'">
+                  <i class="fas fa-phone"></i>
+                  <span>{{ p.telefono }}</span>
+                </div>
+                <div class="suc-status-badge">
+                  Estatus: <b>{{ p.estatus || 'PENDIENTE' }}</b>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="suc-footer">
+              <div class="suc-actions-left">
+                <a *ngIf="p.telefono && p.telefono !== 'Sin teléfono'"
+                   [href]="'tel:' + p.telefono"
+                   class="btn-suc-action btn-call"
+                   title="Llamar directamente">
+                  <i class="fas fa-phone-alt"></i> Llamar
+                </a>
+                <button *ngIf="p.telefono && p.telefono !== 'Sin teléfono'"
+                        type="button"
+                        class="btn-suc-action btn-wa"
+                        (click)="abrirWhatsApp(p.telefono)"
+                        title="Enviar mensaje de WhatsApp">
+                  <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+              </div>
+              <button type="button"
+                      class="btn-suc-action btn-copy"
+                      (click)="copiarDatosPaciente(p)"
+                      title="Copiar datos al portapapeles">
+                <i class="fas fa-copy"></i> Copiar Ficha
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PIE DEL DIÁLOGO -->
+      <div class="sin-ub-dialog-footer">
+        <span class="footer-note">
+          <i class="fas fa-circle-info"></i>
+          Para que estos pacientes aparezcan en el mapa, actualiza la dirección con calle, número exterior y colonia verificables.
+        </span>
+        <button type="button" class="btn-close-dialog" (click)="cerrarModalSinUbicacion()">
+          Cerrar Apartado
+        </button>
+      </div>
+
     </div>
   </div>
 

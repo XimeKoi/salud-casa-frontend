@@ -98,6 +98,9 @@
         </span>
       </div>
       <div class="an-actions">
+        <button class="btn-an-unlocated" *ngIf="totalSinUbicacion > 0" (click)="filtroEstatus = 'NO_ENCONTRADA'; aplicarFiltros()" title="Filtrar pacientes con dirección no encontrada">
+          <i class="fas fa-triangle-exclamation"></i> <b>{{ totalSinUbicacion }}</b> Sin Ubicación
+        </button>
         <button class="btn-an-map" (click)="verEnMapa()" title="Ver los pacientes de esta enfermera en el mapa">
           <i class="fas fa-map-location-dot"></i> Ver en Mapa Operativo
         </button>
@@ -156,6 +159,9 @@
             <button class="pill pill-fin" [class.active]="filtroEstatus === 'FINADO'" (click)="filtroEstatus = 'FINADO'; aplicarFiltros()">
               <i class="fas fa-cross"></i> Finados
             </button>
+            <button class="pill pill-no-enc" *ngIf="totalSinUbicacion > 0" [class.active]="filtroEstatus === 'NO_ENCONTRADA'" (click)="filtroEstatus = 'NO_ENCONTRADA'; aplicarFiltros()">
+              <i class="fas fa-triangle-exclamation"></i> No Encontradas ({{ totalSinUbicacion }})
+            </button>
           </div>
         </div>
 
@@ -164,6 +170,9 @@
           <span class="strip-item count-total"><i class="fas fa-users"></i> Total: <b>{{ pacientesFiltrados.length }}</b></span>
           <span class="strip-item count-pam"><i class="fas fa-person-cane"></i> PAM: <b>{{ totalPam }}</b></span>
           <span class="strip-item count-pcd"><i class="fas fa-wheelchair"></i> PCD: <b>{{ totalPcd }}</b></span>
+          <span class="strip-item count-no-enc" *ngIf="totalSinUbicacion > 0" (click)="filtroEstatus = 'NO_ENCONTRADA'; aplicarFiltros()" style="cursor: pointer;" title="Filtrar pacientes no encontrados">
+            <i class="fas fa-triangle-exclamation"></i> No Encontradas: <b>{{ totalSinUbicacion }}</b>
+          </span>
         </div>
       </div>
     </section>
@@ -246,6 +255,12 @@
 
         <!-- CUERPO DE TARJETA -->
         <div class="patient-card-body">
+          <!-- AVISO DE DIRECCIÓN NO ENCONTRADA -->
+          <div class="card-unlocated-alert" *ngIf="esDireccionNoEncontrada(p)">
+            <i class="fas fa-location-slash"></i>
+            <span>Dirección no encontrada • Excluido del mapa</span>
+          </div>
+
           <div class="card-info-item">
             <i class="fas fa-location-dot icon-dim"></i>
             <span class="card-address-text">{{ p.direccion }}</span>
@@ -386,6 +401,12 @@
           <div class="d-row" *ngIf="pacienteSeleccionado.lat && pacienteSeleccionado.lng">
             <span class="d-label">Coordenadas GPS</span>
             <span class="d-val">{{ pacienteSeleccionado.lat }}, {{ pacienteSeleccionado.lng }}</span>
+          </div>
+          <div class="d-row alert-unlocated-row" *ngIf="esDireccionNoEncontrada(pacienteSeleccionado)">
+            <span class="d-label text-amber">Geolocalización</span>
+            <span class="d-val text-amber font-bold">
+              <i class="fas fa-triangle-exclamation"></i> Dirección no encontrada (Excluido de cartografía)
+            </span>
           </div>
         </div>
       </div>

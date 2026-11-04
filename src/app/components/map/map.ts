@@ -59,6 +59,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   loadingPacientes: boolean = false;
   marcadoresPacientes: L.Marker[] = [];
 
+  // 📍 Apartado de pacientes no encontrados / sin coordenadas
+  pacientesSinUbicacion: any[] = [];
+  mostrarModalSinUbicacion: boolean = false;
+  busquedaSinUbicacion: string = '';
+
   distritoActual: Distrito | null = null;
   private distritoSubscription: any;
 
@@ -253,6 +258,51 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     }));
   }
 
+  // 📍 Apartado de Direcciones No Encontradas / Sin Ubicación
+  toggleModalSinUbicacion(): void {
+    this.mostrarModalSinUbicacion = !this.mostrarModalSinUbicacion;
+    this.busquedaSinUbicacion = '';
+  }
+
+  cerrarModalSinUbicacion(): void {
+    this.mostrarModalSinUbicacion = false;
+    this.busquedaSinUbicacion = '';
+  }
+
+  get pacientesSinUbicacionFiltrados(): any[] {
+    if (!this.pacientesSinUbicacion) return [];
+    if (!this.busquedaSinUbicacion?.trim()) {
+      return this.pacientesSinUbicacion;
+    }
+    const q = this.busquedaSinUbicacion.toLowerCase().trim();
+    return this.pacientesSinUbicacion.filter(p =>
+      (p.nombreCompleto || p.nombre || '').toLowerCase().includes(q) ||
+      (p.curp || '').toLowerCase().includes(q) ||
+      (p.direccion || '').toLowerCase().includes(q) ||
+      (p.colonia || '').toLowerCase().includes(q) ||
+      (p.telefono || '').toLowerCase().includes(q)
+    );
+  }
+
+  copiarDatosPaciente(p: any): void {
+    const texto = `PACIENTE: ${p.nombreCompleto || p.nombre || 'N/A'}\nCURP: ${p.curp || 'N/A'}\nPROGRAMA: ${p.programa || 'PAM'}\nTELÉFONO: ${p.telefono || 'Sin teléfono'}\nDIRECCIÓN: ${p.direccion || 'Dirección no encontrada'}\nCOLONIA: ${p.colonia || 'N/A'}\nESTATUS: ${p.estatus || 'PENDIENTE'}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(texto).then(() => {
+        this.mostrarToast('Copiado', 'Datos copiados al portapapeles', 'success', 1500);
+      }).catch(() => {
+        this.mostrarToast('Info', 'Copia los datos manualmente', 'info', 1500);
+      });
+    }
+  }
+
+  abrirWhatsApp(tel: string): void {
+    if (!tel) return;
+    const numLimpio = tel.replace(/[^0-9]/g, '');
+    if (numLimpio) {
+      window.open(`https://wa.me/52${numLimpio}`, '_blank');
+    }
+  }
+
   cargarPacientesDirectamente(forceRefresh: boolean = false) {
     if (this.loadingPacientes) return;
 
@@ -296,9 +346,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           } catch (e) {}
         }
 
-        const pacientesConCoords = data.filter((p: any) =>
-          p.lat && p.lng && p.lat !== 0 && p.lng !== 0
-        );
+        const esSinUbicacion = (p: any) =>
+          !p.lat || !p.lng || Number(p.lat) === 0 || Number(p.lng) === 0 ||
+          ((p.direccion || '') + ' ' + (p.colonia || '')).toLowerCase().includes('no encontrada') ||
+          ((p.direccion || '') + ' ' + (p.colonia || '')).toLowerCase().includes('no encontrado');
+
+        const pacientesConCoords = (data || []).filter((p: any) => !esSinUbicacion(p));
+        this.pacientesSinUbicacion = (data || []).filter((p: any) => esSinUbicacion(p));
+        console.log(`📍 [MapComponent] Pacientes válidos en mapa: ${pacientesConCoords.length} | Sin ubicación (excluidos): ${this.pacientesSinUbicacion.length}`);
 
         this.pacientes = pacientesConCoords;
         this.pacientesOriginal = [...pacientesConCoords];
@@ -361,9 +416,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (dataOffline && dataOffline.length > 0) {
           console.log(`📶 [Offline Mapa] Mostrando ${dataOffline.length} pacientes guardados localmente`);
           this.pacientesMapService.setPacientesCache(dataOffline);
-          const pacientesConCoords = dataOffline.filter((p: any) =>
-            p.lat && p.lng && p.lat !== 0 && p.lng !== 0
-          );
+          const esSinUbicacionOffline = (p: any) =>
+            !p.lat || !p.lng || Number(p.lat) === 0 || Number(p.lng) === 0 ||
+            ((p.direccion || '') + ' ' + (p.colonia || '')).toLowerCase().includes('no encontrada') ||
+            ((p.direccion || '') + ' ' + (p.colonia || '')).toLowerCase().includes('no encontrado');
+
+          const pacientesConCoords = (dataOffline || []).filter((p: any) => !esSinUbicacionOffline(p));
+          this.pacientesSinUbicacion = (dataOffline || []).filter((p: any) => esSinUbicacionOffline(p));
           this.pacientes = pacientesConCoords;
           this.pacientesOriginal = [...pacientesConCoords];
 
@@ -2431,6 +2490,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       const numLat = parseFloat(String(paciente.lat));
       const numLng = parseFloat(String(paciente.lng));
       if (isNaN(numLat) || isNaN(numLng) || numLat === 0 || numLng === 0) {
+        return;
+      }
+      const dirTxt = ((paciente.direccion || '') + ' ' + (paciente.colonia || '')).toLowerCase();
+      if (dirTxt.includes('no encontrada') || dirTxt.includes('no encontrado')) {
         return;
       }
 

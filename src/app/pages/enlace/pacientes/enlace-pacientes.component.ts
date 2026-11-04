@@ -116,9 +116,11 @@ export class EnlacePacientesComponent implements OnInit {
       const matchProg = this.filtroPrograma === 'todos' || prog === this.filtroPrograma;
 
       // Filtro de estatus
-      const est = (p.estatus || '').toUpperCase();
       let matchEst = true;
-      if (this.filtroEstatus !== 'todos') {
+      if (this.filtroEstatus === 'NO_ENCONTRADA') {
+        matchEst = this.esDireccionNoEncontrada(p);
+      } else if (this.filtroEstatus !== 'todos') {
+        const est = (p.estatus || '').toUpperCase();
         matchEst = est.includes(this.filtroEstatus);
       }
 
@@ -169,6 +171,17 @@ export class EnlacePacientesComponent implements OnInit {
 
   get totalPcd(): number {
     return this.pacientesFiltrados.filter(p => (p.programa || '').toUpperCase() === 'PCD').length;
+  }
+
+  esDireccionNoEncontrada(p: any): boolean {
+    if (!p) return false;
+    if (!p.lat || !p.lng || Number(p.lat) === 0 || Number(p.lng) === 0) return true;
+    const dir = ((p.direccion || '') + ' ' + (p.colonia || '')).toLowerCase();
+    return dir.includes('no encontrada') || dir.includes('no encontrado');
+  }
+
+  get totalSinUbicacion(): number {
+    return this.todosLosPacientes.filter(p => this.esDireccionNoEncontrada(p)).length;
   }
 
   verDetallePaciente(p: any): void {
