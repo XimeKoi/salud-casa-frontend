@@ -380,6 +380,29 @@ export class EnlaceService {
       progresoPct: 66,
       metaDiaria: 15,
       visitasHoy: 14
+    },
+    {
+      id: 14,
+      nombre_completo: 'DAMARIS SARAHI FALCON ALVARADO',
+      zona: '11 LEON 244',
+      zs: 6,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '159609',
+      telefono: '4777538635',
+      curp: 'FAAD911206MGTLLM13',
+      no_cedula: '10241189',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 393,
+      visitados: 309,
+      pendientes: 84,
+      rechazos: 11,
+      cambiosDomicilio: 27,
+      incidencias: 19,
+      finados: 1,
+      progresoPct: 79,
+      metaDiaria: 15,
+      visitasHoy: 13
     }
   ];
 
