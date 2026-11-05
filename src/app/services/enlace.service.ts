@@ -518,6 +518,29 @@ export class EnlaceService {
       progresoPct: 67,
       metaDiaria: 15,
       visitasHoy: 11
+    },
+    {
+      id: 20,
+      nombre_completo: 'FATIMA ITALIVIS VILLEGAS ALVAREZ',
+      zona: '11 LEON 103',
+      zs: 6,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '159423',
+      telefono: '4431019690',
+      curp: 'VIAF910211MMNLLT06',
+      no_cedula: '11011718',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 526,
+      visitados: 286,
+      pendientes: 240,
+      rechazos: 27,
+      cambiosDomicilio: 29,
+      incidencias: 175,
+      finados: 1,
+      progresoPct: 54,
+      metaDiaria: 15,
+      visitasHoy: 12
     }
   ];
 
