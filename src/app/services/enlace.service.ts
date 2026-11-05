@@ -449,6 +449,29 @@ export class EnlaceService {
       progresoPct: 20,
       metaDiaria: 15,
       visitasHoy: 11
+    },
+    {
+      id: 17,
+      nombre_completo: 'CARLOS ALBERTO VAZQUEZ ROJAS',
+      zona: '11 LEON 210',
+      zs: 6,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '159126',
+      telefono: '4792183965',
+      curp: 'VARC811203HGTZJR02',
+      no_cedula: '15388598',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 664,
+      visitados: 492,
+      pendientes: 172,
+      rechazos: 20,
+      cambiosDomicilio: 36,
+      incidencias: 70,
+      finados: 7,
+      progresoPct: 74,
+      metaDiaria: 15,
+      visitasHoy: 13
     }
   ];
 
