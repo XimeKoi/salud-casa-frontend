@@ -403,6 +403,29 @@ export class EnlaceService {
       progresoPct: 79,
       metaDiaria: 15,
       visitasHoy: 13
+    },
+    {
+      id: 15,
+      nombre_completo: 'LAURA CRISTINA QUINTANA GARCIA',
+      zona: '11 LEON 19',
+      zs: 5,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '',
+      telefono: '',
+      curp: '',
+      no_cedula: '',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 516,
+      visitados: 418,
+      pendientes: 98,
+      rechazos: 12,
+      cambiosDomicilio: 9,
+      incidencias: 76,
+      finados: 1,
+      progresoPct: 81,
+      metaDiaria: 15,
+      visitasHoy: 12
     }
   ];
 
