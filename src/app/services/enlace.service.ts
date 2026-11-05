@@ -495,6 +495,29 @@ export class EnlaceService {
       progresoPct: 80,
       metaDiaria: 15,
       visitasHoy: 12
+    },
+    {
+      id: 19,
+      nombre_completo: 'PAOLA YAISEL MUÑOZ MORENO',
+      zona: '11 LEON 257',
+      zs: 6,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '',
+      telefono: '',
+      curp: '',
+      no_cedula: '',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 494,
+      visitados: 333,
+      pendientes: 161,
+      rechazos: 45,
+      cambiosDomicilio: 22,
+      incidencias: 91,
+      finados: 1,
+      progresoPct: 67,
+      metaDiaria: 15,
+      visitasHoy: 11
     }
   ];
 
