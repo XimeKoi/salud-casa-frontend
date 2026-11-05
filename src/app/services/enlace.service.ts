@@ -472,6 +472,29 @@ export class EnlaceService {
       progresoPct: 74,
       metaDiaria: 15,
       visitasHoy: 13
+    },
+    {
+      id: 18,
+      nombre_completo: 'LUZ ADRIANA LOPEZ LOPEZ',
+      zona: '11 LEON 225',
+      zs: 5,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '17161',
+      telefono: '4776932305',
+      curp: 'LOLL800903MGTPPZ08',
+      no_cedula: '12245091',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 466,
+      visitados: 371,
+      pendientes: 95,
+      rechazos: 21,
+      cambiosDomicilio: 8,
+      incidencias: 62,
+      finados: 0,
+      progresoPct: 80,
+      metaDiaria: 15,
+      visitasHoy: 12
     }
   ];
 
