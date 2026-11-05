@@ -426,6 +426,29 @@ export class EnlaceService {
       progresoPct: 81,
       metaDiaria: 15,
       visitasHoy: 12
+    },
+    {
+      id: 16,
+      nombre_completo: 'ANA ELENA MONTES DE OCA ANGEL',
+      zona: '11 LEON 2',
+      zs: 5,
+      region: 'LEON',
+      distrito: 'DISTRITO 03',
+      id_interno: '50710',
+      telefono: '4773961733',
+      curp: 'MOAA980302MGTNNN04',
+      no_cedula: '14920528',
+      nivel_academico: 'LIC EN ENFERMERIA',
+      totalPacientes: 792,
+      visitados: 161,
+      pendientes: 631,
+      rechazos: 142,
+      cambiosDomicilio: 56,
+      incidencias: 423,
+      finados: 2,
+      progresoPct: 20,
+      metaDiaria: 15,
+      visitasHoy: 11
     }
   ];
 
